@@ -1,337 +1,10 @@
-""" Code to reproduce some standard feature visualizations.
-
-Ref: Olah, et al., "Feature Visualization", Distill, 2017.
-"""
 import warnings
 
 import torch
 import torch.nn.functional as F
 from scipy import signal
-from torch import optim
 
-
-class FeatureVisException(Exception):
-    """ Catch-all exception for errors generated during feature visualization."""
-    pass
-
-
-def gradient_ascent(f, x, transform=None, regularization=None, gradient_f=None,
-                    post_update=None, optim_name='SGD', step_size=0.1, optim_kwargs={},
-                    num_iterations=1000, save_iters=None, print_iters=100):
-    """ Maximize f(x) via gradient ascent.
-
-    Objective: f(transform(x)) - regularization(transform(x))
-    Update: x_{t+1} = post_update(x_{t} + step_size * gradient_f(x_{t}.grad))
-
-    Arguments:
-        f (function): Real-valued differentiable function to be optimized
-        x (torch.Tensor): Initial guess of the input to optimize.
-        transform (function): Differentiable transformation applied to x before sending it
-            through the model, e.g., an image generator, jittering, scaling, etc.
-        regularization (function): Differentiable regularization term, e.g., natural
-            prior, total variation, bilateral filters, etc.
-        gradient_f (function): Non-differentiable. Receives the gradient of x and outputs
-            a preconditioned gradient, e.g., blurring, masking, etc.
-        post_update (function): Non-differentiable. Function applied to x after each
-            gradient update, e.g., keep the image norm to some value, blurring, etc.
-        optim_name (string): Optimizer to use: SGD or Adam.
-        step_size (float): Size of the step size to give every iteration.
-        optim_kwargs (dict): Dictionary with kwargs for the optimizer
-        num_iterations (int): Number of gradient ascent steps.
-        save_iters (None or int): How often to save x. If None, it returns the best x;
-            otherwise it saves x after each save_iters iterations.
-        print_iters (int): Print some results every print_iters iterations.
-
-    Returns:
-        optimal_x (torch.Tensor): x that maximizes the desired function. If save_iters is
-            not None, this will be a list of tensors.
-        fevals (list): Function evaluations at each iteration. We also evaluate at x_0
-            (the original input) so this will have max_iterations + 1 elements.
-        reg_terms (list): Value of the regularization term at each iteration. We also
-            evaluate at x_0 (the original input) so this will have max_iterations + 1
-            elements. Empty if regularization is None.
-
-    Note:
-        transform, regularization, gradient_f and post_update receive one positional
-        parameter (its input) and the following optional named parameters:
-            iteration (int): Current iteration (starts at 1).
-
-        The number of optional parameters may increase so we recommend to write functions
-        that receive **kwargs (or use the varargin decorator below) to make sure they will
-        still work if we add other optional parameters in the future.
-    """
-    # Basic checks
-    if x.dtype != torch.float32:
-        raise ValueError('x must be of torch.float32 dtype')
-    x = x.detach().clone()  # to avoid changing original
-    x.requires_grad_()
-
-    # Declare optimizer
-    if optim_name == 'SGD':
-        optimizer = optim.SGD([x], lr=step_size, **optim_kwargs)
-    elif optim_name == 'Adam':
-        optimizer = optim.Adam([x], lr=step_size, **optim_kwargs)
-    else:
-        raise ValueError("Expected optim_name to be 'SGD' or 'Adam'")
-
-    # Run gradient ascent
-    fevals = []  # to store function evaluations
-    reg_terms = []  # to store regularization function evaluations
-    saved_xs = []  # to store xs (ignored if save_iters is None)
-    for i in range(1, num_iterations + 1):
-        # Zero gradients
-        if x.grad is not None:
-            x.grad.zero_()
-
-        # Transform input
-        transformed_x = x if transform is None else transform(x, iteration=i)
-
-        # f(x)
-        feval = f(transformed_x)
-        fevals.append(feval.item())
-
-        # Regularization
-        if regularization is not None:
-            reg_term = regularization(transformed_x, iteration=i)
-            reg_terms.append(reg_term.item())
-        else:
-            reg_term = 0
-
-        # Compute gradient
-        (-feval + reg_term).backward()
-        if x.grad is None:
-            raise FeatureVisException('Gradient did not reach x.')
-
-        # Precondition gradient
-        x.grad = x.grad if gradient_f is None else gradient_f(x.grad, iteration=i)
-        if (torch.abs(x.grad) < 1e-9).all():
-            warnings.warn('Gradient for x is all zero')
-
-        # Gradient ascent step (on x)
-        optimizer.step()
-
-        # Cleanup
-        if post_update is not None:
-            with torch.no_grad():
-                x[:] = post_update(x, iteration=i)  # in place so the optimizer still points to the right object
-
-        # Report results
-        if i % print_iters == 0:
-            feval = feval.item()
-            reg_term = reg_term if regularization is None else reg_term.item()
-            x_std = x.std().item()
-            print('Iter {}: f(x) = {:.2f}, reg(x) = {:.2f}, std(x) = {:.2f}'.format(i,
-                feval, reg_term, x_std))
-
-        # Save x
-        if save_iters is not None and i % save_iters == 0:
-            saved_xs.append(x.detach().clone())
-
-    # Record f(x) and regularization(x) for the final x
-    with torch.no_grad():
-        transformed_x = x if transform is None else transform(x, iteration=i + 1)
-
-        feval = f(transformed_x)
-        fevals.append(feval.item())
-
-        if regularization is not None:
-            reg_term = regularization(transformed_x, iteration=i + 1)
-            reg_terms.append(reg_term.item())
-    print('Final f(x) = {:.2f}'.format(fevals[-1]))
-
-    # Set opt_x
-    opt_x = x.detach().clone() if save_iters is None else saved_xs
-
-    return opt_x, fevals, reg_terms
-
-
-############################### UTILITY CLASSES ########################################
-def varargin(f):
-    """ Decorator to make a function able to ignore named parameters not declared in its
-     definition.
-
-    Arguments:
-        f (function): Original function.
-
-    Usage:
-            @varargin
-            def my_f(x):
-                # ...
-        is equivalent to
-            def my_f(x, **kwargs):
-                #...
-        Using the decorator is recommended because it makes it explicit that my_f won't
-        use arguments received in the kwargs dictionary.
-    """
-    import inspect
-    import functools
-
-    # Find the name of parameters expected by f
-    f_params = inspect.signature(f).parameters.values()
-    param_names = [p.name for p in f_params]  # name of parameters expected by f
-    receives_kwargs = any([p.kind == inspect.Parameter.VAR_KEYWORD for p in
-                           f_params])  # f receives a dictionary of **kwargs
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        if not receives_kwargs:
-            # Ignore named parameters not expected by f
-            kwargs = {k: kwargs[k] for k in kwargs.keys() if k in param_names}
-        return f(*args, **kwargs)
-
-    return wrapper
-
-
-class Compose():
-    """ Chain a set of operations into a single function.
-
-    Each function must receive one positional argument and any number of keyword
-    arguments. Each function is called with the output of the previous one (as its
-    positional argument) and all keyword arguments of the original call.
-
-    Arguments:
-        operations (list): List of functions.
-    """
-
-    def __init__(self, operations):
-        self.operations = operations
-
-    def __call__(self, x, **kwargs):
-        if len(self.operations) == 0:
-            out = None
-        else:
-            out = self.operations[0](x, **kwargs)
-            for op in self.operations[1:]:
-                out = op(out, **kwargs)
-
-        return out
-
-    def __getitem__(self, item):
-        return self.operations[item]
-
-
-class Combine():
-    """ Applies different operations to an input and combines its output.
-
-    Arguments:
-        operations (list): List of operations
-        combine_op (function): Function used to combine the results of all the operations.
-    """
-
-    def __init__(self, operations, combine_op=torch.sum):
-        self.operations = operations
-        self.combine_op = combine_op
-
-    def __call__(self, *args, **kwargs):
-        if len(self.operations) == 0:
-            return
-        else:
-            results = [op(*args, **kwargs) for op in self.operations]
-            return self.combine_op(torch.stack(results, dim=0))
-
-    def __getitem__(self, item):
-        return self.operations[item]
-
-
-################################### MODELS ##############################################
-class Ensemble():
-    """ Average the response across a set of models.
-
-    Arguments:
-        models (list): A list of pytorch models.
-        readout_key (str): String identifying the scan whose neurons will be outputted by
-            the model
-        eye_pos (torch.Tensor): A [1 x 2] tensor with the position of the pupil(x, y).
-            This shifts the FOV of all cells. Default (None) is position at center of
-            screen (i.e., it disables the shifter).
-        behavior (torch.Tensor): A [1 x 3] tensor with the behavior parameters
-            (pupil_dilation, dpupil_dilation/dt, treadmill). Default is to return results
-            without modulation.
-        neuron_idx (int or slice or list): Neuron(s) to return. Default returns all cells.
-        y_shift, x_shift (float or torch tensor): Overwrite the learnt (per-cell readout)
-            shift with these values for all cells. Values are clipped to [-1, 1] (see
-            torch.nn.functional.grid_sample). Default uses the learnt readout shift.
-        device (torch.Device or str): Where to load the models.
-
-    Note:
-        We copy the models to avoid overwriting the gradients (and grid if x_shift or
-        y_shift is set) of the original models. You can access our copy of the models as
-        my_ensemble.models.
-    """
-    def __init__(self, models, readout_key, eye_pos=None, behavior=None,
-                 neuron_idx=slice(None), y_shift=None, x_shift=None, device='cuda'):
-        import copy
-
-        self.models = [copy.deepcopy(m) for m in models]
-        self.readout_key = readout_key
-        self.eye_pos = None if eye_pos is None else eye_pos.to(device)
-        self.behavior = None if behavior is None else behavior.to(device)
-        self.neuron_idx = neuron_idx
-        self.y_shift = y_shift
-        self.x_shift = x_shift
-        self.device = device
-
-        for m in self.models:
-            # If needed, change readout shifts to the desired ones
-            with torch.no_grad():
-                if self.y_shift is not None:
-                    m.readout[readout_key].grid[..., 1] = self.y_shift
-                if self.x_shift is not None:
-                    m.readout[readout_key].grid[..., 0] = self.x_shift
-
-            m.to(device)
-            m.eval()
-
-    def __call__(self, x):
-        resps = [m(x, self.readout_key, eye_pos=self.eye_pos, behavior=self.behavior)[:,
-                 self.neuron_idx] for m in self.models]  # num_models x batch_size x num_neurons
-        resp = torch.stack(resps).mean(0).mean(0)  # num_neurons
-
-        return resp
-
-
-class VGG19Core():
-    """ A pretrained VGG-19. Output will be intermediate feature representation
-    (N x C x H x W) at the desired layer.
-
-    Arguments:
-        layer (int): Index (0-based) of the layer that will be optimized.
-        use_batchnorm (boolean): Whether to download the version with batchnorm.
-        device (torch.Device or str): Where to place the model.
-    """
-    def __init__(self, layer, use_batchnorm=True, device='cuda'):
-        from torchvision import models
-
-        vgg19 = (models.vgg19_bn(pretrained=True) if use_batchnorm else
-                 models.vgg19(pretrained=True))
-        if layer < len(vgg19.features):
-            self.model = vgg19.features[:layer + 1]
-        else:
-            raise ValueError('layer out of range (max is', len(vgg19.features))
-        self.model.to(device)
-        self.model.eval()
-
-    @varargin
-    def __call__(self, x):
-        return self.model(x)
-
-
-class VGG19():
-    """ A pretrained VGG-19. Output will be the average of one channel across spatial
-    dimensions.
-
-    Arguments:
-        layer (int): Index (0-based) of the layer that will be optimized.
-        channel (int)_: Index (0-based) of the channel that will be optimized.
-        use_batchnorm (boolean): Whether to download the version with batchnorm.
-        device (torch.Device or str): Where to place the model.
-    """
-    def __init__(self, layer, channel, use_batchnorm=True, device='cuda'):
-        self.model = VGG19Core(layer, use_batchnorm, device)
-        self.channel = channel
-
-    def __call__(self, x):
-        resp = self.model(x)[:, self.channel, :, :].mean()
-        return resp
+from featurevis.utils import varargin
 
 
 ################################## REGULARIZERS ##########################################
@@ -441,7 +114,7 @@ class Similarity():
         return loss
 
 
-# class PixelCNNRegularizer():
+# class PixelCNN():
 #     def __init__(self, weight=1):
 #         self.weight = weight
 #
@@ -597,7 +270,7 @@ class GaborGenerator():
             x (tuple): Tuple with 4-6 parameters: orientation, phase, wavelength, sigma,
                 dx and dy. See utils.create_gabor for details.
         """
-        from staticnet_invariance import utils
+        from featurevis import utils
 
         gabors = []
         for params in x:
@@ -610,26 +283,26 @@ class GaborGenerator():
         return gabors
 
 
-class Resample():
-    """ Resample images.
+class Resize():
+    """ Resize images.
 
     Arguments:
         scale_factor (float): Factor to rescale the images:
             new_h, new_w = round(scale_factor * (old_h, old_w)).
-        resample_method (str): 'nearest' or 'bilinear' interpolation.
+        resize_method (str): 'nearest' or 'bilinear' interpolation.
 
     Note:
         This changes the dimensions of the image.
     """
-    def __init__(self, scale_factor, resample_method='bilinear'):
+    def __init__(self, scale_factor, resize_method='bilinear'):
         self.scale_factor = scale_factor
-        self.resample_method = resample_method
+        self.resample_method = resize_method
 
     @varargin
     def __call__(self, x):
         new_height = int(round(x.shape[-2] * self.scale_factor))
         new_width = int(round(x.shape[-1] * self.scale_factor))
-        return F.upsample(x, (new_height, new_width), mode=self.resample_method)
+        return F.upsample(x, (new_height, new_width), mode=self.resize_method)
 
 
 class GrayscaleToRGB():

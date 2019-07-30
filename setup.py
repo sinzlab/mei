@@ -3,16 +3,15 @@ from setuptools import setup
 
 setup(
     name='featurevis',
-    version='0.1.0',
+    version='0.2.0',
     description='Visualize features cells are responsive to via gradient ascent',
     author='Erick Cobos',
     author_email='ecobos@bcm.edu',
     license='MIT',
     url='https://github.com/cajal/featurevis',
     keywords= 'feature visualization MEI pytorch',
-    #packages=['featurevis'],
-    py_modules=['featurevis'],
-    install_requires=['torch>=0.4.0', 'scipy', 'torchvision'],
+    packages=['featurevis'],
+    install_requires=['torch>=0.4.0', 'scipy', 'numpy', 'torchvision'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',

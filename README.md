@@ -16,7 +16,7 @@ a `gradient_f` function $g(x)$ to apply to the gradient before applying the upda
 $$
     x_{t+1} = p\left(x_t + \alpha g\left(\frac{\delta f}{\delta x_t}\right)\right)\text{.}
 $$
-These functions ($t$, $r$, $g$ and $p$) should cover the most common scenarios when creating [feature visualizations](https://distill.pub/2017/feature-visualization/) for neural network models. We provide implementations for many of these commonly used functions. 
+These functions ($t$, $r$, $g$ and $p$) should cover the most common scenarios when creating [feature visualizations](https://distill.pub/2017/feature-visualization/) for neural network models. We provide implementations for many of these commonly used functions in `feature_vis.ops`. 
 
 You can check the `Examples.ipynb` notebook to see how to visualize features from a VGG network or real neurons[1] under different configurations. 
 
