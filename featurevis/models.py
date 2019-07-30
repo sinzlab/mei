@@ -20,6 +20,9 @@ class Ensemble():
         y_shift, x_shift (float or torch tensor): Overwrite the learnt (per-cell readout)
             shift with these values for all cells. Values are clipped to [-1, 1] (see
             torch.nn.functional.grid_sample). Default uses the learnt readout shift.
+        average_batch (boolean): If True, responses are averaged across all images in the
+            batch (output is a num_neurons tensor). Otherwise, output is a num_images x
+            num_neurons tensor.
         device (torch.Device or str): Where to load the models.
 
     Note:
@@ -28,7 +31,8 @@ class Ensemble():
         my_ensemble.models.
     """
     def __init__(self, models, readout_key, eye_pos=None, behavior=None,
-                 neuron_idx=slice(None), y_shift=None, x_shift=None, device='cuda'):
+                 neuron_idx=slice(None), y_shift=None, x_shift=None,
+                 average_batch=True, device='cuda'):
         import copy
 
         self.models = [copy.deepcopy(m) for m in models]
@@ -38,6 +42,7 @@ class Ensemble():
         self.neuron_idx = neuron_idx
         self.y_shift = y_shift
         self.x_shift = x_shift
+        self.average_batch = average_batch
         self.device = device
 
         for m in self.models:
@@ -53,8 +58,9 @@ class Ensemble():
 
     def __call__(self, x):
         resps = [m(x, self.readout_key, eye_pos=self.eye_pos, behavior=self.behavior)[:,
-                 self.neuron_idx] for m in self.models]  # num_models x batch_size x num_neurons
-        resp = torch.stack(resps).mean(0).mean(0)  # num_neurons
+                 self.neuron_idx] for m in self.models]
+        resps = torch.stack(resps)  # num_models x batch_size x num_neurons
+        resp = resps.mean(0).mean(0) if self.average_batch else resps.mean(0)
 
         return resp
 
