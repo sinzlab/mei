@@ -48,7 +48,7 @@ class LpNorm():
 
     @varargin
     def __call__(self, x):
-        lpnorm = (torch.abs(x) ** self.p).reshape(len(x), -1).sum(-1) ** (1/self.p)
+        lpnorm = (torch.abs(x) ** self.p).reshape(len(x), -1).sum(-1) ** (1 / self.p)
         loss = self.weight * torch.mean(lpnorm)
         return loss
 
@@ -137,6 +137,7 @@ class Jitter():
     def __init__(self, max_jitter):
         self.max_jitter = max_jitter if isinstance(max_jitter, tuple) else (max_jitter,
                                                                             max_jitter)
+
     @varargin
     def __call__(self, x):
         # Sample how much to jitter
@@ -148,12 +149,12 @@ class Jitter():
         # Pad and crop the rest
         pad_y = (jitter_y, 0) if jitter_y >= 0 else (0, -jitter_y)
         pad_x = (jitter_x, 0) if jitter_x >= 0 else (0, -jitter_x)
-        padded_x = F.pad(x, pad=(*pad_x,  *pad_y), mode='reflect')
+        padded_x = F.pad(x, pad=(*pad_x, *pad_y), mode='reflect')
 
         # Crop
         h, w = x.shape[-2:]
         jittered_x = padded_x[..., slice(0, h) if jitter_y > 0 else slice(-jitter_y, None),
-                              slice(0, w) if jitter_x > 0 else slice(-jitter_x, None)]
+                              slice(0,w) if jitter_x > 0 else slice(-jitter_x, None)]
 
         return jittered_x
 
@@ -171,9 +172,9 @@ class RandomCrop():
 
     @varargin
     def __call__(self, x):
-        crop_y = torch.randint(0, max(0, x.shape[-2] - self.height) + 1, (1, ),
+        crop_y = torch.randint(0, max(0, x.shape[-2] - self.height) + 1, (1,),
                                dtype=torch.int32).item()
-        crop_x = torch.randint(0, max(0, x.shape[-1] - self.width) + 1, (1, ),
+        crop_x = torch.randint(0, max(0, x.shape[-1] - self.width) + 1, (1,),
                                dtype=torch.int32).item()
         cropped_x = x[..., crop_y: crop_y + self.height, crop_x: crop_x + self.width]
 
@@ -198,8 +199,8 @@ class BatchedCrops():
     def __init__(self, height, width, step_size, sigma=None):
         self.height = height
         self.width = width
-        self.step_size = step_size if isinstance(step_size, tuple) else (step_size, ) * 2
-        self.sigma = sigma if sigma is None or isinstance(sigma, tuple) else (sigma, ) * 2
+        self.step_size = step_size if isinstance(step_size, tuple) else (step_size,) * 2
+        self.sigma = sigma if sigma is None or isinstance(sigma, tuple) else (sigma,) * 2
 
         # If needed, create gaussian mask
         if sigma is not None:
@@ -218,7 +219,7 @@ class BatchedCrops():
         crops = []
         for i in range(0, x.shape[-2] - self.height + 1, self.step_size[0]):
             for j in range(0, x.shape[-1] - self.width + 1, self.step_size[1]):
-                crops.append(x[..., i : i + self.height, j: j + self.width])
+                crops.append(x[..., i: i + self.height, j: j + self.width])
         crops = torch.cat(crops, dim=0)
 
         # Multiply by a gaussian mask if needed
@@ -278,7 +279,7 @@ class GaborGenerator():
             if self.normalize_image:
                 gabor = (gabor - gabor.mean()) / (gabor.std() + 1e-9)
             gabors.append(gabor)
-        gabors = torch.stack(gabors)[:, None, :, :] # add channel dimension
+        gabors = torch.stack(gabors)[:, None, :, :]  # add channel dimension
 
         return gabors
 
@@ -329,7 +330,7 @@ class ChangeNorm():
     @varargin
     def __call__(self, x):
         x_norm = torch.norm(x.view(len(x), -1), dim=-1)
-        renorm = x * (self.norm / x_norm).view(len(x), *[1, ] * (x.dim() -1))
+        renorm = x * (self.norm / x_norm).view(len(x), *[1,] * (x.dim() - 1))
         return renorm
 
 
@@ -377,11 +378,11 @@ class FourierSmoothing():
         yx_freq = torch.sqrt(freq_y[:, None] ** 2 + freq_x ** 2)
 
         # Create smoothing mask
-        norm_freq = yx_freq * torch.sqrt(torch.tensor(2.0)) # 0-1
+        norm_freq = yx_freq * torch.sqrt(torch.tensor(2.0))  # 0-1
         mask = (1 - norm_freq) ** self.freq_exp
 
         # Smooth
-        freq = torch.rfft(x, signal_ndim=2) # same output as np.fft.rfft2
+        freq = torch.rfft(x, signal_ndim=2)  # same output as np.fft.rfft2
         mask = torch.as_tensor(mask, device=freq.device, dtype=freq.dtype).unsqueeze(-1)
         smooth = torch.irfft(freq * mask, signal_ndim=2, signal_sizes=x.shape[-2:])
         return smooth
@@ -446,7 +447,7 @@ class GaussianBlur():
             'constant', 'reflect' and 'replicate'
     """
     def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode='reflect'):
-        self.sigma = sigma if isinstance(sigma, tuple) else (sigma, ) * 2
+        self.sigma = sigma if isinstance(sigma, tuple) else (sigma,) * 2
         self.decay_factor = decay_factor
         self.truncate = truncate
         self.pad_mode = pad_mode
@@ -476,7 +477,7 @@ class GaussianBlur():
                              groups=num_channels)
         blurred_x = F.conv2d(blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1),
                              groups=num_channels)
-        final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum()) # normalize
+        final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
 
         return final_x
 
@@ -492,6 +493,6 @@ class ChangeStd():
 
     @varargin
     def __call__(self, x):
-        x_std= torch.std(x.view(len(x), -1), dim=-1)
-        fixed_std = x * (self.std / (x_std + 1e-9)).view(len(x), *[1, ] * (x.dim() -1))
+        x_std = torch.std(x.view(len(x), -1), dim=-1)
+        fixed_std = x * (self.std / (x_std + 1e-9)).view(len(x), *[1, ] * (x.dim() - 1))
         return fixed_std
