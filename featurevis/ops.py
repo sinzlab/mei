@@ -388,27 +388,11 @@ class FourierSmoothing():
         return smooth
 
 
-class DeepDrawUpdateFactor():
-    """ Computing the update factor in deepdraw
-
-    x_new = x_old + step_size * update_factor
-    x_new = x_old + step_size * [(step_gain * grad) / (255 * torch.abs(grad).mean())]
-
-    Arguments:
-        step_gain (float): Scaling factor for the gradient
-
-    Note:
-        Original update is this:
-            src.data += (step_size / (torch.abs(grad.data).mean() + eps)) * (step_gain / 255) * grad.data
-    """
-    def __init__(self, step_gain):
-        self.step_gain = step_gain
-
+class DivideByMeanOfAbsolute():
+    """ Divides x by the mean of absolute x. """
     @varargin
     def __call__(self, x):
-        mean_abs_x = torch.abs(x).view(len(x), -1).mean(-1)
-        factor = (self.step_gain * x) / (255 * mean_abs_x[:, None, None, None] + 1e-9)
-        return factor
+        return x / torch.abs(x).view(len(x), -1).mean(-1)
 
 
 class MultiplyBy():
