@@ -250,40 +250,6 @@ class ChangeRange():
         return new_x
 
 
-class GaborGenerator():
-    """ Generate a Gabor patch based on some input parameters.
-
-    Arguments:
-        height: Height of the Gabor patch.
-        width: Width of the Gabor patch.
-        normalize_image: Whether we normalize the gabor patch before returning.
-    """
-    def __init__(self, height, width, normalize_image=False):
-        self.height = height
-        self.width = width
-        self.normalize_image = normalize_image
-
-    @varargin
-    def __call__(self, x):
-        """  Create a Gabor patch with the params in x.
-
-        Arguments:
-            x (tuple): Tuple with 4-6 parameters: orientation, phase, wavelength, sigma,
-                dx and dy. See utils.create_gabor for details.
-        """
-        from featurevis import utils
-
-        gabors = []
-        for params in x:
-            gabor = utils.create_gabor(self.height, self.width, *params)
-            if self.normalize_image:
-                gabor = (gabor - gabor.mean()) / (gabor.std() + 1e-9)
-            gabors.append(gabor)
-        gabors = torch.stack(gabors)[:, None, :, :]  # add channel dimension
-
-        return gabors
-
-
 class Resize():
     """ Resize images.
 
