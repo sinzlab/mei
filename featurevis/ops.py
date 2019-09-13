@@ -61,7 +61,7 @@ class Similarity():
         metric (str): What metric to use when computing pairwise similarities. One of:
             correlation: Masked correlation.
             cosine: Cosine similarity of the masked input.
-            euclidean: Negative of euclidean distance between the masked input.
+            neg_euclidean: Negative of euclidean distance between the masked input.
         combine_op (function): Function used to agglomerate pairwise similarities.
         mask (torch.tensor or None): Mask to use when calculating similarities. Expected
             to be in [0, 1] range and be broadcastable with input.
@@ -100,7 +100,7 @@ class Similarity():
         elif self.metric == 'cosine':
             norms = torch.norm(flat_x, dim=-1)
             sim_matrix = torch.mm(flat_x, flat_x.t()) / (torch.ger(norms, norms) + 1e-9)
-        elif self.metric == 'euclidean':
+        elif self.metric == 'neg_euclidean':
             sim_matrix = -torch.norm(flat_x[None, :, :] - flat_x[:, None, :], dim=-1)
         else:
             raise ValueError('Invalid metric name:{}'.format(self.metric))
@@ -246,7 +246,7 @@ class ChangeRange():
 
     @varargin
     def __call__(self, x):
-        new_x = torch.sigmoid(x) * self.x_max + self.x_min
+        new_x = torch.sigmoid(x) * (self.x_max - self.x_min) + self.x_min
         return new_x
 
 
@@ -314,6 +314,13 @@ class GrayscaleToRGB():
             raise ValueError('Image is not grayscale!')
 
         return x.expand(-1, 3, -1, -1)
+
+
+class Identity():
+    """ Transform that returns the input as is."""
+    @varargin
+    def __call__(self, x):
+        return x
 
 
 ############################## GRADIENT OPERATIONS #######################################
