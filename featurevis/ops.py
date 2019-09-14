@@ -232,7 +232,7 @@ class BatchedCrops():
 
 class ChangeRange():
     """ This changes the range of x as follows:
-        new_x = sigmoid(x) * desired_max + desired_min
+        new_x = sigmoid(x) * (desired_max - desired_min) + desired_min
 
     Arguments:
         x_min (float or tensor): Minimum desired value for the output. If a tensor it
