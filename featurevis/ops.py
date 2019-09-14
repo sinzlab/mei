@@ -61,7 +61,7 @@ class Similarity():
         metric (str): What metric to use when computing pairwise similarities. One of:
             correlation: Masked correlation.
             cosine: Cosine similarity of the masked input.
-            euclidean: Negative of euclidean distance between the masked input.
+            neg_euclidean: Negative of euclidean distance between the masked input.
         combine_op (function): Function used to agglomerate pairwise similarities.
         mask (torch.tensor or None): Mask to use when calculating similarities. Expected
             to be in [0, 1] range and be broadcastable with input.
@@ -100,7 +100,7 @@ class Similarity():
         elif self.metric == 'cosine':
             norms = torch.norm(flat_x, dim=-1)
             sim_matrix = torch.mm(flat_x, flat_x.t()) / (torch.ger(norms, norms) + 1e-9)
-        elif self.metric == 'euclidean':
+        elif self.metric == 'neg_euclidean':
             sim_matrix = -torch.norm(flat_x[None, :, :] - flat_x[:, None, :], dim=-1)
         else:
             raise ValueError('Invalid metric name:{}'.format(self.metric))
@@ -232,7 +232,7 @@ class BatchedCrops():
 
 class ChangeRange():
     """ This changes the range of x as follows:
-        new_x = sigmoid(x) * desired_max + desired_min
+        new_x = sigmoid(x) * (desired_max - desired_min) + desired_min
 
     Arguments:
         x_min (float or tensor): Minimum desired value for the output. If a tensor it
@@ -246,42 +246,8 @@ class ChangeRange():
 
     @varargin
     def __call__(self, x):
-        new_x = torch.sigmoid(x) * self.x_max + self.x_min
+        new_x = torch.sigmoid(x) * (self.x_max - self.x_min) + self.x_min
         return new_x
-
-
-class GaborGenerator():
-    """ Generate a Gabor patch based on some input parameters.
-
-    Arguments:
-        height: Height of the Gabor patch.
-        width: Width of the Gabor patch.
-        normalize_image: Whether we normalize the gabor patch before returning.
-    """
-    def __init__(self, height, width, normalize_image=False):
-        self.height = height
-        self.width = width
-        self.normalize_image = normalize_image
-
-    @varargin
-    def __call__(self, x):
-        """  Create a Gabor patch with the params in x.
-
-        Arguments:
-            x (tuple): Tuple with 4-6 parameters: orientation, phase, wavelength, sigma,
-                dx and dy. See utils.create_gabor for details.
-        """
-        from featurevis import utils
-
-        gabors = []
-        for params in x:
-            gabor = utils.create_gabor(self.height, self.width, *params)
-            if self.normalize_image:
-                gabor = (gabor - gabor.mean()) / (gabor.std() + 1e-9)
-            gabors.append(gabor)
-        gabors = torch.stack(gabors)[:, None, :, :]  # add channel dimension
-
-        return gabors
 
 
 class Resize():
@@ -314,6 +280,13 @@ class GrayscaleToRGB():
             raise ValueError('Image is not grayscale!')
 
         return x.expand(-1, 3, -1, -1)
+
+
+class Identity():
+    """ Transform that returns the input as is."""
+    @varargin
+    def __call__(self, x):
+        return x
 
 
 ############################## GRADIENT OPERATIONS #######################################
