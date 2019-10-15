@@ -17,22 +17,17 @@ class Ensemble():
             (pupil_dilation, dpupil_dilation/dt, treadmill). Default is to return results
             without modulation.
         neuron_idx (int or slice or list): Neuron(s) to return. Default returns all cells.
-        y_shift, x_shift (float or torch tensor): Overwrite the learnt (per-cell readout)
-            shift with these values for all cells. Values are clipped to [-1, 1] (see
-            torch.nn.functional.grid_sample). Default uses the learnt readout shift.
         average_batch (boolean): If True, responses are averaged across all images in the
             batch (output is a num_neurons tensor). Otherwise, output is a num_images x
             num_neurons tensor.
         device (torch.Device or str): Where to load the models.
 
     Note:
-        We copy the models to avoid overwriting the gradients (and grid if x_shift or
-        y_shift is set) of the original models. You can access our copy of the models as
-        my_ensemble.models.
+        We copy the models to avoid overwriting the gradients of the original models. You
+        can access our copy of the models as my_ensemble.models.
     """
     def __init__(self, models, readout_key, eye_pos=None, behavior=None,
-                 neuron_idx=slice(None), y_shift=None, x_shift=None,
-                 average_batch=True, device='cuda'):
+                 neuron_idx=slice(None), average_batch=True, device='cuda'):
         import copy
 
         self.models = [copy.deepcopy(m) for m in models]
@@ -40,19 +35,10 @@ class Ensemble():
         self.eye_pos = None if eye_pos is None else eye_pos.to(device)
         self.behavior = None if behavior is None else behavior.to(device)
         self.neuron_idx = neuron_idx
-        self.y_shift = y_shift
-        self.x_shift = x_shift
         self.average_batch = average_batch
         self.device = device
 
         for m in self.models:
-            # If needed, change readout shifts to the desired ones
-            with torch.no_grad():
-                if self.y_shift is not None:
-                    m.readout[readout_key].grid[..., 1] = self.y_shift
-                if self.x_shift is not None:
-                    m.readout[readout_key].grid[..., 0] = self.x_shift
-
             m.to(device)
             m.eval()
 
