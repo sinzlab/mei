@@ -24,8 +24,9 @@ def varargin(f):
     # Find the name of parameters expected by f
     f_params = inspect.signature(f).parameters.values()
     param_names = [p.name for p in f_params]  # name of parameters expected by f
-    receives_kwargs = any([p.kind == inspect.Parameter.VAR_KEYWORD for p in
-                           f_params])  # f receives a dictionary of **kwargs
+    receives_kwargs = any(
+        [p.kind == inspect.Parameter.VAR_KEYWORD for p in f_params]
+    )  # f receives a dictionary of **kwargs
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
@@ -37,7 +38,7 @@ def varargin(f):
     return wrapper
 
 
-class Compose():
+class Compose:
     """ Chain a set of operations into a single function.
 
     Each function must receive one positional argument and any number of keyword
@@ -65,7 +66,7 @@ class Compose():
         return self.operations[item]
 
 
-class Combine():
+class Combine:
     """ Applies different operations to an input and combines its output.
 
     Arguments:

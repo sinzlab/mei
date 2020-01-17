@@ -3,7 +3,7 @@ import torch
 from featurevis.utils import varargin
 
 
-class Ensemble():
+class Ensemble:
     """ Average the response across a set of models.
 
     Arguments:
@@ -26,8 +26,17 @@ class Ensemble():
         We copy the models to avoid overwriting the gradients of the original models. You
         can access our copy of the models as my_ensemble.models.
     """
-    def __init__(self, models, readout_key, eye_pos=None, behavior=None,
-                 neuron_idx=slice(None), average_batch=True, device='cuda'):
+
+    def __init__(
+        self,
+        models,
+        readout_key,
+        eye_pos=None,
+        behavior=None,
+        neuron_idx=slice(None),
+        average_batch=True,
+        device="cuda",
+    ):
         import copy
 
         self.models = [copy.deepcopy(m) for m in models]
@@ -43,15 +52,17 @@ class Ensemble():
             m.eval()
 
     def __call__(self, x):
-        resps = [m(x, self.readout_key, eye_pos=self.eye_pos, behavior=self.behavior)[:,
-                 self.neuron_idx] for m in self.models]
+        resps = [
+            m(x, self.readout_key, eye_pos=self.eye_pos, behavior=self.behavior)[:, self.neuron_idx]
+            for m in self.models
+        ]
         resps = torch.stack(resps)  # num_models x batch_size x num_neurons
         resp = resps.mean(0).mean(0) if self.average_batch else resps.mean(0)
 
         return resp
 
 
-class VGG19Core():
+class VGG19Core:
     """ A pretrained VGG-19. Output will be intermediate feature representation
     (N x C x H x W) at the desired layer.
 
@@ -60,15 +71,15 @@ class VGG19Core():
         use_batchnorm (boolean): Whether to download the version with batchnorm.
         device (torch.Device or str): Where to place the model.
     """
-    def __init__(self, layer, use_batchnorm=True, device='cuda'):
+
+    def __init__(self, layer, use_batchnorm=True, device="cuda"):
         from torchvision import models
 
-        vgg19 = (models.vgg19_bn(pretrained=True) if use_batchnorm else
-                 models.vgg19(pretrained=True))
+        vgg19 = models.vgg19_bn(pretrained=True) if use_batchnorm else models.vgg19(pretrained=True)
         if layer < len(vgg19.features):
-            self.model = vgg19.features[:layer + 1]
+            self.model = vgg19.features[: layer + 1]
         else:
-            raise ValueError('layer out of range (max is', len(vgg19.features))
+            raise ValueError("layer out of range (max is", len(vgg19.features))
         self.model.to(device)
         self.model.eval()
 
@@ -77,7 +88,7 @@ class VGG19Core():
         return self.model(x)
 
 
-class VGG19():
+class VGG19:
     """ A pretrained VGG-19. Output will be the average of one channel across spatial
     dimensions.
 
@@ -87,7 +98,8 @@ class VGG19():
         use_batchnorm (boolean): Whether to download the version with batchnorm.
         device (torch.Device or str): Where to place the model.
     """
-    def __init__(self, layer, channel, use_batchnorm=True, device='cuda'):
+
+    def __init__(self, layer, channel, use_batchnorm=True, device="cuda"):
         self.model = VGG19Core(layer, use_batchnorm, device)
         self.channel = channel
 
