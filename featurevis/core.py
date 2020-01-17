@@ -6,9 +6,20 @@ from torch import optim
 from featurevis.exceptions import FeatureVisException
 
 
-def gradient_ascent(f, x, transform=None, regularization=None, gradient_f=None,
-                    post_update=None, optim_name='SGD', step_size=0.1, optim_kwargs={},
-                    num_iterations=1000, save_iters=None, print_iters=100):
+def gradient_ascent(
+    f,
+    x,
+    transform=None,
+    regularization=None,
+    gradient_f=None,
+    post_update=None,
+    optim_name="SGD",
+    step_size=0.1,
+    optim_kwargs={},
+    num_iterations=1000,
+    save_iters=None,
+    print_iters=100,
+):
     """ Maximize f(x) via gradient ascent.
 
     Objective: f(transform(x)) - regularization(transform(x))
@@ -53,14 +64,14 @@ def gradient_ascent(f, x, transform=None, regularization=None, gradient_f=None,
     """
     # Basic checks
     if x.dtype != torch.float32:
-        raise ValueError('x must be of torch.float32 dtype')
+        raise ValueError("x must be of torch.float32 dtype")
     x = x.detach().clone()  # to avoid changing original
     x.requires_grad_()
 
     # Declare optimizer
-    if optim_name == 'SGD':
+    if optim_name == "SGD":
         optimizer = optim.SGD([x], lr=step_size, **optim_kwargs)
-    elif optim_name == 'Adam':
+    elif optim_name == "Adam":
         optimizer = optim.Adam([x], lr=step_size, **optim_kwargs)
     else:
         raise ValueError("Expected optim_name to be 'SGD' or 'Adam'")
@@ -91,12 +102,12 @@ def gradient_ascent(f, x, transform=None, regularization=None, gradient_f=None,
         # Compute gradient
         (-feval + reg_term).backward()
         if x.grad is None:
-            raise FeatureVisException('Gradient did not reach x.')
+            raise FeatureVisException("Gradient did not reach x.")
 
         # Precondition gradient
         x.grad = x.grad if gradient_f is None else gradient_f(x.grad, iteration=i)
         if (torch.abs(x.grad) < 1e-9).all():
-            warnings.warn('Gradient for x is all zero')
+            warnings.warn("Gradient for x is all zero")
 
         # Gradient ascent step (on x)
         optimizer.step()
@@ -111,8 +122,7 @@ def gradient_ascent(f, x, transform=None, regularization=None, gradient_f=None,
             feval = feval.item()
             reg_term = reg_term if regularization is None else reg_term.item()
             x_std = x.std().item()
-            print('Iter {}: f(x) = {:.2f}, reg(x) = {:.2f}, std(x) = {:.2f}'.format(i,
-                feval, reg_term, x_std))
+            print("Iter {}: f(x) = {:.2f}, reg(x) = {:.2f}, std(x) = {:.2f}".format(i, feval, reg_term, x_std))
 
         # Save x
         if save_iters is not None and i % save_iters == 0:
@@ -128,7 +138,7 @@ def gradient_ascent(f, x, transform=None, regularization=None, gradient_f=None,
         if regularization is not None:
             reg_term = regularization(transformed_x, iteration=i + 1)
             reg_terms.append(reg_term.item())
-    print('Final f(x) = {:.2f}'.format(fevals[-1]))
+    print("Final f(x) = {:.2f}".format(fevals[-1]))
 
     # Set opt_x
     opt_x = x.detach().clone() if save_iters is None else saved_xs
