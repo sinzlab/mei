@@ -1,0 +1,27 @@
+{% set common %}
+    build: .
+    volumes:
+        - .:/src/mei
+    env_file:
+        - .env
+    ipc: host
+{% endset %}
+
+version: '2.3'
+services:
+    {% for i in range(N_GPU) %}
+    gpu{{ i }}:
+        {{ common|indent(4, True) }}
+        ports:
+            - 1004{{ i }}:8888
+        container_name: "dev_cblessing_mei_gpu{{ i }}"
+        environment:
+            - NVIDIA_VISIBLE_DEVICES={{ i }}
+        runtime: nvidia
+    {% endfor %}
+    cpu:
+        {{ common|indent(4, True) }}
+        ports:
+            - 10050:8888
+        container_name: "dev_cblessing_mei_cpu"
+        runtime: runc
