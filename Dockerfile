@@ -17,9 +17,9 @@ FROM sinzlab/pytorch:v1.3.1-cuda10.1-dj0.12.4
 
 COPY --from=intermediate /src /src
 WORKDIR /src
-RUN python3 ./nnfabrik/setup.py install && \
-    python3 ./ml-utils/setup.py install
+RUN python3 -m pip install ./nnfabrik && \
+    python3 -m pip install ./ml-utils
 
 WORKDIR /src/mei
 COPY . .
-RUN python3 setup.py develop
+RUN python3 -m pip install -e .
