@@ -20,6 +20,9 @@ WORKDIR /src
 RUN python3 -m pip install ./nnfabrik && \
     python3 -m pip install ./ml-utils
 
+RUN apt-get update && apt-get install -y nodejs npm
+RUN jupyter labextension install jupyterlab_vim
+
 WORKDIR /src/mei
 COPY . .
 RUN python3 -m pip install -e .
