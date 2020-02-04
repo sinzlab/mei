@@ -16,9 +16,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
 
     dataset_table = Dataset
 
-    @property
-    def definition(self):
-        return """
+    definition = """
         # contains information that can be used to map a neuron's id to its corresponding integer position in the output
         # of the model. 
         -> self.dataset_table
