@@ -2,7 +2,7 @@ import pickle
 
 import datajoint as dj
 
-from nnfabrik.main import Dataset
+from nnfabrik.main import Dataset, schema
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
@@ -54,3 +54,22 @@ class CSRFV1SelectorTemplate(dj.Computed):
             return model_output[:, neuron_position]
 
         return select_neuron
+
+
+@schema
+class MEIMethod(dj.Lookup):
+    definition = """
+    method_id                   : tinyint unsigned      # integer that uniquely identifies a set of parameter values
+    ---
+    transform           = NULL  : varchar(64)           # differentiable function that transforms the MEI before sending
+                                                        # it to through the model
+    regularization      = NULL  : varchar(64)           # differentiable function used for regularization
+    gradient            = NULL  : varchar(64)           # non-differentiable function that receives the gradient of the
+                                                        # MEI and outputs a preconditioned gradient
+    post_update         = NULL  : varchar(64)           # non-differentiable function applied to the MEI after each 
+                                                        # gradient update
+    step_size           = 0.1   : float                 # size of the step size to give every iteration
+    optimizer           = "SGD" : enum("SGD", "Adam")   # optimizer to be used
+    optimizer_config    = NULL  : longblob              # dictionary containing keyword arguments for the optimizer
+    n_iterations        = 1000  : smallint unsigned     # number of gradient ascent steps
+    """
