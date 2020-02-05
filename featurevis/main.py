@@ -59,6 +59,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
 @schema
 class MEIMethod(dj.Lookup):
     definition = """
+    # contains parameters used in MEI generation
     method_id                   : tinyint unsigned      # integer that uniquely identifies a set of parameter values
     ---
     transform           = NULL  : varchar(64)           # differentiable function that transforms the MEI before sending
