@@ -37,7 +37,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
                 entities.append(dict(key, neuron_id=neuron_id, neuron_position=neuron_pos))
         self.insert(entities)
 
-    def get_select_neuron(self, neuron_id):
+    def get_selector(self, neuron_id):
         """Creates a function that can be used to select the output corresponding to a uniquely identified neuron from
         the whole output of the model.
 
@@ -50,10 +50,10 @@ class CSRFV1SelectorTemplate(dj.Computed):
         """
         neuron_position = (self & dict(neuron_id=neuron_id)).fetch1("neuron_position")
 
-        def select_neuron(model_output):
+        def select(model_output):
             return model_output[:, neuron_position]
 
-        return select_neuron
+        return select
 
 
 @schema
