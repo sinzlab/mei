@@ -23,6 +23,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
         neuron_id       : smallint unsigned # unique neuron identifier
         ---
         neuron_position : smallint unsigned # integer position of the neuron in the model's output 
+        session_id      : varchar(13)       # unique session identifier
         """
 
     _key_source = Dataset & dict(dataset_fn="csrf_v1")
@@ -34,7 +35,9 @@ class CSRFV1SelectorTemplate(dj.Computed):
             with open(datafile_path, "rb") as datafile:
                 data = pickle.load(datafile)
             for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
-                entities.append(dict(key, neuron_id=neuron_id, neuron_position=neuron_pos))
+                entities.append(
+                    dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"])
+                )
         self.insert(entities)
 
     def get_selector(self, neuron_id):
