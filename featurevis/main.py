@@ -1,8 +1,14 @@
 import pickle
+import tempfile
+import os
 
 import datajoint as dj
+import torch
 
 from nnfabrik.main import Dataset, schema
+from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
+from nnfabrik.utility.dj_helpers import make_hash
+from .core import gradient_ascent
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
@@ -80,3 +86,53 @@ class MEIMethod(dj.Lookup):
     optim_kwargs        = NULL  : longblob              # dictionary containing keyword arguments for the optimizer
     num_iterations      = 1000  : smallint unsigned     # number of gradient ascent steps
     """
+
+
+class MEITemplate(dj.Computed):
+    """MEI table template.
+
+    To create a functional "MEI" table, create a new class that inherits from this template and decorate it with your
+    preferred Datajoint schema. By default, the created table will point to the "MEIMethod" table in the Datajoint
+    schema called "nnfabrik.main". This behavior can be changed by overwriting the class attribute called
+    "method_table".
+    """
+
+    method_table = MEIMethod
+    trained_model_table = None
+    selector_table = None
+
+    definition = """
+    # contains maximally exciting images (MEIs)
+    -> self.method_table
+    -> self.trained_model_table
+    -> self.selector_table
+    ---
+    mei : attach@minio  # the MEI as a tensor
+    """
+
+    def make(self, key):
+        dataloaders, model = self.trained_model_table().load_model(key=key)
+        neuron_ids = (self.selector_table & key).fetch("neuron_id")
+        mei_method = (MEIMethod & key).fetch1()
+        method_id = mei_method.pop("method_id")
+        if not mei_method["optim_kwargs"]:
+            mei_method["optim_kwargs"] = dict()
+        input_shape = list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
+        initial_guess = torch.randn(1, *input_shape[1:])
+        entities = []
+        meis = []
+        for neuron_id in neuron_ids:
+            output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
+            mei, _, _ = gradient_ascent(output_selected_model, initial_guess, **mei_method)
+            meis.append(mei)
+            entities.append(dict(key, neuron_id=neuron_id, method_id=method_id))
+
+        processed_entities = []
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for entity, mei in zip(entities, meis):
+                filename = make_hash(entity) + ".pth.tar"
+                filepath = os.path.join(temp_dir, filename)
+                torch.save(mei, filepath)
+                entity["mei"] = filepath
+                processed_entities.append(entity)
+            self.insert(processed_entities)
