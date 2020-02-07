@@ -87,6 +87,16 @@ class MEIMethod(dj.Lookup):
     num_iterations      = 1000  : smallint unsigned     # number of gradient ascent steps
     """
 
+    def get_mei_method(self):
+        """Fetches a set of MEI generation parameters and makes them ready to be used in the MEI table.
+
+        This function assumes that the table is already restricted to one entry when it is called.
+        """
+        method = self.fetch1()
+        if not method["optim_kwargs"]:
+            method["optim_kwargs"] = dict()
+        return method
+
 
 class MEITemplate(dj.Computed):
     """MEI table template.
@@ -113,17 +123,15 @@ class MEITemplate(dj.Computed):
     def make(self, key):
         dataloaders, model = self.trained_model_table().load_model(key=key)
         neuron_ids = (self.selector_table & key).fetch("neuron_id")
-        mei_method = (MEIMethod & key).fetch1()
-        method_id = mei_method.pop("method_id")
-        if not mei_method["optim_kwargs"]:
-            mei_method["optim_kwargs"] = dict()
+        method = (self.method_table & key).get_mei_method()
+        method_id = method.pop("method_id")
         input_shape = list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
         initial_guess = torch.randn(1, *input_shape[1:])
         entities = []
         meis = []
         for neuron_id in neuron_ids:
             output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
-            mei, _, _ = gradient_ascent(output_selected_model, initial_guess, **mei_method)
+            mei, _, _ = gradient_ascent(output_selected_model, initial_guess, **method)
             meis.append(mei)
             entities.append(dict(key, neuron_id=neuron_id, method_id=method_id))
 
