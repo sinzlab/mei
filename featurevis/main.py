@@ -7,6 +7,7 @@ import torch
 
 from nnfabrik.main import Dataset, schema
 from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
+from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
 from .core import gradient_ascent
 
@@ -95,6 +96,11 @@ class MEIMethod(dj.Lookup):
         method = self.fetch1()
         if not method["optim_kwargs"]:
             method["optim_kwargs"] = dict()
+        for attribute in ("transform", "regularization", "gradient_f", "post_update"):
+            if not method[attribute]:
+                continue
+            abs_module_path, function_name = split_module_name(method[attribute])
+            method[attribute] = dynamic_import(abs_module_path, function_name)
         return method
 
 
