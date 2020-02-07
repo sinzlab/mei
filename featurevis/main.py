@@ -128,25 +128,18 @@ class MEITemplate(dj.Computed):
 
     def make(self, key):
         dataloaders, model = self.trained_model_table().load_model(key=key)
-        neuron_ids = (self.selector_table & key).fetch("neuron_id")
+        neuron_id = (self.selector_table & key).fetch1("neuron_id")
         method = (self.method_table & key).get_mei_method()
         method_id = method.pop("method_id")
         input_shape = list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
         initial_guess = torch.randn(1, *input_shape[1:])
-        entities = []
-        meis = []
-        for neuron_id in neuron_ids:
-            output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
-            mei, _, _ = gradient_ascent(output_selected_model, initial_guess, **method)
-            meis.append(mei)
-            entities.append(dict(key, neuron_id=neuron_id, method_id=method_id))
+        output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
+        mei, _, _ = gradient_ascent(output_selected_model, initial_guess, **method)
+        entity = dict(key, neuron_id=neuron_id, method_id=method_id)
 
-        processed_entities = []
         with tempfile.TemporaryDirectory() as temp_dir:
-            for entity, mei in zip(entities, meis):
-                filename = make_hash(entity) + ".pth.tar"
-                filepath = os.path.join(temp_dir, filename)
-                torch.save(mei, filepath)
-                entity["mei"] = filepath
-                processed_entities.append(entity)
-            self.insert(processed_entities)
+            filename = make_hash(entity) + ".pth.tar"
+            filepath = os.path.join(temp_dir, filename)
+            torch.save(mei, filepath)
+            entity["mei"] = filepath
+            self.insert1(entity)
