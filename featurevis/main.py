@@ -131,12 +131,17 @@ class MEITemplate(dj.Computed):
         dataloaders, model = self.trained_model_table().load_model(key=key)
         neuron_id = (self.selector_table & key).fetch1("neuron_id")
         method_id, method = (self.method_table & key).get_mei_method()
-        input_shape = list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
+        input_shape = self._get_input_shape(dataloaders)
         initial_guess = torch.randn(1, *input_shape[1:])
         output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
         mei, evaluations, _ = gradient_ascent(output_selected_model, initial_guess, **method)
         mei_entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations, mei=mei)
         self._insert_mei(mei_entity)
+
+    @staticmethod
+    def _get_input_shape(dataloaders):
+        """Gets the shape of the input that the model expects from the dataloaders."""
+        return list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
 
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
