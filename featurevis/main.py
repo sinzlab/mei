@@ -24,14 +24,14 @@ class CSRFV1SelectorTemplate(dj.Computed):
     dataset_table = Dataset
 
     definition = """
-        # contains information that can be used to map a neuron's id to its corresponding integer position in the output
-        # of the model. 
-        -> self.dataset_table
-        neuron_id       : smallint unsigned # unique neuron identifier
-        ---
-        neuron_position : smallint unsigned # integer position of the neuron in the model's output 
-        session_id      : varchar(13)       # unique session identifier
-        """
+    # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
+    # the model. 
+    -> self.dataset_table
+    neuron_id       : smallint unsigned # unique neuron identifier
+    ---
+    neuron_position : smallint unsigned # integer position of the neuron in the model's output 
+    session_id      : varchar(13)       # unique session identifier
+    """
 
     _key_source = Dataset & dict(dataset_fn="csrf_v1")
 
@@ -101,7 +101,7 @@ class MEIMethod(dj.Lookup):
                 continue
             abs_module_path, function_name = split_module_name(method[attribute])
             method[attribute] = dynamic_import(abs_module_path, function_name)
-        return method
+        return method.pop("method_id"), method
 
 
 class MEITemplate(dj.Computed):
@@ -130,8 +130,7 @@ class MEITemplate(dj.Computed):
     def make(self, key):
         dataloaders, model = self.trained_model_table().load_model(key=key)
         neuron_id = (self.selector_table & key).fetch1("neuron_id")
-        method = (self.method_table & key).get_mei_method()
-        method_id = method.pop("method_id")
+        method_id, method = (self.method_table & key).get_mei_method()
         input_shape = list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
         initial_guess = torch.randn(1, *input_shape[1:])
         output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
