@@ -136,11 +136,14 @@ class MEITemplate(dj.Computed):
         initial_guess = torch.randn(1, *input_shape[1:])
         output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
         mei, evaluations, _ = gradient_ascent(output_selected_model, initial_guess, **method)
-        entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations)
+        mei_entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations, mei=mei)
+        self._insert_mei(mei_entity)
 
+    def _insert_mei(self, mei_entity):
+        """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            filename = make_hash(entity) + ".pth.tar"
+            filename = make_hash(mei_entity) + ".pth.tar"
             filepath = os.path.join(temp_dir, filename)
-            torch.save(mei, filepath)
-            entity["mei"] = filepath
-            self.insert1(entity)
+            torch.save(mei_entity["mei"], filepath)
+            mei_entity["mei"] = filepath
+            self.insert1(mei_entity)
