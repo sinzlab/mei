@@ -123,7 +123,8 @@ class MEITemplate(dj.Computed):
     -> self.trained_model_table
     -> self.selector_table
     ---
-    mei : attach@minio  # the MEI as a tensor
+    mei                 : attach@minio  # the MEI as a tensor
+    evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
     """
 
     def make(self, key):
@@ -134,8 +135,8 @@ class MEITemplate(dj.Computed):
         input_shape = list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
         initial_guess = torch.randn(1, *input_shape[1:])
         output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
-        mei, _, _ = gradient_ascent(output_selected_model, initial_guess, **method)
-        entity = dict(key, neuron_id=neuron_id, method_id=method_id)
+        mei, evaluations, _ = gradient_ascent(output_selected_model, initial_guess, **method)
+        entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             filename = make_hash(entity) + ".pth.tar"
