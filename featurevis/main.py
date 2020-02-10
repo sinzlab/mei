@@ -145,7 +145,7 @@ class MEITemplate(dj.Computed):
 
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
-        mei = mei_entity.pop("mei")
+        mei = mei_entity.pop("mei").squeeze()
         filename = make_hash(mei_entity) + ".pth.tar"
         with tempfile.TemporaryDirectory() as temp_dir:
             filepath = os.path.join(temp_dir, filename)
