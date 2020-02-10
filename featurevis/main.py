@@ -123,7 +123,7 @@ class MEITemplate(dj.Computed):
     -> self.trained_model_table
     -> self.selector_table
     ---
-    mei                 : attach@minio  # the MEI as a numpy array
+    mei                 : attach@minio  # the MEI as a tensor
     evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
     """
 
@@ -135,7 +135,7 @@ class MEITemplate(dj.Computed):
         initial_guess = torch.randn(1, *input_shape[1:])
         output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
         mei, evaluations, _ = gradient_ascent(output_selected_model, initial_guess, **method)
-        mei_entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations, mei=mei.numpy())
+        mei_entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations, mei=mei)
         self._insert_mei(mei_entity)
 
     @staticmethod
@@ -145,10 +145,11 @@ class MEITemplate(dj.Computed):
 
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
+        mei = mei_entity.pop("mei")
+        filename = make_hash(mei_entity) + ".pth.tar"
         with tempfile.TemporaryDirectory() as temp_dir:
-            filename = make_hash(mei_entity) + ".pth.tar"
             filepath = os.path.join(temp_dir, filename)
-            torch.save(mei_entity["mei"], filepath)
+            torch.save(mei, filepath)
             mei_entity["mei"] = filepath
             self.insert1(mei_entity)
 
