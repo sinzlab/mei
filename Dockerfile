@@ -1,4 +1,4 @@
-FROM sinzlab/pytorch:v1.3.1-cuda10.1-dj0.12.4 as intermediate
+FROM sinzlab/pytorch:v3.8-torch1.4.0-cuda10.1-dj0.12.4 as intermediate
 
 WORKDIR /
 COPY .ssh/id_rsa .
@@ -13,7 +13,7 @@ RUN chmod 400 id_rsa && \
 
 
 
-FROM sinzlab/pytorch:v1.3.1-cuda10.1-dj0.12.4
+FROM sinzlab/pytorch:v3.8-torch1.4.0-cuda10.1-dj0.12.4
 
 COPY --from=intermediate /src /src
 WORKDIR /src
