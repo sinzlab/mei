@@ -123,7 +123,7 @@ class MEITemplate(dj.Computed):
     -> self.trained_model_table
     -> self.selector_table
     ---
-    mei                 : attach@minio  # the MEI as a tensor
+    mei                 : attach@minio  # the MEI as a numpy array
     evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
     """
 
@@ -135,7 +135,7 @@ class MEITemplate(dj.Computed):
         initial_guess = torch.randn(1, *input_shape[1:])
         output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
         mei, evaluations, _ = gradient_ascent(output_selected_model, initial_guess, **method)
-        mei_entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations, mei=mei)
+        mei_entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations, mei=mei.numpy())
         self._insert_mei(mei_entity)
 
     @staticmethod
