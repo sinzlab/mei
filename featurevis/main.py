@@ -167,8 +167,9 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     dataset_table = Dataset
 
     definition = """
+    # contains ensemble ids
     -> self.dataset_table
-    ensemble_id : tinyint unsigned
+    ensemble_id : tinyint unsigned  # the ensemble id
     """
 
     class Member(dj.Part):
@@ -182,6 +183,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
         trained_model_table = None
 
         definition = """
+        # contains assignments of trained models to a specific ensemble id
         -> master
         -> self.trained_model_table
         """
