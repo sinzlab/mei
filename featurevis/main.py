@@ -151,3 +151,53 @@ class MEITemplate(dj.Computed):
             torch.save(mei_entity["mei"], filepath)
             mei_entity["mei"] = filepath
             self.insert1(mei_entity)
+
+
+class TrainedEnsembleModelTemplate(dj.Manual):
+    """TrainedEnsembleModel table template.
+
+    To create a functional "TrainedEnsembleModel" table, create a new class that inherits from this template and
+    decorate it with your preferred Datajoint schema. By default the created table will point to the "Dataset" table in
+    the Datajoint schema called "nnfabrik.main". This behaviour can be changed by overwriting the class attribute called
+    "dataset_table".
+    """
+
+    dataset_table = Dataset
+
+    definition = """
+    -> self.dataset_table
+    ensemble_id : tinyint unsigned
+    """
+
+    class Member(dj.Part):
+        """Member part table template.
+
+        To create a functional "Member" table, create a new class inside your "TrainedEnsembleModel" table that inherits
+        from this template and is called "Member". Then you assign your "TrainedModel" table to the class variable
+        called "trained_model_table".
+        """
+
+        trained_model_table = None
+
+        definition = """
+        -> master
+        -> self.trained_model_table
+        """
+
+        def load_model(self, key=None):
+            dataloaders, model = self.trained_model_table().load_model(key=key)
+            return dataloaders, model
+
+    def load_model(self, key=None):
+        def ensemble_model(x, *args, **kwargs):
+            outputs = [m(x, *args, **kwargs) for m in models]
+            mean_output = torch.stack(outputs, dim=0).mean(dim=0)
+            return mean_output
+
+        if key:
+            query = self.Member() & key
+        else:
+            query = self.Member()
+        model_keys = query.fetch(as_dict=True)
+        dataloaders, models = tuple(list(x) for x in zip(*[self.Member().load_model(key=k) for k in model_keys]))
+        return dataloaders[0], ensemble_model
