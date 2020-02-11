@@ -189,10 +189,21 @@ class TrainedEnsembleModelTemplate(dj.Manual):
         """
 
         def load_model(self, key=None):
+            """Wrapper around the "load_model" method in the trained model table."""
             dataloaders, model = self.trained_model_table().load_model(key=key)
             return dataloaders, model
 
     def load_model(self, key=None):
+        """Loads an ensemble model.
+
+        Args:
+            key: A dictionary used to restrict the member part table.
+
+        Returns:
+            A function that has the model's input as parameters and returns the mean output across the individual models
+            in the ensemble.
+        """
+
         def ensemble_model(x, *args, **kwargs):
             outputs = [m(x, *args, **kwargs) for m in models]
             mean_output = torch.stack(outputs, dim=0).mean(dim=0)
