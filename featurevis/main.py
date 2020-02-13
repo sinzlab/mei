@@ -147,6 +147,23 @@ class MEIMethod(dj.Lookup):
     num_iterations      = 1000  : smallint unsigned     # number of gradient ascent steps
     """
 
+    def generate_mei(self, dataloaders, model, key):
+        """Generates a MEI.
+
+        Args:
+            dataloaders: A dictionary of dataloaders.
+            model: A PyTorch module.
+            key: A dictionary used to restrict this table to a single entry.
+
+        Returns:
+            A dictionary containing the MEI ready for insertion into the MEI table.
+        """
+        method_id, method = (self & key).get_mei_method()
+        input_shape = self._get_input_shape(dataloaders)
+        initial_guess = torch.randn(1, *input_shape[1:])
+        mei, evaluations, _ = gradient_ascent(model, initial_guess, **method)
+        return dict(key, evaluations=evaluations, mei=mei)
+
     def get_mei_method(self):
         """Fetches a set of MEI generation parameters and makes them ready to be used in the MEI table.
 
@@ -161,6 +178,11 @@ class MEIMethod(dj.Lookup):
             abs_module_path, function_name = split_module_name(method[attribute])
             method[attribute] = dynamic_import(abs_module_path, function_name)
         return method.pop("method_id"), method
+
+    @staticmethod
+    def _get_input_shape(dataloaders):
+        """Gets the shape of the input that the model expects from the dataloaders."""
+        return list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
 
 
 class MEITemplate(dj.Computed):
@@ -189,18 +211,9 @@ class MEITemplate(dj.Computed):
 
     def make(self, key):
         dataloaders, model = self.trained_model_table().load_model(key=key)
-        method_id, method = (self.method_table & key).get_mei_method()
-        input_shape = self._get_input_shape(dataloaders)
-        initial_guess = torch.randn(1, *input_shape[1:])
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
-        mei, evaluations, _ = gradient_ascent(output_selected_model, initial_guess, **method)
-        mei_entity = dict(key, method_id=method_id, evaluations=evaluations, mei=mei)
+        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
         self._insert_mei(mei_entity)
-
-    @staticmethod
-    def _get_input_shape(dataloaders):
-        """Gets the shape of the input that the model expects from the dataloaders."""
-        return list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
 
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
