@@ -16,12 +16,14 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     """TrainedEnsembleModel table template.
 
     To create a functional "TrainedEnsembleModel" table, create a new class that inherits from this template and
-    decorate it with your preferred Datajoint schema. By default the created table will point to the "Dataset" table in
-    the Datajoint schema called "nnfabrik.main". This behaviour can be changed by overwriting the class attribute called
+    decorate it with your preferred Datajoint schema. Next assign the trained model table of your choosing to the class
+    variable called "trained_model_table". By default the created table will point to the "Dataset" table in the
+    Datajoint schema called "nnfabrik.main". This behaviour can be changed by overwriting the class attribute called
     "dataset_table".
     """
 
     dataset_table = Dataset
+    trained_model_table = None
 
     definition = """
     # contains ensemble ids
@@ -30,27 +32,19 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     """
 
     class Member(dj.Part):
-        """Member part table template.
-
-        To create a functional "Member" table, create a new class inside your "TrainedEnsembleModel" table that inherits
-        from this template and is called "Member". Then you assign your "TrainedModel" table to the class variable
-        called "trained_model_table".
-        """
-
-        trained_model_table = None
+        """Member table template."""
 
         definition = """
         # contains assignments of trained models to a specific ensemble id
         -> master
-        -> self.trained_model_table
+        -> master.trained_model_table
         """
 
-        def load_model(self, key=None):
-            """Wrapper around the "load_model" method in the trained model table."""
-            dataloaders, model = self.trained_model_table().load_model(key=key)
-            return dataloaders, model
-
     def load_model(self, key=None):
+        """Wrapper to preserve the interface of the trained model table."""
+        return self._load_ensemble_model(key=key)
+
+    def _load_ensemble_model(self, key=None):
         """Loads an ensemble model.
 
         Args:
@@ -71,7 +65,9 @@ class TrainedEnsembleModelTemplate(dj.Manual):
         else:
             query = self.Member()
         model_keys = query.fetch(as_dict=True)
-        dataloaders, models = tuple(list(x) for x in zip(*[self.Member().load_model(key=k) for k in model_keys]))
+        dataloaders, models = tuple(
+            list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
+        )
         return dataloaders[0], ensemble_model
 
 
