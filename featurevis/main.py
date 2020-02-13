@@ -106,20 +106,20 @@ class CSRFV1SelectorTemplate(dj.Computed):
                 )
         self.insert(entities)
 
-    def get_output_selected_model(self, model, neuron_id):
+    def get_output_selected_model(self, model, key):
         """Creates a version of the model that has its output selected down to a single uniquely identified neuron.
 
         Args:
             model: A PyTorch module that can be called with a keyword argument called "data_key". The output of the
                 module is expected to be a two dimensional Torch tensor where the first dimension corresponds to the
                 batch size and the second to the number of neurons.
-            neuron_id: An integer that can be used to uniquely identify a neuron.
+            key: A dictionary used to restrict the selector table to one entry.
 
         Returns:
             A function that takes the model input(s) as parameter(s) and returns the model output corresponding to the
             selected neuron.
         """
-        neuron_pos, session_id = (self & dict(neuron_id=neuron_id)).fetch1("neuron_position", "session_id")
+        neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
 
         def output_selected_model(x, *args, **kwargs):
             output = model(x, *args, data_key=session_id, **kwargs)
@@ -189,13 +189,12 @@ class MEITemplate(dj.Computed):
 
     def make(self, key):
         dataloaders, model = self.trained_model_table().load_model(key=key)
-        neuron_id = (self.selector_table & key).fetch1("neuron_id")
         method_id, method = (self.method_table & key).get_mei_method()
         input_shape = self._get_input_shape(dataloaders)
         initial_guess = torch.randn(1, *input_shape[1:])
-        output_selected_model = self.selector_table().get_output_selected_model(model, neuron_id)
+        output_selected_model = self.selector_table().get_output_selected_model(model, key)
         mei, evaluations, _ = gradient_ascent(output_selected_model, initial_guess, **method)
-        mei_entity = dict(key, neuron_id=neuron_id, method_id=method_id, evaluations=evaluations, mei=mei)
+        mei_entity = dict(key, method_id=method_id, evaluations=evaluations, mei=mei)
         self._insert_mei(mei_entity)
 
     @staticmethod
