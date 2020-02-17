@@ -10,6 +10,7 @@ from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
 from .core import gradient_ascent
+from .table_funcs import load_ensemble_model
 
 
 class TrainedEnsembleModelTemplate(dj.Manual):
@@ -42,33 +43,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
 
     def load_model(self, key=None):
         """Wrapper to preserve the interface of the trained model table."""
-        return self._load_ensemble_model(key=key)
-
-    def _load_ensemble_model(self, key=None):
-        """Loads an ensemble model.
-
-        Args:
-            key: A dictionary used to restrict the member part table.
-
-        Returns:
-            A function that has the model's input as parameters and returns the mean output across the individual models
-            in the ensemble.
-        """
-
-        def ensemble_model(x, *args, **kwargs):
-            outputs = [m(x, *args, **kwargs) for m in models]
-            mean_output = torch.stack(outputs, dim=0).mean(dim=0)
-            return mean_output
-
-        if key:
-            query = self.Member() & key
-        else:
-            query = self.Member()
-        model_keys = query.fetch(as_dict=True)
-        dataloaders, models = tuple(
-            list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
-        )
-        return dataloaders[0], ensemble_model
+        return load_ensemble_model(self.Member, self.trained_model_table, key=key)
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
@@ -210,7 +185,7 @@ class MEITemplate(dj.Computed):
     """
 
     def make(self, key):
-        dataloaders, model = self.trained_model_table().load_model(key=key)
+        dataloaders, model = self.trained_model_table().load_ensemble_model(key=key)
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
         self._insert_mei(mei_entity)
