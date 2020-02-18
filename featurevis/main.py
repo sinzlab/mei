@@ -74,7 +74,8 @@ class CSRFV1SelectorTemplate(dj.Computed):
         self.insert(mappings)
 
     def get_output_selected_model(self, model, key):
-        table_funcs.get_output_selected_model(self, model, key)
+        neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
+        return table_funcs.get_output_selected_model(neuron_pos, session_id, model)
 
 
 @schema
