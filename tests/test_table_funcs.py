@@ -35,17 +35,8 @@ def test_load_ensemble():
     assert torch.allclose(ensemble_model(ensemble_input), expected_output)
 
 
-class FakeCSRFV1Selector:
-    def __and__(self, other):
-        return self
-
-    @staticmethod
-    def fetch1(*_args):
-        return 0, 10
-
-
 def test_get_output_selected_model():
-    model = table_funcs.get_output_selected_model(FakeCSRFV1Selector(), FakeModel(1), "dummy_key")
+    model = table_funcs.get_output_selected_model(0, 10, FakeModel(1))
     output = model(torch.tensor([[1, 2, 3]], dtype=torch.float))
     expected_output = torch.tensor([[11]], dtype=torch.float)
     assert output == expected_output
