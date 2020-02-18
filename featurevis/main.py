@@ -10,7 +10,7 @@ from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
 from .core import gradient_ascent
-from .table_funcs import load_ensemble_model
+from . import table_funcs
 
 
 class TrainedEnsembleModelTemplate(dj.Manual):
@@ -43,7 +43,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
 
     def load_model(self, key=None):
         """Wrapper to preserve the interface of the trained model table."""
-        return load_ensemble_model(self.Member, self.trained_model_table, key=key)
+        return table_funcs.load_ensemble_model(self.Member, self.trained_model_table, key=key)
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
