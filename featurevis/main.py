@@ -82,25 +82,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
         self.insert(entities)
 
     def get_output_selected_model(self, model, key):
-        """Creates a version of the model that has its output selected down to a single uniquely identified neuron.
-
-        Args:
-            model: A PyTorch module that can be called with a keyword argument called "data_key". The output of the
-                module is expected to be a two dimensional Torch tensor where the first dimension corresponds to the
-                batch size and the second to the number of neurons.
-            key: A dictionary used to restrict the selector table to one entry.
-
-        Returns:
-            A function that takes the model input(s) as parameter(s) and returns the model output corresponding to the
-            selected neuron.
-        """
-        neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
-
-        def output_selected_model(x, *args, **kwargs):
-            output = model(x, *args, data_key=session_id, **kwargs)
-            return output[:, neuron_pos]
-
-        return output_selected_model
+        table_funcs.get_output_selected_model(self, model, key)
 
 
 @schema
