@@ -1,3 +1,5 @@
+import pickle
+
 import torch
 
 
@@ -51,3 +53,18 @@ def get_output_selected_model(csrf_v1_selector, model, key):
         return output[:, neuron_pos]
 
     return output_selected_model
+
+
+def get_mappings(dataset_config, key, load_func=None):
+    if load_func is None:
+        load_func = pickle.load
+    entities = []
+    for datafile_path in dataset_config["datafiles"]:
+        with open(datafile_path, "rb") as datafile:
+            data = load_func(datafile)
+        for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
+            entities.append(
+                dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"])
+            )
+    return entities
+

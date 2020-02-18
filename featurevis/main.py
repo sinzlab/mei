@@ -71,15 +71,8 @@ class CSRFV1SelectorTemplate(dj.Computed):
 
     def make(self, key):
         dataset_config = (Dataset & key).fetch1("dataset_config")
-        entities = []
-        for datafile_path in dataset_config["datafiles"]:
-            with open(datafile_path, "rb") as datafile:
-                data = pickle.load(datafile)
-            for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
-                entities.append(
-                    dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"])
-                )
-        self.insert(entities)
+        mappings = table_funcs.get_mappings(dataset_config, key)
+        self.insert(mappings)
 
     def get_output_selected_model(self, model, key):
         table_funcs.get_output_selected_model(self, model, key)
