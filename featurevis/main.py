@@ -160,7 +160,7 @@ class MEITemplate(dj.Computed):
     """
 
     def make(self, key):
-        dataloaders, model = self.trained_model_table().load_ensemble_model(key=key)
+        dataloaders, model = self.trained_model_table().load_model(key=key)
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
         self._insert_mei(mei_entity)
