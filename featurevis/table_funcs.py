@@ -57,14 +57,16 @@ def get_output_selected_model(csrf_v1_selector, model, key):
 
 def get_mappings(dataset_config, key, load_func=None):
     if load_func is None:
-        load_func = pickle.load
+        load_func = load_pickled_data
     entities = []
     for datafile_path in dataset_config["datafiles"]:
-        with open(datafile_path, "rb") as datafile:
-            data = load_func(datafile)
+        data = load_func(datafile_path)
         for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
-            entities.append(
-                dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"])
-            )
+            entities.append(dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"]))
     return entities
 
+
+def load_pickled_data(path):
+    with open(path, "rb") as datafile:
+        data = pickle.load(datafile)
+    return data
