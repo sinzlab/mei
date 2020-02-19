@@ -6,7 +6,6 @@ import torch
 
 from nnfabrik.main import Dataset, schema
 from nnfabrik.utility.dj_helpers import make_hash
-from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from .core import gradient_ascent
 from . import table_funcs
 
@@ -107,8 +106,8 @@ class MEIMethod(dj.Lookup):
         Returns:
             A dictionary containing the MEI ready for insertion into the MEI table.
         """
-        method_id, method = (self & key).get_mei_method()
-        input_shape = table_funcs.get_dims_for_loader_dict(dataloaders)
+        method = (self & key).get_mei_method()
+        input_shape = table_funcs.get_input_shape(dataloaders)
         initial_guess = torch.randn(1, *input_shape[1:])
         mei, evaluations, _ = gradient_ascent(model, initial_guess, **method)
         return dict(key, evaluations=evaluations, mei=mei)
