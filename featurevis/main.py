@@ -5,7 +5,6 @@ import datajoint as dj
 import torch
 
 from nnfabrik.main import Dataset, schema
-from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
 from .core import gradient_ascent
@@ -109,7 +108,7 @@ class MEIMethod(dj.Lookup):
             A dictionary containing the MEI ready for insertion into the MEI table.
         """
         method_id, method = (self & key).get_mei_method()
-        input_shape = self._get_input_shape(dataloaders)
+        input_shape = table_funcs.get_dims_for_loader_dict(dataloaders)
         initial_guess = torch.randn(1, *input_shape[1:])
         mei, evaluations, _ = gradient_ascent(model, initial_guess, **method)
         return dict(key, evaluations=evaluations, mei=mei)
@@ -128,11 +127,6 @@ class MEIMethod(dj.Lookup):
             abs_module_path, function_name = split_module_name(method[attribute])
             method[attribute] = dynamic_import(abs_module_path, function_name)
         return method.pop("method_id"), method
-
-    @staticmethod
-    def _get_input_shape(dataloaders):
-        """Gets the shape of the input that the model expects from the dataloaders."""
-        return list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
 
 
 class MEITemplate(dj.Computed):

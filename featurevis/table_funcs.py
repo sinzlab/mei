@@ -2,6 +2,8 @@ import pickle
 
 import torch
 
+from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
+
 
 def load_ensemble_model(member_table, trained_model_table, key=None):
     """Loads an ensemble model.
@@ -68,3 +70,8 @@ def load_pickled_data(path):
     with open(path, "rb") as datafile:
         data = pickle.load(datafile)
     return data
+
+
+def get_input_shape(dataloaders, get_dims_func=get_dims_for_loader_dict):
+    """Gets the shape of the input that the model expects from the dataloaders."""
+    return list(get_dims_func(dataloaders["train"]).values())[0]["inputs"]
