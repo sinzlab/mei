@@ -2,7 +2,6 @@ import pickle
 
 import torch
 
-from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 
 
@@ -71,11 +70,6 @@ def load_pickled_data(path):
     with open(path, "rb") as datafile:
         data = pickle.load(datafile)
     return data
-
-
-def get_input_shape(dataloaders, get_dims_func=get_dims_for_loader_dict):
-    """Gets the shape of the input that the model expects from the dataloaders."""
-    return list(get_dims_func(dataloaders["train"]).values())[0]["inputs"]
 
 
 def prepare_mei_method(method, import_func=None):
