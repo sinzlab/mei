@@ -5,7 +5,6 @@ import datajoint as dj
 import torch
 
 from nnfabrik.main import Dataset, schema
-from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
 from .core import gradient_ascent
 from . import table_funcs
@@ -119,14 +118,7 @@ class MEIMethod(dj.Lookup):
         This function assumes that the table is already restricted to one entry when it is called.
         """
         method = self.fetch1()
-        if not method["optim_kwargs"]:
-            method["optim_kwargs"] = dict()
-        for attribute in ("transform", "regularization", "gradient_f", "post_update"):
-            if not method[attribute]:
-                continue
-            abs_module_path, function_name = split_module_name(method[attribute])
-            method[attribute] = dynamic_import(abs_module_path, function_name)
-        return method.pop("method_id"), method
+        return table_funcs.prepare_mei_method(method)
 
 
 class MEITemplate(dj.Computed):
