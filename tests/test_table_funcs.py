@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from featurevis import table_funcs
@@ -74,3 +75,27 @@ def test_get_input_shape():
     )
     shape = table_funcs.get_input_shape(dataloaders, get_dims_func=fake_get_dims)
     assert shape == 0
+
+
+@pytest.mark.parametrize("raw_optim_kwargs,optim_kwargs", [(None, dict()), (dict(a=1), dict(a=1))])
+def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
+    method = dict(
+        method_id=0,
+        optim_kwargs=raw_optim_kwargs,
+        transform="module0.func1",
+        regularization=None,
+        gradient_f="module3.func6",
+        post_update=None,
+    )
+    prepared = table_funcs.prepare_mei_method(method, import_func=lambda x: x)
+    expected = (
+        0,
+        dict(
+            optim_kwargs=optim_kwargs,
+            transform="module0.func1",
+            regularization=None,
+            gradient_f="module3.func6",
+            post_update=None,
+        ),
+    )
+    assert prepared == expected
