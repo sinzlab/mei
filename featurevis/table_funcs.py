@@ -81,7 +81,8 @@ def prepare_mei_method(method, import_func=None):
         if not method[attribute]:
             continue
         method[attribute] = import_func(method[attribute])
-    return method.pop("method_id"), method
+    method.pop("method_id")
+    return method
 
 
 def import_module(path):

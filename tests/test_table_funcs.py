@@ -75,14 +75,11 @@ def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
         post_update=None,
     )
     prepared = table_funcs.prepare_mei_method(method, import_func=lambda x: x)
-    expected = (
-        0,
-        dict(
-            optim_kwargs=optim_kwargs,
-            transform="module0.func1",
-            regularization=None,
-            gradient_f="module3.func6",
-            post_update=None,
-        ),
+    expected = dict(
+        optim_kwargs=optim_kwargs,
+        transform="module0.func1",
+        regularization=None,
+        gradient_f="module3.func6",
+        post_update=None,
     )
     assert prepared == expected
