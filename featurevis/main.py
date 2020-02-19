@@ -7,7 +7,7 @@ import torch
 from nnfabrik.main import Dataset, schema
 from nnfabrik.utility.dj_helpers import make_hash
 from .core import gradient_ascent
-from . import table_funcs
+from . import integration
 
 
 class TrainedEnsembleModelTemplate(dj.Manual):
@@ -40,7 +40,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
 
     def load_model(self, key=None):
         """Wrapper to preserve the interface of the trained model table."""
-        return table_funcs.load_ensemble_model(self.Member, self.trained_model_table, key=key)
+        return integration.load_ensemble_model(self.Member, self.trained_model_table, key=key)
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
@@ -68,12 +68,12 @@ class CSRFV1SelectorTemplate(dj.Computed):
 
     def make(self, key):
         dataset_config = (Dataset & key).fetch1("dataset_config")
-        mappings = table_funcs.get_mappings(dataset_config, key)
+        mappings = integration.get_mappings(dataset_config, key)
         self.insert(mappings)
 
     def get_output_selected_model(self, model, key):
         neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
-        return table_funcs.get_output_selected_model(neuron_pos, session_id, model)
+        return integration.get_output_selected_model(neuron_pos, session_id, model)
 
 
 @schema
@@ -107,7 +107,7 @@ class MEIMethod(dj.Lookup):
             A dictionary containing the MEI ready for insertion into the MEI table.
         """
         method = (self & key).get_mei_method()
-        input_shape = table_funcs.get_input_shape(dataloaders)
+        input_shape = integration.get_input_shape(dataloaders)
         initial_guess = torch.randn(1, *input_shape[1:])
         mei, evaluations, _ = gradient_ascent(model, initial_guess, **method)
         return dict(key, evaluations=evaluations, mei=mei)
@@ -118,7 +118,7 @@ class MEIMethod(dj.Lookup):
         This function assumes that the table is already restricted to one entry when it is called.
         """
         method = self.fetch1()
-        return table_funcs.prepare_mei_method(method)
+        return integration.prepare_mei_method(method)
 
 
 class MEITemplate(dj.Computed):

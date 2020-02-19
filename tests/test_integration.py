@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from featurevis import table_funcs
+from featurevis import integration
 
 
 class FakeModel:
@@ -29,7 +29,7 @@ class FakeTrainedModel:
 
 
 def test_load_ensemble():
-    dataloader, ensemble_model = table_funcs.load_ensemble_model(FakeMember, FakeTrainedModel)
+    dataloader, ensemble_model = integration.load_ensemble_model(FakeMember, FakeTrainedModel)
     ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
     expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
     assert dataloader == "dataloader1"
@@ -37,7 +37,7 @@ def test_load_ensemble():
 
 
 def test_get_output_selected_model():
-    model = table_funcs.get_output_selected_model(0, 10, FakeModel(1))
+    model = integration.get_output_selected_model(0, 10, FakeModel(1))
     output = model(torch.tensor([[1, 2, 3]], dtype=torch.float))
     expected_output = torch.tensor([[11]], dtype=torch.float)
     assert output == expected_output
@@ -56,7 +56,7 @@ def test_get_mappings():
     data = dict(
         path0=dict(unit_indices=["u0", "u1"], session_id="s0"), path1=dict(unit_indices=["u10"], session_id="s5")
     )
-    mappings = table_funcs.get_mappings(dataset_config, key, get_fake_load_function(data))
+    mappings = integration.get_mappings(dataset_config, key, get_fake_load_function(data))
     assert mappings == [
         dict(attr1=0, neuron_id="u0", neuron_position=0, session_id="s0"),
         dict(attr1=0, neuron_id="u1", neuron_position=1, session_id="s0"),
@@ -73,7 +73,7 @@ def test_get_input_shape():
         train=dict(session_id0=dict(inputs=0), session_id1=dict(inputs=1)),
         validation=dict(session_id0=dict(inputs=2), session_id1=dict(inputs=3)),
     )
-    shape = table_funcs.get_input_shape(dataloaders, get_dims_func=fake_get_dims)
+    shape = integration.get_input_shape(dataloaders, get_dims_func=fake_get_dims)
     assert shape == 0
 
 
@@ -87,7 +87,7 @@ def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
         gradient_f="module3.func6",
         post_update=None,
     )
-    prepared = table_funcs.prepare_mei_method(method, import_func=lambda x: x)
+    prepared = integration.prepare_mei_method(method, import_func=lambda x: x)
     expected = dict(
         optim_kwargs=optim_kwargs,
         transform="module0.func1",
