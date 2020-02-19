@@ -64,6 +64,19 @@ def test_get_mappings():
     ]
 
 
+def fake_get_dims(dataloaders):
+    return dataloaders
+
+
+def test_get_input_shape():
+    dataloaders = dict(
+        train=dict(session_id0=dict(inputs=0), session_id1=dict(inputs=1)),
+        validation=dict(session_id0=dict(inputs=2), session_id1=dict(inputs=3)),
+    )
+    shape = table_funcs.get_input_shape(dataloaders, get_dims_func=fake_get_dims)
+    assert shape == 0
+
+
 @pytest.mark.parametrize("raw_optim_kwargs,optim_kwargs", [(None, dict()), (dict(a=1), dict(a=1))])
 def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
     method = dict(

@@ -107,8 +107,8 @@ class MEIMethod(dj.Lookup):
         Returns:
             A dictionary containing the MEI ready for insertion into the MEI table.
         """
-        method = (self & key).get_mei_method()
-        input_shape = list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
+        method_id, method = (self & key).get_mei_method()
+        input_shape = table_funcs.get_dims_for_loader_dict(dataloaders)
         initial_guess = torch.randn(1, *input_shape[1:])
         mei, evaluations, _ = gradient_ascent(model, initial_guess, **method)
         return dict(key, evaluations=evaluations, mei=mei)
