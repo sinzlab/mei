@@ -24,31 +24,36 @@ class FakeMemberTable:
         return [dict(trained_model_attr=i) for i in range(3)]
 
 
-def get_fake_trained_model_table(primary_key=None):
-    class FakeTrainedModelTable:
-        primary_key = None
-        models = []
-        # noinspection PyUnusedLocal
-        @classmethod
-        def load_model(cls, key):
-            model = FakeModel(key["trained_model_attr"] + 1)
-            cls.models.append(model)
-            return "dataloaders" + str(key["trained_model_attr"]), model
+@pytest.fixture
+def fake_trained_model_table():
+    def _fake_trained_model_table(primary_key=None):
+        class FakeTrainedModelTable:
+            primary_key = None
+            models = []
 
-    setattr(FakeTrainedModelTable, "primary_key", primary_key)
-    return FakeTrainedModelTable
+            # noinspection PyUnusedLocal
+            @classmethod
+            def load_model(cls, key):
+                model = FakeModel(key["trained_model_attr"] + 1)
+                cls.models.append(model)
+                return "dataloaders" + str(key["trained_model_attr"]), model
+
+        setattr(FakeTrainedModelTable, "primary_key", primary_key)
+        return FakeTrainedModelTable
+
+    return _fake_trained_model_table
 
 
 class TestLoadEnsemble:
-    def test_load_ensemble(self):
-        dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, get_fake_trained_model_table())
+    def test_load_ensemble(self, fake_trained_model_table):
+        dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, fake_trained_model_table())
         ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
         expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
         assert dataloaders == "dataloaders0"
         assert torch.allclose(ensemble_model(ensemble_input), expected_output)
 
-    def test_eval_mode(self):
-        fake_trained_model_table = get_fake_trained_model_table()
+    def test_eval_mode(self, fake_trained_model_table):
+        fake_trained_model_table = fake_trained_model_table()
         integration.load_ensemble_model(FakeMemberTable, fake_trained_model_table)
         for model in fake_trained_model_table.models:
             model.eval.assert_called_once()
@@ -118,21 +123,21 @@ def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
 
 class TestModelLoader:
     @pytest.mark.parametrize("order", ["same", "reversed"])
-    def test_model_caching(self, order):
+    def test_model_caching(self, fake_trained_model_table, order):
         key1 = dict(trained_model_attr=0, other_attr=1)
         if order == "same":
             key2 = key1.copy()
         else:
             key2 = {k: key1[k] for k in reversed(key1)}
-        model_loader = integration.ModelLoader(get_fake_trained_model_table(primary_key=["trained_model_attr"]))
+        model_loader = integration.ModelLoader(fake_trained_model_table(primary_key=["trained_model_attr"]))
         model1 = model_loader.load(key1)
         model2 = model_loader.load(key2)
         assert model1 is model2
 
     @pytest.mark.parametrize("cache_size_limit", [0, 1, 10])
-    def test_cache_size_limit(self, cache_size_limit):
+    def test_cache_size_limit(self, fake_trained_model_table, cache_size_limit):
         model_loader = integration.ModelLoader(
-            get_fake_trained_model_table(primary_key=["trained_model_attr"]), cache_size_limit=cache_size_limit
+            fake_trained_model_table(primary_key=["trained_model_attr"]), cache_size_limit=cache_size_limit
         )
         first_model = model_loader.load(dict(trained_model_attr=0))
         for i in range(cache_size_limit):
