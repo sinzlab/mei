@@ -103,11 +103,28 @@ class ModelLoader:
         self.cache = dict()
 
     def load(self, key):
-        hashed_key = make_hash({k: key[k] for k in self.model_table().primary_key})
-        if hashed_key in self.cache:
-            return self.cache[hashed_key]
-        model = self.model_table().load_model(key=key)
-        self.cache[hashed_key] = model
+        if self.cache_size_limit == 0:
+            return self._load_model(key)
+        if not self._is_cached(key):
+            self._cache_model(key)
+        return self._get_cached_model(key)
+
+    def _load_model(self, key):
+        return self.model_table().load_model(key=key)
+
+    def _is_cached(self, key):
+        if self._hash_trained_model_key(key) in self.cache:
+            return True
+        return False
+
+    def _cache_model(self, key):
+        self.cache[self._hash_trained_model_key(key)] = self._load_model(key)
         if len(self.cache) > self.cache_size_limit:
             del self.cache[list(self.cache)[0]]
-        return model
+
+    def _get_cached_model(self, key):
+        return self.cache[self._hash_trained_model_key(key)]
+
+    def _hash_trained_model_key(self, key):
+        """Creates a hash from the part of the key corresponding to the primary key of the trained model table."""
+        return make_hash({k: key[k] for k in self.model_table().primary_key})
