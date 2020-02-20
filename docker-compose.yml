@@ -1,0 +1,17 @@
+version: "3.7"
+services:
+  pycharm:
+      build: .
+      volumes:
+      - .:/src/mei
+      - ./data:/data
+      entrypoint: ""
+  jupyter:
+      build: .
+      volumes:
+      - .:/src/mei
+      - ./data:/data
+      ports:
+      - 8888:8888
+      env_file:
+        - .env
