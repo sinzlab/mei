@@ -101,3 +101,28 @@ def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
         post_update=None,
     )
     assert prepared == expected
+
+
+class TestModelLoader:
+    @pytest.mark.parametrize("order", ["same", "reversed"])
+    def test_model_caching(self, order):
+        key1 = dict(trained_model_attr=0, other_attr=1)
+        if order == "same":
+            key2 = key1.copy()
+        else:
+            key2 = {k: key1[k] for k in reversed(key1)}
+        model_loader = integration.ModelLoader(get_fake_trained_model_table(primary_key=["trained_model_attr"]))
+        model1 = model_loader.load(key1)
+        model2 = model_loader.load(key2)
+        assert model1 is model2
+
+    @pytest.mark.parametrize("cache_size_limit", [0, 1, 10])
+    def test_cache_size_limit(self, cache_size_limit):
+        model_loader = integration.ModelLoader(
+            get_fake_trained_model_table(primary_key=["trained_model_attr"]), cache_size_limit=cache_size_limit
+        )
+        first_model = model_loader.load(dict(trained_model_attr=0))
+        for i in range(cache_size_limit):
+            model_loader.load(dict(trained_model_attr=i + 1))
+        model = model_loader.load(dict(trained_model_attr=0))
+        assert model is not first_model

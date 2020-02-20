@@ -4,6 +4,7 @@ import torch
 
 from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
+from nnfabrik.utility.dj_helpers import make_hash
 
 
 def load_ensemble_model(member_table, trained_model_table, key=None):
@@ -93,3 +94,20 @@ def prepare_mei_method(method, import_func=None):
 
 def import_module(path):
     return dynamic_import(*split_module_name(path))
+
+
+class ModelLoader:
+    def __init__(self, model_table, cache_size_limit=10):
+        self.model_table = model_table
+        self.cache_size_limit = cache_size_limit
+        self.cache = dict()
+
+    def load(self, key):
+        hashed_key = make_hash({k: key[k] for k in self.model_table().primary_key})
+        if hashed_key in self.cache:
+            return self.cache[hashed_key]
+        model = self.model_table().load_model(key=key)
+        self.cache[hashed_key] = model
+        if len(self.cache) > self.cache_size_limit:
+            del self.cache[list(self.cache)[0]]
+        return model

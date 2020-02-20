@@ -145,8 +145,12 @@ class MEITemplate(dj.Computed):
     evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
     """
 
+    def __init__(self, cache_size_limit=10):
+        super().__init__()
+        self.model_loader = integration.ModelLoader(self.trained_model_table, cache_size_limit=cache_size_limit)
+
     def make(self, key):
-        dataloaders, model = self.trained_model_table().load_model(key=key)
+        dataloaders, model = self.model_loader.load(key=key)
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
         self._insert_mei(mei_entity)
