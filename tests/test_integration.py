@@ -144,3 +144,29 @@ class TestModelLoader:
             model_loader.load(dict(trained_model_attr=i + 1))
         model = model_loader.load(dict(trained_model_attr=0))
         assert model is not first_model
+
+
+class TestHashListOfDictionaries:
+    def test_output_format(self):
+        list_of_dicts = [dict(a=1, b=2), dict(a=3, b=5), dict(a=2, b=8)]
+        hashed = integration.hash_list_of_dictionaries(list_of_dicts)
+        assert isinstance(hashed, str) and len(hashed) == 32
+
+    def test_same_list_of_dicts(self):
+        list_of_dicts = [dict(a=1, b=2), dict(a=3, b=5), dict(a=2, b=8)]
+        assert self.hash_and_compare(list_of_dicts, list_of_dicts.copy())
+
+    @staticmethod
+    def hash_and_compare(list_of_dicts1, list_of_dicts2):
+        hashed1, hashed2 = (integration.hash_list_of_dictionaries(l) for l in (list_of_dicts1, list_of_dicts2))
+        return hashed1 == hashed2
+
+    def test_invariance_to_dictionary_key_order(self):
+        list_of_dicts1 = [dict(a=1, b=2), dict(a=3, b=5), dict(a=2, b=8)]
+        list_of_dicts2 = [dict(a=1, b=2), dict(b=5, a=3), dict(a=2, b=8)]
+        assert self.hash_and_compare(list_of_dicts1, list_of_dicts2)
+
+    def test_invariance_to_order_of_dictionaries_in_list(self):
+        list_of_dicts1 = [dict(a=3, b=5), dict(a=1, b=2), dict(a=2, b=8)]
+        list_of_dicts2 = [dict(a=1, b=2), dict(a=3, b=5), dict(a=2, b=8)]
+        assert self.hash_and_compare(list_of_dicts1, list_of_dicts2)

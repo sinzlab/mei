@@ -131,3 +131,19 @@ class ModelLoader:
     def _hash_trained_model_key(self, key):
         """Creates a hash from the part of the key corresponding to the primary key of the trained model table."""
         return make_hash({k: key[k] for k in self.model_table().primary_key})
+
+
+def hash_list_of_dictionaries(list_of_dicts):
+    """Creates a hash from a list of dictionaries that uniquely identifies the provided list of dictionaries.
+
+    The keys of every dictionary in the list and the list itself are sorted before creating the hash.
+
+    Args:
+        list_of_dicts: List of dictionaries.
+
+    Returns:
+        A string representing the hash that uniquely identifies the provided list of dictionaries.
+    """
+    dict_of_dicts = {make_hash(d): d for d in list_of_dicts}
+    sorted_list_of_dicts = [dict_of_dicts[h] for h in sorted(dict_of_dicts)]
+    return make_hash(sorted_list_of_dicts)
