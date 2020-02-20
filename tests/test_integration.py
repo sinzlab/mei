@@ -21,15 +21,20 @@ class FakeMemberTable:
         return [dict(trained_model_attr=i) for i in range(3)]
 
 
-class FakeTrainedModelTable:
-    # noinspection PyUnusedLocal
-    @staticmethod
-    def load_model(key):
-        return "dataloaders" + str(key["trained_model_attr"]), FakeModel(key["trained_model_attr"] + 1)
+def get_fake_trained_model_table(primary_key=None):
+    class FakeTrainedModelTable:
+        primary_key = None
+        # noinspection PyUnusedLocal
+        @staticmethod
+        def load_model(key):
+            return "dataloaders" + str(key["trained_model_attr"]), FakeModel(key["trained_model_attr"] + 1)
+
+    setattr(FakeTrainedModelTable, "primary_key", primary_key)
+    return FakeTrainedModelTable
 
 
 def test_load_ensemble():
-    dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, FakeTrainedModelTable)
+    dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, get_fake_trained_model_table())
     ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
     expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
     assert dataloaders == "dataloaders0"
