@@ -18,21 +18,21 @@ class FakeMemberTable:
     # noinspection PyUnusedLocal
     @staticmethod
     def fetch(as_dict=False):
-        return ["key1", "key2", "key3"]
+        return [dict(trained_model_attr=i) for i in range(3)]
 
 
 class FakeTrainedModelTable:
     # noinspection PyUnusedLocal
     @staticmethod
     def load_model(key):
-        return "dataloader" + key[-1], FakeModel(int(key[-1]))
+        return "dataloaders" + str(key["trained_model_attr"]), FakeModel(key["trained_model_attr"] + 1)
 
 
 def test_load_ensemble():
-    dataloader, ensemble_model = integration.load_ensemble_model(FakeMemberTable, FakeTrainedModelTable)
+    dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, FakeTrainedModelTable)
     ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
     expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
-    assert dataloader == "dataloader1"
+    assert dataloaders == "dataloaders0"
     assert torch.allclose(ensemble_model(ensemble_input), expected_output)
 
 
