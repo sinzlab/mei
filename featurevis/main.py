@@ -26,7 +26,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     definition = """
     # contains ensemble ids
     -> self.dataset_table
-    ensemble_id : tinyint unsigned  # the ensemble id
+    ensemble_hash : char(32) # the hash of the ensemble
     """
 
     class Member(dj.Part):
@@ -37,6 +37,25 @@ class TrainedEnsembleModelTemplate(dj.Manual):
         -> master
         -> master.trained_model_table
         """
+
+    def create_ensemble(self, key):
+        """Creates a new ensemble and inserts it into the table.
+
+        Args:
+            key: A dictionary representing a key that must be sufficient to restrict the dataset table to one entry. The
+                models that are in the trained model table after restricting it with the provided key will be part of
+                the ensemble.
+
+        Returns:
+            None.
+        """
+        if len(self.dataset_table() & key) != 1:
+            raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
+        dataset_key = (self.dataset_table().proj() & key).fetch1()
+        models = (self.trained_model_table().proj() & key).fetch(as_dict=True)
+        ensemble_table_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
+        self.insert1(ensemble_table_key)
+        self.Member().insert([{**ensemble_table_key, **m} for m in models])
 
     def load_model(self, key=None):
         """Wrapper to preserve the interface of the trained model table."""
