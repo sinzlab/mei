@@ -146,6 +146,11 @@ class MEITemplate(dj.Computed):
     """
 
     def __init__(self, cache_size_limit=10):
+        """Initializes MEITemplate.
+
+        Args:
+            cache_size_limit: An integer indicating the maximum number of cached models.
+        """
         super().__init__()
         self.model_loader = integration.ModelLoader(self.trained_model_table, cache_size_limit=cache_size_limit)
 

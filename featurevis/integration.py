@@ -118,6 +118,7 @@ class ModelLoader:
         return False
 
     def _cache_model(self, key):
+        """Caches a model and makes sure the cache is not bigger than the specified limit."""
         self.cache[self._hash_trained_model_key(key)] = self._load_model(key)
         if len(self.cache) > self.cache_size_limit:
             del self.cache[list(self.cache)[0]]
