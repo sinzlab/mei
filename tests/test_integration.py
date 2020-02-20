@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 import torch
 
@@ -7,6 +9,7 @@ from featurevis import integration
 class FakeModel:
     def __init__(self, multiplier):
         self.multiplier = multiplier
+        self.eval = Mock()
 
     def __call__(self, x, *args, **kwargs):
         if "data_key" in kwargs:
@@ -24,21 +27,31 @@ class FakeMemberTable:
 def get_fake_trained_model_table(primary_key=None):
     class FakeTrainedModelTable:
         primary_key = None
+        models = []
         # noinspection PyUnusedLocal
-        @staticmethod
-        def load_model(key):
-            return "dataloaders" + str(key["trained_model_attr"]), FakeModel(key["trained_model_attr"] + 1)
+        @classmethod
+        def load_model(cls, key):
+            model = FakeModel(key["trained_model_attr"] + 1)
+            cls.models.append(model)
+            return "dataloaders" + str(key["trained_model_attr"]), model
 
     setattr(FakeTrainedModelTable, "primary_key", primary_key)
     return FakeTrainedModelTable
 
 
-def test_load_ensemble():
-    dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, get_fake_trained_model_table())
-    ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
-    expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
-    assert dataloaders == "dataloaders0"
-    assert torch.allclose(ensemble_model(ensemble_input), expected_output)
+class TestLoadEnsemble:
+    def test_load_ensemble(self):
+        dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, get_fake_trained_model_table())
+        ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
+        expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
+        assert dataloaders == "dataloaders0"
+        assert torch.allclose(ensemble_model(ensemble_input), expected_output)
+
+    def test_eval_mode(self):
+        fake_trained_model_table = get_fake_trained_model_table()
+        integration.load_ensemble_model(FakeMemberTable, fake_trained_model_table)
+        for model in fake_trained_model_table.models:
+            model.eval.assert_called_once()
 
 
 def test_get_output_selected_model():

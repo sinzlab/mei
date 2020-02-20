@@ -32,6 +32,8 @@ def load_ensemble_model(member_table, trained_model_table, key=None):
         query = member_table()
     model_keys = query.fetch(as_dict=True)
     dataloaders, models = tuple(list(x) for x in zip(*[trained_model_table().load_model(key=k) for k in model_keys]))
+    for model in models:
+        model.eval()
     return dataloaders[0], ensemble_model
 
 
