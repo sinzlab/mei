@@ -81,19 +81,6 @@ def get_input_shape(dataloaders, get_dims_func=get_dims_for_loader_dict):
     return list(get_dims_func(dataloaders["train"]).values())[0]["inputs"]
 
 
-def prepare_mei_method(method, import_func=None):
-    if import_func is None:
-        import_func = import_module
-    if not method["optim_kwargs"]:
-        method["optim_kwargs"] = dict()
-    for attribute in ("transform", "regularization", "gradient_f", "post_update"):
-        if not method[attribute]:
-            continue
-        method[attribute] = import_func(method[attribute])
-    del method["method_id"]
-    return method
-
-
 def import_module(path):
     return dynamic_import(*split_module_name(path))
 

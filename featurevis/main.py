@@ -6,7 +6,6 @@ import torch
 
 from nnfabrik.main import Dataset, schema
 from nnfabrik.utility.dj_helpers import make_hash
-from .core import gradient_ascent
 from . import integration
 
 
@@ -98,46 +97,22 @@ class CSRFV1SelectorTemplate(dj.Computed):
 @schema
 class MEIMethod(dj.Lookup):
     definition = """
-    # contains parameters used in MEI generation
-    method_id                   : tinyint unsigned      # integer that uniquely identifies a set of parameter values
+    # contains methods for generating MEIs and their configurations.
+    method_fn                           : varchar(64)   # name of the method function
+    method_hash                         : varchar(32)   # hash of the method config
     ---
-    transform           = NULL  : varchar(64)           # differentiable function that transforms the MEI before sending
-                                                        # it to through the model
-    regularization      = NULL  : varchar(64)           # differentiable function used for regularization
-    gradient_f          = NULL  : varchar(64)           # non-differentiable function that receives the gradient of the
-                                                        # MEI and outputs a preconditioned gradient
-    post_update         = NULL  : varchar(64)           # non-differentiable function applied to the MEI after each 
-                                                        # gradient update
-    step_size           = 0.1   : float                 # size of the step size to give every iteration
-    optim_name          = "SGD" : enum("SGD", "Adam")   # optimizer to be used
-    optim_kwargs        = NULL  : longblob              # dictionary containing keyword arguments for the optimizer
-    num_iterations      = 1000  : smallint unsigned     # number of gradient ascent steps
+    method_config                       : longblob      # method configuration object
+    method_ts       = CURRENT_TIMESTAMP : timestamp     # UTZ timestamp at time of insertion
     """
 
-    def generate_mei(self, dataloaders, model, key):
-        """Generates a MEI.
+    def add_method(self, method_fn, method_config):
+        self.insert1(dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config))
 
-        Args:
-            dataloaders: A dictionary of dataloaders.
-            model: A PyTorch module.
-            key: A dictionary used to restrict this table to a single entry.
-
-        Returns:
-            A dictionary containing the MEI ready for insertion into the MEI table.
-        """
-        method = (self & key).get_mei_method()
-        input_shape = integration.get_input_shape(dataloaders)
-        initial_guess = torch.randn(1, *input_shape[1:])
-        mei, evaluations, _ = gradient_ascent(model, initial_guess, **method)
+    def generate_mei(self, dataloader, model, key):
+        method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
+        method_fn = integration.import_module(method_fn)
+        mei, evaluations = method_fn(dataloader, model, method_config)
         return dict(key, evaluations=evaluations, mei=mei)
-
-    def get_mei_method(self):
-        """Fetches a set of MEI generation parameters and makes them ready to be used in the MEI table.
-
-        This function assumes that the table is already restricted to one entry when it is called.
-        """
-        method = self.fetch1()
-        return integration.prepare_mei_method(method)
 
 
 class MEITemplate(dj.Computed):
