@@ -100,27 +100,6 @@ def test_get_input_shape():
     assert shape == 0
 
 
-@pytest.mark.parametrize("raw_optim_kwargs,optim_kwargs", [(None, dict()), (dict(a=1), dict(a=1))])
-def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
-    method = dict(
-        method_id=0,
-        optim_kwargs=raw_optim_kwargs,
-        transform="module0.func1",
-        regularization=None,
-        gradient_f="module3.func6",
-        post_update=None,
-    )
-    prepared = integration.prepare_mei_method(method, import_func=lambda x: x)
-    expected = dict(
-        optim_kwargs=optim_kwargs,
-        transform="module0.func1",
-        regularization=None,
-        gradient_f="module3.func6",
-        post_update=None,
-    )
-    assert prepared == expected
-
-
 class TestModelLoader:
     @pytest.mark.parametrize("order", ["same", "reversed"])
     def test_model_caching(self, fake_trained_model_table, order):
