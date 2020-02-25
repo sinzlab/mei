@@ -14,10 +14,15 @@ def test_gradient_ascent():
     get_initial_guess = Mock(return_value="initial_guess")
     ascend = Mock(return_value=("mei", "evaluations", "_"))
 
-    gradient_ascent = methods.GradientAscent(
-        import_object=import_object, get_dims=get_dims, get_initial_guess=get_initial_guess, ascend=ascend
+    returned = methods.gradient_ascent(
+        dataloaders,
+        model,
+        config,
+        import_object=import_object,
+        get_dims=get_dims,
+        get_initial_guess=get_initial_guess,
+        ascend=ascend,
     )
-    returned = gradient_ascent(dataloaders, model, config)
 
     assert returned == ("mei", "evaluations")
     import_object.assert_called_once_with("module.function")
