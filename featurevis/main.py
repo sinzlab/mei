@@ -4,7 +4,17 @@ from nnfabrik.main import Dataset, schema
 from . import handlers
 
 
-class TrainedEnsembleModelTemplate(dj.Manual):
+class Base:
+    """Base class for all the table classes."""
+
+    handler = None
+
+    @property
+    def definition(self):
+        return self.handler.definition
+
+
+class TrainedEnsembleModelTemplate(Base, dj.Manual):
     """TrainedEnsembleModel table template.
 
     To create a functional "TrainedEnsembleModel" table, create a new class that inherits from this template and
@@ -17,24 +27,16 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     dataset_table = Dataset
     trained_model_table = None
 
-    class Member(dj.Part):
+    class Member(Base, dj.Part):
         """Member table template."""
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.handler = handlers.TrainedEnsembleModelHandler.Member(self)
 
-        @property
-        def definition(self):
-            return self.handler.definition
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.handler = handlers.TrainedEnsembleModelHandler(self)
-
-    @property
-    def definition(self):
-        return self.handler.definition
 
     def create_ensemble(self, *args, **kwargs):
         return self.handler.create_ensemble(*args, **kwargs)
@@ -44,7 +46,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
         return self.handler.load_model(*args, **kwargs)
 
 
-class CSRFV1SelectorTemplate(dj.Computed):
+class CSRFV1SelectorTemplate(Base, dj.Computed):
     """CSRF V1 selector table template.
 
     To create a functional "CSRFV1Selector" table, create a new class that inherits from this template and decorate it
@@ -60,10 +62,6 @@ class CSRFV1SelectorTemplate(dj.Computed):
         super().__init__(*args, **kwargs)
         self.handler = handlers.CSRFV1SelectorHandler(self)
 
-    @property
-    def definition(self):
-        return self.handler.definition
-
     def make(self, *args, **kwargs):
         return self.handler.make(*args, **kwargs)
 
@@ -72,14 +70,10 @@ class CSRFV1SelectorTemplate(dj.Computed):
 
 
 @schema
-class MEIMethod(dj.Lookup):
+class MEIMethod(Base, dj.Lookup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.handler = handlers.MEIMethodHandler(self)
-
-    @property
-    def definition(self):
-        return self.handler.definition
 
     def add_method(self, *args, **kwargs):
         return self.handler.add_method(*args, **kwargs)
@@ -88,7 +82,7 @@ class MEIMethod(dj.Lookup):
         return self.handler.generate_mei(*args, **kwargs)
 
 
-class MEITemplate(dj.Computed):
+class MEITemplate(Base, dj.Computed):
     """MEI table template.
 
     To create a functional "MEI" table, create a new class that inherits from this template and decorate it with your
@@ -105,10 +99,6 @@ class MEITemplate(dj.Computed):
     def __init__(self, *args, cache_size_limit=10, **kwargs):
         super().__init__(*args, **kwargs)
         self.handler = handlers.MEIHandler(self, cache_size_limit=cache_size_limit)
-
-    @property
-    def definition(self):
-        return self.handler.definition
 
     def make(self, *args, **kwargs):
         return self.handler.make(*args, **kwargs)
