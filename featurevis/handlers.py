@@ -8,22 +8,6 @@ from . import integration
 
 
 class TrainedEnsembleModelHandler:
-    definition = """
-    # contains ensemble ids
-    -> self.dataset_table
-    ensemble_hash : char(32) # the hash of the ensemble
-    """
-
-    class Member:
-        definition = """
-        # contains assignments of trained models to a specific ensemble id
-        -> master
-        -> master.trained_model_table
-        """
-
-        def __init__(self, table):
-            self.table = table
-
     def __init__(self, table):
         self.table = table
 
@@ -52,16 +36,6 @@ class TrainedEnsembleModelHandler:
 
 
 class CSRFV1SelectorHandler:
-    definition = """
-    # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
-    # the model. 
-    -> self.dataset_table
-    neuron_id       : smallint unsigned # unique neuron identifier
-    ---
-    neuron_position : smallint unsigned # integer position of the neuron in the model's output 
-    session_id      : varchar(13)       # unique session identifier
-    """
-
     def __init__(self, table):
         self.table = table
 
@@ -76,15 +50,6 @@ class CSRFV1SelectorHandler:
 
 
 class MEIMethodHandler:
-    definition = """
-    # contains methods for generating MEIs and their configurations.
-    method_fn                           : varchar(64)   # name of the method function
-    method_hash                         : varchar(32)   # hash of the method config
-    ---
-    method_config                       : longblob      # method configuration object
-    method_ts       = CURRENT_TIMESTAMP : timestamp     # UTZ timestamp at time of insertion
-    """
-
     def __init__(self, table):
         self.table = table
 
@@ -99,16 +64,6 @@ class MEIMethodHandler:
 
 
 class MEIHandler:
-    definition = """
-    # contains maximally exciting images (MEIs)
-    -> self.method_table
-    -> self.trained_model_table
-    -> self.selector_table
-    ---
-    mei                 : attach@minio  # the MEI as a tensor
-    evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
-    """
-
     def __init__(self, table, cache_size_limit=10):
         self.table = table
         self.model_loader = integration.ModelLoader(table.trained_model_table, cache_size_limit=cache_size_limit)
