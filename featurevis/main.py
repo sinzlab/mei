@@ -1,11 +1,6 @@
-import tempfile
-import os
-
 import datajoint as dj
-import torch
 
 from nnfabrik.main import Dataset, schema
-from nnfabrik.utility.dj_helpers import make_hash
 from . import integration
 
 
@@ -22,43 +17,31 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     dataset_table = Dataset
     trained_model_table = None
 
-    definition = """
-    # contains ensemble ids
-    -> self.dataset_table
-    ensemble_hash : char(32) # the hash of the ensemble
-    """
-
     class Member(dj.Part):
         """Member table template."""
 
-        definition = """
-        # contains assignments of trained models to a specific ensemble id
-        -> master
-        -> master.trained_model_table
-        """
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.handler = integration.TrainedEnsembleModelHandler.Member(self)
 
-    def create_ensemble(self, key):
-        """Creates a new ensemble and inserts it into the table.
+        @property
+        def definition(self):
+            return self.handler.definition
 
-        Args:
-            key: A dictionary representing a key that must be sufficient to restrict the dataset table to one entry. The
-                models that are in the trained model table after restricting it with the provided key will be part of
-                the ensemble.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.handler = integration.TrainedEnsembleModelHandler(self)
 
-        Returns:
-            None.
-        """
-        if len(self.dataset_table() & key) != 1:
-            raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
-        dataset_key = (self.dataset_table().proj() & key).fetch1()
-        models = (self.trained_model_table().proj() & key).fetch(as_dict=True)
-        ensemble_table_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
-        self.insert1(ensemble_table_key)
-        self.Member().insert([{**ensemble_table_key, **m} for m in models])
+    @property
+    def definition(self):
+        return self.handler.definition
 
-    def load_model(self, key=None):
+    def create_ensemble(self, *args, **kwargs):
+        return self.handler.create_ensemble(*args, **kwargs)
+
+    def load_model(self, *args, **kwargs):
         """Wrapper to preserve the interface of the trained model table."""
-        return integration.load_ensemble_model(self.Member, self.trained_model_table, key=key)
+        return self.handler.load_model(*args, **kwargs)
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
@@ -71,48 +54,38 @@ class CSRFV1SelectorTemplate(dj.Computed):
     """
 
     dataset_table = Dataset
+    _key_source = dataset_table & dict(dataset_fn="csrf_v1")
 
-    definition = """
-    # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
-    # the model. 
-    -> self.dataset_table
-    neuron_id       : smallint unsigned # unique neuron identifier
-    ---
-    neuron_position : smallint unsigned # integer position of the neuron in the model's output 
-    session_id      : varchar(13)       # unique session identifier
-    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.handler = integration.CSRFV1SelectorHandler(self)
 
-    _key_source = Dataset & dict(dataset_fn="csrf_v1")
+    @property
+    def definition(self):
+        return self.handler.definition
 
-    def make(self, key):
-        dataset_config = (Dataset & key).fetch1("dataset_config")
-        mappings = integration.get_mappings(dataset_config, key)
-        self.insert(mappings)
+    def make(self, *args, **kwargs):
+        return self.handler.make(*args, **kwargs)
 
-    def get_output_selected_model(self, model, key):
-        neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
-        return integration.get_output_selected_model(neuron_pos, session_id, model)
+    def get_output_selected_model(self, *args, **kwargs):
+        return self.handler.get_output_selected_model(*args, **kwargs)
 
 
 @schema
 class MEIMethod(dj.Lookup):
-    definition = """
-    # contains methods for generating MEIs and their configurations.
-    method_fn                           : varchar(64)   # name of the method function
-    method_hash                         : varchar(32)   # hash of the method config
-    ---
-    method_config                       : longblob      # method configuration object
-    method_ts       = CURRENT_TIMESTAMP : timestamp     # UTZ timestamp at time of insertion
-    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.handler = integration.MEIMethodHandler(self)
 
-    def add_method(self, method_fn, method_config):
-        self.insert1(dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config))
+    @property
+    def definition(self):
+        return self.handler.definition
 
-    def generate_mei(self, dataloader, model, key):
-        method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
-        method_fn = integration.import_module(method_fn)
-        mei, evaluations = method_fn(dataloader, model, method_config)
-        return dict(key, evaluations=evaluations, mei=mei)
+    def add_method(self, *args, **kwargs):
+        return self.handler.add_method(*args, **kwargs)
+
+    def generate_mei(self, *args, **kwargs):
+        return self.handler.generate_mei(*args, **kwargs)
 
 
 class MEITemplate(dj.Computed):
@@ -129,37 +102,13 @@ class MEITemplate(dj.Computed):
     trained_model_table = None
     selector_table = None
 
-    definition = """
-    # contains maximally exciting images (MEIs)
-    -> self.method_table
-    -> self.trained_model_table
-    -> self.selector_table
-    ---
-    mei                 : attach@minio  # the MEI as a tensor
-    evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
-    """
+    def __init__(self, *args, cache_size_limit=10, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.handler = integration.MEIHandler(self, cache_size_limit=cache_size_limit)
 
-    def __init__(self, cache_size_limit=10):
-        """Initializes MEITemplate.
+    @property
+    def definition(self):
+        return self.handler.definition
 
-        Args:
-            cache_size_limit: An integer indicating the maximum number of cached models.
-        """
-        super().__init__()
-        self.model_loader = integration.ModelLoader(self.trained_model_table, cache_size_limit=cache_size_limit)
-
-    def make(self, key):
-        dataloaders, model = self.model_loader.load(key=key)
-        output_selected_model = self.selector_table().get_output_selected_model(model, key)
-        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
-        self._insert_mei(mei_entity)
-
-    def _insert_mei(self, mei_entity):
-        """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
-        mei = mei_entity.pop("mei").squeeze()
-        filename = make_hash(mei_entity) + ".pth.tar"
-        with tempfile.TemporaryDirectory() as temp_dir:
-            filepath = os.path.join(temp_dir, filename)
-            torch.save(mei, filepath)
-            mei_entity["mei"] = filepath
-            self.insert1(mei_entity)
+    def make(self, *args, **kwargs):
+        return self.handler.make(*args, **kwargs)
