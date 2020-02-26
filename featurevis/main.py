@@ -1,7 +1,7 @@
 import datajoint as dj
 
 from nnfabrik.main import Dataset, schema
-from . import integration
+from . import handlers
 
 
 class TrainedEnsembleModelTemplate(dj.Manual):
@@ -22,7 +22,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            self.handler = integration.TrainedEnsembleModelHandler.Member(self)
+            self.handler = handlers.TrainedEnsembleModelHandler.Member(self)
 
         @property
         def definition(self):
@@ -30,7 +30,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.handler = integration.TrainedEnsembleModelHandler(self)
+        self.handler = handlers.TrainedEnsembleModelHandler(self)
 
     @property
     def definition(self):
@@ -58,7 +58,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.handler = integration.CSRFV1SelectorHandler(self)
+        self.handler = handlers.CSRFV1SelectorHandler(self)
 
     @property
     def definition(self):
@@ -75,7 +75,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
 class MEIMethod(dj.Lookup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.handler = integration.MEIMethodHandler(self)
+        self.handler = handlers.MEIMethodHandler(self)
 
     @property
     def definition(self):
@@ -104,7 +104,7 @@ class MEITemplate(dj.Computed):
 
     def __init__(self, *args, cache_size_limit=10, **kwargs):
         super().__init__(*args, **kwargs)
-        self.handler = integration.MEIHandler(self, cache_size_limit=cache_size_limit)
+        self.handler = handlers.MEIHandler(self, cache_size_limit=cache_size_limit)
 
     @property
     def definition(self):
