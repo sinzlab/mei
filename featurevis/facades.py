@@ -25,7 +25,7 @@ class TrainedEnsembleModelFacade:
         return self.trained_model_table().load_model(key=key)
 
     def insert_ensemble(self, key):
-        self.trained_ensemble_table.insert1(key)
+        self.trained_ensemble_table().insert1(key)
 
     def insert_members(self, members):
         self.member_table().insert(members)
