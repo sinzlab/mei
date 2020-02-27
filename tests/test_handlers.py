@@ -28,7 +28,7 @@ class TestTrainedEnsembleModel:
         facade.properly_restricts = MagicMock(return_value=is_sufficient)
 
         with expectation:
-            handler.create_ensemble(None)
+            handler.create_ensemble("key")
 
     def test_if_call_to_properly_restricts_is_correct(self, facade, handler):
         handler.create_ensemble("key")
@@ -43,7 +43,7 @@ class TestTrainedEnsembleModel:
     def test_if_call_to_insert_ensemble_is_correct(self, facade, handler):
         facade.fetch_primary_dataset_key = MagicMock(return_value=dict(d1=1, d2=2))
 
-        handler.create_ensemble(None)
+        handler.create_ensemble("key")
 
         facade.insert_ensemble.assert_called_once_with(
             dict(d1=1, d2=2, ensemble_hash="d41d8cd98f00b204e9800998ecf8427e")
@@ -53,7 +53,7 @@ class TestTrainedEnsembleModel:
         facade.fetch_primary_dataset_key = MagicMock(return_value=dict(d=1))
         facade.fetch_trained_models_primary_keys = MagicMock(return_value=[dict(m=0), dict(m=1)])
 
-        handler.create_ensemble(None)
+        handler.create_ensemble("key")
 
         facade.insert_members.assert_called_once_with(
             [
@@ -96,7 +96,7 @@ class TestTrainedEnsembleModel:
 
         _, ensemble = handler.load_model("key")
 
-        assert torch.allclose(ensemble(None), torch.tensor([5, 7.5]))
+        assert torch.allclose(ensemble("key"), torch.tensor([5, 7.5]))
 
     def test_that_only_first_dataloader_is_returned(self, facade, handler):
         facade.fetch_trained_models = MagicMock(return_value=["m1", "m2"])
