@@ -1,4 +1,3 @@
-import pickle
 import tempfile
 import os
 
@@ -6,10 +5,8 @@ import datajoint as dj
 import torch
 
 from nnfabrik.main import Dataset, schema
-from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
-from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
-from .core import gradient_ascent
+from . import integration
 
 
 class TrainedEnsembleModelTemplate(dj.Manual):
@@ -28,7 +25,7 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     definition = """
     # contains ensemble ids
     -> self.dataset_table
-    ensemble_id : tinyint unsigned  # the ensemble id
+    ensemble_hash : char(32) # the hash of the ensemble
     """
 
     class Member(dj.Part):
@@ -40,35 +37,28 @@ class TrainedEnsembleModelTemplate(dj.Manual):
         -> master.trained_model_table
         """
 
-    def load_model(self, key=None):
-        """Wrapper to preserve the interface of the trained model table."""
-        return self._load_ensemble_model(key=key)
-
-    def _load_ensemble_model(self, key=None):
-        """Loads an ensemble model.
+    def create_ensemble(self, key):
+        """Creates a new ensemble and inserts it into the table.
 
         Args:
-            key: A dictionary used to restrict the member part table.
+            key: A dictionary representing a key that must be sufficient to restrict the dataset table to one entry. The
+                models that are in the trained model table after restricting it with the provided key will be part of
+                the ensemble.
 
         Returns:
-            A function that has the model's input as parameters and returns the mean output across the individual models
-            in the ensemble.
+            None.
         """
+        if len(self.dataset_table() & key) != 1:
+            raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
+        dataset_key = (self.dataset_table().proj() & key).fetch1()
+        models = (self.trained_model_table().proj() & key).fetch(as_dict=True)
+        ensemble_table_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
+        self.insert1(ensemble_table_key)
+        self.Member().insert([{**ensemble_table_key, **m} for m in models])
 
-        def ensemble_model(x, *args, **kwargs):
-            outputs = [m(x, *args, **kwargs) for m in models]
-            mean_output = torch.stack(outputs, dim=0).mean(dim=0)
-            return mean_output
-
-        if key:
-            query = self.Member() & key
-        else:
-            query = self.Member()
-        model_keys = query.fetch(as_dict=True)
-        dataloaders, models = tuple(
-            list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
-        )
-        return dataloaders[0], ensemble_model
+    def load_model(self, key=None):
+        """Wrapper to preserve the interface of the trained model table."""
+        return integration.load_ensemble_model(self.Member, self.trained_model_table, key=key)
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
@@ -96,93 +86,33 @@ class CSRFV1SelectorTemplate(dj.Computed):
 
     def make(self, key):
         dataset_config = (Dataset & key).fetch1("dataset_config")
-        entities = []
-        for datafile_path in dataset_config["datafiles"]:
-            with open(datafile_path, "rb") as datafile:
-                data = pickle.load(datafile)
-            for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
-                entities.append(
-                    dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"])
-                )
-        self.insert(entities)
+        mappings = integration.get_mappings(dataset_config, key)
+        self.insert(mappings)
 
     def get_output_selected_model(self, model, key):
-        """Creates a version of the model that has its output selected down to a single uniquely identified neuron.
-
-        Args:
-            model: A PyTorch module that can be called with a keyword argument called "data_key". The output of the
-                module is expected to be a two dimensional Torch tensor where the first dimension corresponds to the
-                batch size and the second to the number of neurons.
-            key: A dictionary used to restrict the selector table to one entry.
-
-        Returns:
-            A function that takes the model input(s) as parameter(s) and returns the model output corresponding to the
-            selected neuron.
-        """
         neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
-
-        def output_selected_model(x, *args, **kwargs):
-            output = model(x, *args, data_key=session_id, **kwargs)
-            return output[:, neuron_pos]
-
-        return output_selected_model
+        return integration.get_output_selected_model(neuron_pos, session_id, model)
 
 
 @schema
 class MEIMethod(dj.Lookup):
     definition = """
-    # contains parameters used in MEI generation
-    method_id                   : tinyint unsigned      # integer that uniquely identifies a set of parameter values
+    # contains methods for generating MEIs and their configurations.
+    method_fn                           : varchar(64)   # name of the method function
+    method_hash                         : varchar(32)   # hash of the method config
     ---
-    transform           = NULL  : varchar(64)           # differentiable function that transforms the MEI before sending
-                                                        # it to through the model
-    regularization      = NULL  : varchar(64)           # differentiable function used for regularization
-    gradient_f          = NULL  : varchar(64)           # non-differentiable function that receives the gradient of the
-                                                        # MEI and outputs a preconditioned gradient
-    post_update         = NULL  : varchar(64)           # non-differentiable function applied to the MEI after each 
-                                                        # gradient update
-    step_size           = 0.1   : float                 # size of the step size to give every iteration
-    optim_name          = "SGD" : enum("SGD", "Adam")   # optimizer to be used
-    optim_kwargs        = NULL  : longblob              # dictionary containing keyword arguments for the optimizer
-    num_iterations      = 1000  : smallint unsigned     # number of gradient ascent steps
+    method_config                       : longblob      # method configuration object
+    method_ts       = CURRENT_TIMESTAMP : timestamp     # UTZ timestamp at time of insertion
     """
 
-    def generate_mei(self, dataloaders, model, key):
-        """Generates a MEI.
+    def add_method(self, method_fn, method_config):
+        self.insert1(dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config))
 
-        Args:
-            dataloaders: A dictionary of dataloaders.
-            model: A PyTorch module.
-            key: A dictionary used to restrict this table to a single entry.
-
-        Returns:
-            A dictionary containing the MEI ready for insertion into the MEI table.
-        """
-        method_id, method = (self & key).get_mei_method()
-        input_shape = self._get_input_shape(dataloaders)
-        initial_guess = torch.randn(1, *input_shape[1:])
-        mei, evaluations, _ = gradient_ascent(model, initial_guess, **method)
+    def generate_mei(self, dataloader, model, key):
+        method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
+        method_fn = integration.import_module(method_fn)
+        mei, evaluations = method_fn(dataloader, model, method_config)
         return dict(key, evaluations=evaluations, mei=mei)
-
-    def get_mei_method(self):
-        """Fetches a set of MEI generation parameters and makes them ready to be used in the MEI table.
-
-        This function assumes that the table is already restricted to one entry when it is called.
-        """
-        method = self.fetch1()
-        if not method["optim_kwargs"]:
-            method["optim_kwargs"] = dict()
-        for attribute in ("transform", "regularization", "gradient_f", "post_update"):
-            if not method[attribute]:
-                continue
-            abs_module_path, function_name = split_module_name(method[attribute])
-            method[attribute] = dynamic_import(abs_module_path, function_name)
-        return method.pop("method_id"), method
-
-    @staticmethod
-    def _get_input_shape(dataloaders):
-        """Gets the shape of the input that the model expects from the dataloaders."""
-        return list(get_dims_for_loader_dict(dataloaders["train"]).values())[0]["inputs"]
 
 
 class MEITemplate(dj.Computed):
@@ -209,8 +139,17 @@ class MEITemplate(dj.Computed):
     evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
     """
 
+    def __init__(self, cache_size_limit=10):
+        """Initializes MEITemplate.
+
+        Args:
+            cache_size_limit: An integer indicating the maximum number of cached models.
+        """
+        super().__init__()
+        self.model_loader = integration.ModelLoader(self.trained_model_table, cache_size_limit=cache_size_limit)
+
     def make(self, key):
-        dataloaders, model = self.trained_model_table().load_model(key=key)
+        dataloaders, model = self.model_loader.load(key=key)
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
         self._insert_mei(mei_entity)

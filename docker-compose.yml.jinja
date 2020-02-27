@@ -14,7 +14,7 @@ services:
     gpu{{ i }}:
         {{ common|indent(4, True) }}
         ports:
-            - 1004{{ i }}:8888
+            - "127.0.0.1:1004{{ i }}:8888"
         container_name: "dev_cblessing_mei_gpu{{ i }}"
         environment:
             - NVIDIA_VISIBLE_DEVICES={{ i }}
@@ -23,6 +23,6 @@ services:
     cpu:
         {{ common|indent(4, True) }}
         ports:
-            - 10051:8888
+            - "127.0.0.1:10051:8888"
         container_name: "dev_cblessing_mei_cpu"
         runtime: runc
