@@ -2,6 +2,7 @@ import datajoint as dj
 
 from nnfabrik.main import Dataset, schema
 from . import handlers
+from . import facades
 
 
 class TrainedEnsembleModelTemplate(dj.Manual):
@@ -34,7 +35,11 @@ class TrainedEnsembleModelTemplate(dj.Manual):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.handler = handlers.TrainedEnsembleModelHandler(self)
+        self.handler = handlers.TrainedEnsembleModelHandler(
+            facades.TrainedEnsembleModelFacade(
+                self.__class__, self.Member, self.dataset_table, self.trained_model_table
+            )
+        )
 
     def create_ensemble(self, *args, **kwargs):
         return self.handler.create_ensemble(*args, **kwargs)

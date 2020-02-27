@@ -8,8 +8,8 @@ from . import integration
 
 
 class TrainedEnsembleModelHandler:
-    def __init__(self, table):
-        self.table = table
+    def __init__(self, facade):
+        self.facade = facade
 
     def create_ensemble(self, key):
         """Creates a new ensemble and inserts it into the table.
@@ -22,17 +22,29 @@ class TrainedEnsembleModelHandler:
         Returns:
             None.
         """
-        if len(self.table.dataset_table() & key) != 1:
+        if not self.facade.properly_restricts(key):
             raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
-        dataset_key = (self.table.dataset_table().proj() & key).fetch1()
-        models = (self.table.trained_model_table().proj() & key).fetch(as_dict=True)
+        dataset_key = self.facade.fetch_primary_dataset_key(key)
+        models = self.facade.fetch_trained_models_primary_keys(key)
         ensemble_table_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
-        self.table.insert1(ensemble_table_key)
-        self.table.Member().insert([{**ensemble_table_key, **m} for m in models])
+        self.facade.insert_ensemble(ensemble_table_key)
+        self.facade.insert_members([{**ensemble_table_key, **m} for m in models])
 
     def load_model(self, key=None):
         """Wrapper to preserve the interface of the trained model table."""
-        return integration.load_ensemble_model(self.table.Member, self.table.trained_model_table, key=key)
+        return self._load_ensemble_model(key=key)
+
+    def _load_ensemble_model(self, key=None):
+        def ensemble_model(x, *args, **kwargs):
+            outputs = [m(x, *args, **kwargs) for m in models]
+            mean_output = torch.stack(outputs, dim=0).mean(dim=0)
+            return mean_output
+
+        model_keys = self.facade.fetch_trained_models(key)
+        dataloaders, models = tuple(list(x) for x in zip(*[self.facade.load_model(key=k) for k in model_keys]))
+        for model in models:
+            model.eval()
+        return dataloaders[0], ensemble_model
 
 
 class CSRFV1SelectorHandler:
