@@ -13,37 +13,37 @@ def does_not_raise():
 
 
 class TestTrainedEnsembleModel:
+    @pytest.fixture
+    def facade(self):
+        return MagicMock()
+
     @pytest.mark.parametrize(
         "is_sufficient,expectation", [(True, does_not_raise()), (False, pytest.raises(ValueError))]
     )
-    def test_if_key_restrictiveness_is_checked(self, is_sufficient, expectation):
-        facade = MagicMock()
+    def test_if_key_restrictiveness_is_checked(self, facade, is_sufficient, expectation):
         facade.properly_restricts = MagicMock(return_value=is_sufficient)
 
         handler = handlers.TrainedEnsembleModelHandler(facade)
         with expectation:
             handler.create_ensemble(None)
 
-    def test_if_call_to_properly_restricts_is_correct(self):
+    def test_if_call_to_properly_restricts_is_correct(self, facade):
         key = "key"
-        facade = MagicMock()
 
         handler = handlers.TrainedEnsembleModelHandler(facade)
         handler.create_ensemble(key)
 
         facade.properly_restricts.assert_called_once_with(key)
 
-    def test_if_call_to_fetch_trained_models_primary_keys_is_correct(self):
+    def test_if_call_to_fetch_trained_models_primary_keys_is_correct(self, facade):
         key = "key"
-        facade = MagicMock()
 
         handler = handlers.TrainedEnsembleModelHandler(facade)
         handler.create_ensemble(key)
 
         facade.fetch_trained_models_primary_keys.assert_called_once_with(key)
 
-    def test_if_call_to_insert_ensemble_is_correct(self):
-        facade = MagicMock()
+    def test_if_call_to_insert_ensemble_is_correct(self, facade):
         facade.fetch_primary_dataset_key = MagicMock(return_value=dict(d1=1, d2=2))
 
         handler = handlers.TrainedEnsembleModelHandler(facade)
@@ -53,8 +53,7 @@ class TestTrainedEnsembleModel:
             dict(d1=1, d2=2, ensemble_hash="d41d8cd98f00b204e9800998ecf8427e")
         )
 
-    def test_if_call_to_insert_members_is_correct(self):
-        facade = MagicMock()
+    def test_if_call_to_insert_members_is_correct(self, facade):
         facade.fetch_primary_dataset_key = MagicMock(return_value=dict(d=1))
         facade.fetch_trained_models_primary_keys = MagicMock(return_value=[dict(m=0), dict(m=1)])
 
@@ -68,8 +67,7 @@ class TestTrainedEnsembleModel:
             ]
         )
 
-    def test_if_call_to_fetch_trained_models_is_correct(self):
-        facade = MagicMock()
+    def test_if_call_to_fetch_trained_models_is_correct(self, facade):
         facade.fetch_trained_models = MagicMock(return_value=["m"])
         facade.load_model = MagicMock(return_value=("dataloader", MagicMock()))
 
@@ -78,8 +76,7 @@ class TestTrainedEnsembleModel:
 
         facade.fetch_trained_models.assert_called_once_with("key")
 
-    def test_if_call_to_load_model_is_correct(self):
-        facade = MagicMock()
+    def test_if_call_to_load_model_is_correct(self, facade):
         facade.fetch_trained_models = MagicMock(return_value=["m1", "m2"])
         facade.load_model = MagicMock(return_value=("dataloader", MagicMock()))
 
@@ -89,8 +86,7 @@ class TestTrainedEnsembleModel:
         assert facade.load_model.call_count == 2
         facade.load_model.assert_has_calls([call(key="m1"), call(key="m2")])
 
-    def test_that_models_are_switched_to_evaluation_mode(self):
-        facade = MagicMock()
+    def test_that_models_are_switched_to_evaluation_mode(self, facade):
         facade.fetch_trained_models = MagicMock(return_value=["m1", "m2"])
         model = MagicMock()
         facade.load_model = MagicMock(return_value=("dataloader", model))
@@ -100,8 +96,7 @@ class TestTrainedEnsembleModel:
 
         assert model.eval.call_count == 2
 
-    def test_that_ensemble_model_is_correctly_constructed(self):
-        facade = MagicMock()
+    def test_that_ensemble_model_is_correctly_constructed(self, facade):
         facade.fetch_trained_models = MagicMock(return_value=["m1", "m2"])
         outputs = (torch.tensor([4.0, 7.0]), torch.tensor([6.0, 8.0]))
         model = MagicMock(side_effect=outputs)
@@ -112,8 +107,7 @@ class TestTrainedEnsembleModel:
 
         assert torch.allclose(ensemble(None), torch.tensor([5, 7.5]))
 
-    def test_that_only_first_dataloader_is_returned(self):
-        facade = MagicMock()
+    def test_that_only_first_dataloader_is_returned(self, facade):
         facade.fetch_trained_models = MagicMock(return_value=["m1", "m2"])
         dataloaders = [("dataloader1", MagicMock()), ("dataloader2", MagicMock())]
         facade.load_model = MagicMock(side_effect=dataloaders)
