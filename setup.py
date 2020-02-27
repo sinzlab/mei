@@ -11,7 +11,7 @@ setup(
     url="https://github.com/cajal/featurevis",
     keywords="feature visualization MEI pytorch",
     packages=["featurevis"],
-    install_requires=["torch>=0.4.0", "scipy", "numpy", "torchvision", "datajoint", "nnfabrik"],
+    install_requires=["torch>=0.4.0", "scipy", "numpy", "torchvision", "datajoint", "nnfabrik", "pytest"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
