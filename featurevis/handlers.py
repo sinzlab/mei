@@ -70,9 +70,9 @@ class MEIMethodHandler:
             dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config)
         )
 
-    def generate_mei(self, dataloader, model, key):
+    def generate_mei(self, dataloader, model, key, import_func=integration.import_module):
         method_fn, method_config = self.facade.fetch_method(key)
-        method_fn = integration.import_module(method_fn)
+        method_fn = import_func(method_fn)
         mei, evaluations = method_fn(dataloader, model, method_config)
         return dict(key, evaluations=evaluations, mei=mei)
 
