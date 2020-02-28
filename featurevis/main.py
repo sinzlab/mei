@@ -130,7 +130,10 @@ class MEITemplate(dj.Computed):
 
     def __init__(self, *args, cache_size_limit=10, **kwargs):
         super().__init__(*args, **kwargs)
-        self.handler = handlers.MEIHandler(self, cache_size_limit=cache_size_limit)
+        self.handler = handlers.MEIHandler(
+            facades.MEIFacade(self.__class__, self.method_table, self.trained_model_table, self.selector_table),
+            cache_size_limit=cache_size_limit,
+        )
 
     def make(self, *args, **kwargs):
         return self.handler.make(*args, **kwargs)
