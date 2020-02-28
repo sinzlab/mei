@@ -12,7 +12,7 @@ def does_not_raise():
     yield
 
 
-class TestTrainedEnsembleModel:
+class TestTrainedEnsembleModelHandler:
     @pytest.fixture
     def facade(self):
         return MagicMock()
