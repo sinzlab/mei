@@ -76,22 +76,22 @@ class MEIMethodHandler:
 
 
 class MEIHandler:
-    def __init__(self, facade, cache_size_limit=10):
+    def __init__(self, facade, model_loader=integration.ModelLoader, cache_size_limit=10):
         self.facade = facade
-        self.model_loader = integration.ModelLoader(facade.trained_model_table, cache_size_limit=cache_size_limit)
+        self.model_loader = model_loader(facade.trained_model_table, cache_size_limit=cache_size_limit)
 
-    def make(self, key):
+    def make(self, key, save_func=torch.save, temp_dir_func=tempfile.TemporaryDirectory):
         dataloaders, model = self.model_loader.load(key=key)
         output_selected_model = self.facade.get_output_selected_model(model, key)
         mei_entity = self.facade.generate_mei(dataloaders, output_selected_model, key)
-        self._insert_mei(mei_entity)
+        self._insert_mei(mei_entity, save_func, temp_dir_func)
 
-    def _insert_mei(self, mei_entity):
+    def _insert_mei(self, mei_entity, save_func, temp_dir_func):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
         mei = mei_entity.pop("mei").squeeze()
         filename = make_hash(mei_entity) + ".pth.tar"
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temp_dir_func() as temp_dir:
             filepath = os.path.join(temp_dir, filename)
-            torch.save(mei, filepath)
+            save_func(mei, filepath)
             mei_entity["mei"] = filepath
             self.facade.insert_mei(mei_entity)
