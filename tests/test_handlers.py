@@ -108,6 +108,66 @@ class TestTrainedEnsembleModelHandler:
         assert dataloader == "dataloader1"
 
 
+class TestMEIMethodHandler:
+    def test_that_call_to_insert_method_is_correct(self):
+        facade = MagicMock()
+
+        handler = handlers.MEIMethodHandler(facade)
+        handler.add_method("method_fn", "method_config")
+
+        facade.insert_method.assert_called_once_with(
+            dict(method_fn="method_fn", method_hash="57f270bf813f42465bd9c21a364bdb2b", method_config="method_config")
+        )
+
+    def test_that_call_to_fetch_method_is_correct(self):
+        facade = MagicMock()
+        facade.fetch_method.return_value = "method_fn", "method_config"
+
+        import_func = MagicMock()
+        import_func.return_value.return_value = "mei", "evaluations"
+
+        handler = handlers.MEIMethodHandler(facade)
+        handler.generate_mei("dataloader", "model", dict(key="key"), import_func=import_func)
+
+        facade.fetch_method.assert_called_once_with(dict(key="key"))
+
+    def test_that_import_func_is_called_correctly(self):
+        facade = MagicMock()
+        facade.fetch_method.return_value = "method_fn", "method_config"
+
+        import_func = MagicMock()
+        import_func.return_value.return_value = "mei", "evaluations"
+
+        handler = handlers.MEIMethodHandler(facade)
+        handler.generate_mei("dataloader", "model", dict(key="key"), import_func=import_func)
+
+        import_func.assert_called_once_with("method_fn")
+
+    def test_that_method_func_is_called_correctly(self):
+        facade = MagicMock()
+        facade.fetch_method.return_value = "method_fn", "method_config"
+
+        import_func = MagicMock()
+        import_func.return_value.return_value = "mei", "evaluations"
+
+        handler = handlers.MEIMethodHandler(facade)
+        handler.generate_mei("dataloader", "model", dict(key="key"), import_func=import_func)
+
+        import_func.return_value.assert_called_once_with("dataloader", "model", "method_config")
+
+    def test_that_generated_mei_is_returned(self):
+        facade = MagicMock()
+        facade.fetch_method.return_value = "method_fn", "method_config"
+
+        import_func = MagicMock()
+        import_func.return_value.return_value = "mei", "evaluations"
+
+        handler = handlers.MEIMethodHandler(facade)
+        mei = handler.generate_mei("dataloader", "model", dict(key="key"), import_func=import_func)
+
+        assert mei == dict(key="key", evaluations="evaluations", mei="mei")
+
+
 class TestMEIHandler:
     def test_that_model_loader_is_correctly_initialized(self):
         model_loader = MagicMock()
