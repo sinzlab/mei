@@ -31,6 +31,17 @@ class TrainedEnsembleModelFacade:
         self.member_table().insert(members)
 
 
+class MEIMethodFacade:
+    def __init__(self, method_table):
+        self.method_table = method_table
+
+    def insert_method(self, method):
+        self.method_table().insert1(method)
+
+    def fetch_method(self, key):
+        return (self.method_table() & key).fetch1("method_fn", "method_config")
+
+
 class MEIFacade:
     def __init__(self, mei_table, method_table, trained_model_table, selector_table):
         self.mei_table = mei_table
