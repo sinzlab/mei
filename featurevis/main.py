@@ -95,7 +95,7 @@ class MEIMethod(dj.Lookup):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.handler = handlers.MEIMethodHandler(self)
+        self.handler = handlers.MEIMethodHandler(facades.MEIMethodFacade(self.__class__))
 
     def add_method(self, *args, **kwargs):
         return self.handler.add_method(*args, **kwargs)

@@ -62,14 +62,16 @@ class CSRFV1SelectorHandler:
 
 
 class MEIMethodHandler:
-    def __init__(self, table):
-        self.table = table
+    def __init__(self, facade):
+        self.facade = facade
 
     def add_method(self, method_fn, method_config):
-        self.table.insert1(dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config))
+        self.facade.insert_method(
+            dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config)
+        )
 
     def generate_mei(self, dataloader, model, key):
-        method_fn, method_config = (self.table & key).fetch1("method_fn", "method_config")
+        method_fn, method_config = self.facade.fetch_method(key)
         method_fn = integration.import_module(method_fn)
         mei, evaluations = method_fn(dataloader, model, method_config)
         return dict(key, evaluations=evaluations, mei=mei)
