@@ -106,3 +106,86 @@ class TestTrainedEnsembleModel:
         dataloader, _ = handler.load_model("key")
 
         assert dataloader == "dataloader1"
+
+
+class TestMEIHandler:
+    def test_that_model_loader_is_correctly_initialized(self):
+        model_loader = MagicMock()
+        facade = MagicMock()
+        facade.trained_model_table = "trained_model_table_instance"
+
+        _ = handlers.MEIHandler(facade, model_loader=model_loader, cache_size_limit=5)
+
+        model_loader.assert_called_once_with("trained_model_table_instance", cache_size_limit=5)
+
+    def test_that_call_to_load_is_correct(self):
+        model_loader_instance = MagicMock()
+        model_loader_instance.load.return_value = "dataloaders", "model"
+        model_loader = MagicMock(return_value=model_loader_instance)
+
+        handler = handlers.MEIHandler(MagicMock(), model_loader=model_loader)
+        handler.make("key", save_func=MagicMock())
+
+        model_loader_instance.load.assert_called_once_with(key="key")
+
+    def test_that_call_to_get_output_selected_model_is_correct(self):
+        model_loader_instance = MagicMock()
+        model_loader_instance.load.return_value = ("dataloaders", "model")
+        model_loader = MagicMock(return_value=model_loader_instance)
+        facade = MagicMock()
+
+        handler = handlers.MEIHandler(facade, model_loader=model_loader)
+        handler.make("key", save_func=MagicMock())
+
+        facade.get_output_selected_model.assert_called_once_with("model", "key")
+
+    def test_that_call_to_generate_mei_is_correct(self):
+        model_loader_instance = MagicMock()
+        model_loader_instance.load.return_value = ("dataloaders", "model")
+        model_loader = MagicMock(return_value=model_loader_instance)
+        facade = MagicMock()
+        facade.get_output_selected_model.return_value = "output_selected_model"
+
+        handler = handlers.MEIHandler(facade, model_loader=model_loader)
+        handler.make("key", save_func=MagicMock())
+
+        facade.generate_mei.assert_called_once_with("dataloaders", "output_selected_model", "key")
+
+    def test_that_call_to_save_func_is_correct(self):
+        model_loader_instance = MagicMock()
+        model_loader_instance.load.return_value = ("dataloaders", "model")
+        model_loader = MagicMock(return_value=model_loader_instance)
+
+        mei = MagicMock()
+        mei.squeeze.return_value = "mei"
+        mei_entity = MagicMock()
+        mei_entity.pop.return_value = mei
+
+        facade = MagicMock()
+        facade.generate_mei.return_value = mei_entity
+
+        temp_dir_func = MagicMock()
+        temp_dir_func.return_value.__enter__.return_value = "/temp_dir"
+
+        save_func = MagicMock()
+
+        handler = handlers.MEIHandler(facade, model_loader=model_loader)
+        handler.make("key", save_func=save_func, temp_dir_func=temp_dir_func)
+
+        save_func.assert_called_once_with("mei", "/temp_dir/d41d8cd98f00b204e9800998ecf8427e.pth.tar")
+
+    def test_that_call_to_insert_mei_is_correct(self):
+        model_loader_instance = MagicMock()
+        model_loader_instance.load.return_value = ("dataloaders", "model")
+        model_loader = MagicMock(return_value=model_loader_instance)
+
+        facade = MagicMock()
+        facade.generate_mei.return_value = dict(mei=torch.tensor([1, 2, 3]))
+
+        temp_dir_func = MagicMock()
+        temp_dir_func.return_value.__enter__.return_value = "/temp_dir"
+
+        handler = handlers.MEIHandler(facade, model_loader=model_loader)
+        handler.make("key", save_func=MagicMock(), temp_dir_func=temp_dir_func)
+
+        facade.insert_mei.assert_called_once_with(dict(mei="/temp_dir/d41d8cd98f00b204e9800998ecf8427e.pth.tar"))
