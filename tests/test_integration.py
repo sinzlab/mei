@@ -44,21 +44,6 @@ def fake_trained_model_table():
     return _fake_trained_model_table
 
 
-class TestLoadEnsemble:
-    def test_load_ensemble(self, fake_trained_model_table):
-        dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, fake_trained_model_table())
-        ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
-        expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
-        assert dataloaders == "dataloaders0"
-        assert torch.allclose(ensemble_model(ensemble_input), expected_output)
-
-    def test_eval_mode(self, fake_trained_model_table):
-        fake_trained_model_table = fake_trained_model_table()
-        integration.load_ensemble_model(FakeMemberTable, fake_trained_model_table)
-        for model in fake_trained_model_table.models:
-            model.eval.assert_called_once()
-
-
 def test_get_output_selected_model():
     model = integration.get_output_selected_model(0, 10, FakeModel(1))
     output = model(torch.tensor([[1, 2, 3]], dtype=torch.float))
