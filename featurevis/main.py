@@ -77,7 +77,7 @@ class MEIMethod(dj.Lookup):
         return self.handler.generate_mei(*args, **kwargs)
 
 
-class MEITemplate(dj.Computed):
+class MEITemplate(tables.MEITemplate, dj.Computed):
     """MEI table template.
 
     To create a functional "MEI" table, create a new class that inherits from this template and decorate it with your
@@ -87,26 +87,4 @@ class MEITemplate(dj.Computed):
     the class attribute called "method_table".
     """
 
-    definition = """
-    # contains maximally exciting images (MEIs)
-    -> self.method_table
-    -> self.trained_model_table
-    -> self.selector_table
-    ---
-    mei                 : attach@minio  # the MEI as a tensor
-    evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
-    """
-
     method_table = MEIMethod
-    trained_model_table = None
-    selector_table = None
-
-    def __init__(self, *args, cache_size_limit=10, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.handler = handlers.MEIHandler(
-            facades.MEIFacade(self.__class__, self.method_table, self.trained_model_table, self.selector_table),
-            cache_size_limit=cache_size_limit,
-        )
-
-    def make(self, *args, **kwargs):
-        return self.handler.make(*args, **kwargs)
