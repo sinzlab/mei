@@ -3,9 +3,10 @@ import datajoint as dj
 from nnfabrik.main import Dataset, schema
 from . import handlers
 from . import facades
+from . import tables
 
 
-class TrainedEnsembleModelTemplate(dj.Manual):
+class TrainedEnsembleModelTemplate(tables.TrainedEnsembleModelTemplate, dj.Manual):
     """TrainedEnsembleModel table template.
 
     To create a functional "TrainedEnsembleModel" table, create a new class that inherits from this template and
@@ -15,38 +16,10 @@ class TrainedEnsembleModelTemplate(dj.Manual):
     "dataset_table".
     """
 
-    definition = """
-    # contains ensemble ids
-    -> self.dataset_table
-    ensemble_hash : char(32) # the hash of the ensemble
-    """
-
     dataset_table = Dataset
-    trained_model_table = None
 
-    class Member(dj.Part):
+    class Member(tables.TrainedEnsembleModelTemplate.Member, dj.Part):
         """Member table template."""
-
-        definition = """
-        # contains assignments of trained models to a specific ensemble id
-        -> master
-        -> master.trained_model_table
-        """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.handler = handlers.TrainedEnsembleModelHandler(
-            facades.TrainedEnsembleModelFacade(
-                self.__class__, self.Member, self.dataset_table, self.trained_model_table
-            )
-        )
-
-    def create_ensemble(self, *args, **kwargs):
-        return self.handler.create_ensemble(*args, **kwargs)
-
-    def load_model(self, *args, **kwargs):
-        """Wrapper to preserve the interface of the trained model table."""
-        return self.handler.load_model(*args, **kwargs)
 
 
 class CSRFV1SelectorTemplate(dj.Computed):
