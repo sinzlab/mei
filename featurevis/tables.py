@@ -1,6 +1,9 @@
+import os
+import tempfile
 from typing import Callable, Dict
 
 import torch
+from nnfabrik.utility.dj_helpers import make_hash
 
 from . import integration
 
@@ -51,3 +54,44 @@ class TrainedEnsembleModelTemplate:
         for model in models:
             model.eval()
         return dataloaders[0], ensemble_model
+
+
+class MEITemplate:
+    definition = """
+    # contains maximally exciting images (MEIs)
+    -> self.method_table
+    -> self.trained_model_table
+    -> self.selector_table
+    ---
+    mei                 : attach@minio  # the MEI as a tensor
+    evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
+    """
+
+    trained_model_table = None
+    selector_table = None
+    method_table = None
+    model_loader_class = integration.ModelLoader
+    save_func = staticmethod(torch.save)
+    temp_dir_func = tempfile.TemporaryDirectory
+
+    insert1: Callable[[Dict], None]
+
+    def __init__(self, *args, cache_size_limit=10, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model_loader = self.model_loader_class(self.trained_model_table, cache_size_limit=cache_size_limit)
+
+    def make(self, key):
+        dataloaders, model = self.model_loader.load(key=key)
+        output_selected_model = self.selector_table().get_output_selected_model(model, key)
+        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
+        self._insert_mei(mei_entity)
+
+    def _insert_mei(self, mei_entity):
+        """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
+        mei = mei_entity.pop("mei").squeeze()
+        filename = make_hash(mei_entity) + ".pth.tar"
+        with self.temp_dir_func() as temp_dir:
+            filepath = os.path.join(temp_dir, filename)
+            self.save_func(mei, filepath)
+            mei_entity["mei"] = filepath
+            self.insert1(mei_entity)
