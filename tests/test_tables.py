@@ -112,3 +112,79 @@ class TestTrainedEnsembleModelTemplate:
     def test_if_only_first_dataloader_is_returned(self, trained_ensemble_model_template):
         dataloaders, _ = trained_ensemble_model_template().load_model("key")
         assert dataloaders == "dataloaders1"
+
+
+class TestMEITemplate:
+    @pytest.fixture
+    def mei_template(self, trained_model_table, selector_table, method_table, insert1, save_func, model_loader_class):
+        mei_template = tables.MEITemplate
+        mei_template.trained_model_table = trained_model_table
+        mei_template.selector_table = selector_table
+        mei_template.method_table = method_table
+        mei_template.insert1 = insert1
+        mei_template.save_func = save_func
+        mei_template.model_loader_class = model_loader_class
+        temp_dir_func = MagicMock()
+        temp_dir_func.return_value.__enter__.return_value = "/temp_dir"
+        mei_template.temp_dir_func = temp_dir_func
+        return mei_template
+
+    @pytest.fixture
+    def trained_model_table(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def selector_table(self):
+        selector_table = MagicMock()
+        selector_table.return_value.get_output_selected_model.return_value = "output_selected_model"
+        return selector_table
+
+    @pytest.fixture
+    def method_table(self):
+        method_table = MagicMock()
+        mei_entity = MagicMock()
+        mei_entity.squeeze.return_value = "mei"
+        method_table.return_value.generate_mei.return_value = dict(mei=mei_entity)
+        return method_table
+
+    @pytest.fixture
+    def insert1(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def save_func(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def model_loader_class(self, model_loader):
+        return MagicMock(return_value=model_loader)
+
+    @pytest.fixture
+    def model_loader(self):
+        model_loader = MagicMock()
+        model_loader.load.return_value = "dataloaders", "model"
+        return model_loader
+
+    def test_if_model_loader_is_correctly_initialized(self, mei_template, trained_model_table, model_loader_class):
+        mei_template(cache_size_limit=5)
+        model_loader_class.assert_called_once_with(trained_model_table, cache_size_limit=5)
+
+    def test_if_model_is_correctly_loaded(self, mei_template, model_loader):
+        mei_template().make("key")
+        model_loader.load.assert_called_once_with(key="key")
+
+    def test_if_correct_model_output_is_selected(self, mei_template, selector_table):
+        mei_template().make("key")
+        selector_table.return_value.get_output_selected_model.assert_called_once_with("model", "key")
+
+    def test_if_mei_is_correctly_generated(self, mei_template, method_table):
+        mei_template().make("key")
+        method_table.return_value.generate_mei.assert_called_once_with("dataloaders", "output_selected_model", "key")
+
+    def test_if_mei_is_correctly_saved(self, mei_template, save_func):
+        mei_template().make("key")
+        save_func.assert_called_once_with("mei", "/temp_dir/d41d8cd98f00b204e9800998ecf8427e.pth.tar")
+
+    def test_if_mei_entity_is_correctly_saved(self, mei_template, insert1):
+        mei_template().make("key")
+        insert1.assert_called_once_with(dict(mei="/temp_dir/d41d8cd98f00b204e9800998ecf8427e.pth.tar"))
