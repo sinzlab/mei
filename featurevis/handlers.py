@@ -7,46 +7,6 @@ from nnfabrik.utility.dj_helpers import make_hash
 from . import integration
 
 
-class TrainedEnsembleModelHandler:
-    def __init__(self, ensemble_facade):
-        self.ensemble_facade = ensemble_facade
-
-    def create_ensemble(self, key):
-        """Creates a new ensemble and inserts it into the table.
-
-        Args:
-            key: A dictionary representing a key that must be sufficient to restrict the dataset table to one entry. The
-                models that are in the trained model table after restricting it with the provided key will be part of
-                the ensemble.
-
-        Returns:
-            None.
-        """
-        if not self.ensemble_facade.properly_restricts(key):
-            raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
-        dataset_key = self.ensemble_facade.fetch_primary_dataset_key(key)
-        models = self.ensemble_facade.fetch_trained_models_primary_keys(key)
-        ensemble_table_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
-        self.ensemble_facade.insert_ensemble(ensemble_table_key)
-        self.ensemble_facade.insert_members([{**ensemble_table_key, **m} for m in models])
-
-    def load_model(self, key=None):
-        """Wrapper to preserve the interface of the trained model table."""
-        return self._load_ensemble_model(key=key)
-
-    def _load_ensemble_model(self, key=None):
-        def ensemble_model(x, *args, **kwargs):
-            outputs = [m(x, *args, **kwargs) for m in models]
-            mean_output = torch.stack(outputs, dim=0).mean(dim=0)
-            return mean_output
-
-        model_keys = self.ensemble_facade.fetch_trained_models(key)
-        dataloaders, models = tuple(list(x) for x in zip(*[self.ensemble_facade.load_model(key=k) for k in model_keys]))
-        for model in models:
-            model.eval()
-        return dataloaders[0], ensemble_model
-
-
 class CSRFV1SelectorHandler:
     def __init__(self, table):
         self.table = table
