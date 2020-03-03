@@ -38,6 +38,7 @@ def gradient_ascent(
     """
 
     set_seed(seed)
+    model.eval()
     config = prepare_config(config, import_object)
     mei_shape = get_input_dimensions(dataloaders, get_dims)
     initial_guess = get_initial_guess(1, *mei_shape[1:])
