@@ -2,7 +2,6 @@ import datajoint as dj
 
 from nnfabrik.main import Dataset, schema
 from . import handlers
-from . import facades
 from . import tables
 
 
@@ -56,25 +55,8 @@ class CSRFV1SelectorTemplate(dj.Computed):
 
 
 @schema
-class MEIMethod(dj.Lookup):
-    definition = """
-    # contains methods for generating MEIs and their configurations.
-    method_fn                           : varchar(64)   # name of the method function
-    method_hash                         : varchar(32)   # hash of the method config
-    ---
-    method_config                       : longblob      # method configuration object
-    method_ts       = CURRENT_TIMESTAMP : timestamp     # UTZ timestamp at time of insertion
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.handler = handlers.MEIMethodHandler(facades.MEIMethodFacade(self.__class__))
-
-    def add_method(self, *args, **kwargs):
-        return self.handler.add_method(*args, **kwargs)
-
-    def generate_mei(self, *args, **kwargs):
-        return self.handler.generate_mei(*args, **kwargs)
+class MEIMethod(tables.MEIMethod, dj.Lookup):
+    pass
 
 
 class MEITemplate(tables.MEITemplate, dj.Computed):
