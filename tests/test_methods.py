@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 
 from featurevis import methods
 
@@ -9,10 +9,10 @@ def test_gradient_ascent():
     config = dict(
         optim_kwargs=None, transform=None, regularization="module.function", gradient_f=None, post_update=None
     )
-    import_object = Mock(return_value="imported_function")
-    get_dims = Mock(return_value=dict(session1=dict(inputs=(100, 10, 24, 24))))
-    get_initial_guess = Mock(return_value="initial_guess")
-    ascend = Mock(return_value=("mei", "evaluations", "_"))
+    import_object = MagicMock(return_value="imported_function")
+    get_dims = MagicMock(return_value=dict(session1=dict(inputs=(100, 10, 24, 24))))
+    get_initial_guess = MagicMock(return_value="initial_guess")
+    ascend = MagicMock(return_value=("mei", "evaluations", "_"))
 
     returned = methods.gradient_ascent(
         dataloaders,
