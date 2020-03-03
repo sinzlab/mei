@@ -79,7 +79,9 @@ class TestTrainedEnsembleModelTemplate:
 
     def test_if_ensemble_key_is_correctly_inserted(self, trained_ensemble_model_template, insert1):
         trained_ensemble_model_template().create_ensemble("key")
-        insert1.assert_called_once_with(dict(ds=0, ensemble_hash="536072017a2a3501ea8f09fffa51ee61"))
+        insert1.assert_called_once_with(
+            dict(ds=0, ensemble_hash="536072017a2a3501ea8f09fffa51ee61", ensemble_comment="")
+        )
 
     def test_if_member_models_are_correctly_inserted(self, trained_ensemble_model_template, insert):
         trained_ensemble_model_template().create_ensemble("key")
