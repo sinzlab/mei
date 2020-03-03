@@ -33,8 +33,15 @@ class CSRFV1SelectorTemplate(tables.CSRFV1SelectorTemplate, dj.Computed):
 
 
 @schema
+class MEISeed(tables.MEISeed, dj.Lookup):
+    """Seed table for MEI method."""
+
+
+@schema
 class MEIMethod(tables.MEIMethod, dj.Lookup):
-    pass
+    """Table that contains MEI methods and their configurations."""
+
+    seed_table = MEISeed
 
 
 class MEITemplate(tables.MEITemplate, dj.Computed):
