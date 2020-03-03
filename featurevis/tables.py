@@ -29,6 +29,7 @@ class TrainedEnsembleModelTemplate:
 
     dataset_table = None
     trained_model_table = None
+    ensemble_model_class = integration.EnsembleModel
 
     insert1: Callable[[Dict], None]
 
@@ -45,18 +46,11 @@ class TrainedEnsembleModelTemplate:
         return self._load_ensemble_model(key=key)
 
     def _load_ensemble_model(self, key=None):
-        def ensemble_model(x, *args, **kwargs):
-            outputs = [m(x, *args, **kwargs) for m in models]
-            mean_output = torch.stack(outputs, dim=0).mean(dim=0)
-            return mean_output
-
         model_keys = (self.trained_model_table() & key).fetch(as_dict=True)
         dataloaders, models = tuple(
             list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
         )
-        for model in models:
-            model.eval()
-        return dataloaders[0], ensemble_model
+        return dataloaders[0], self.ensemble_model_class(*models)
 
 
 class CSRFV1SelectorTemplate:
