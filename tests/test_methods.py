@@ -8,12 +8,14 @@ from featurevis import methods
 
 class TestGradientAscent:
     @pytest.fixture
-    def gradient_ascent(self, dataloaders, config, import_object, get_dims, get_initial_guess, ascend):
+    def gradient_ascent(self, dataloaders, config, set_seed, import_object, get_dims, get_initial_guess, ascend):
         return partial(
             methods.gradient_ascent,
             dataloaders,
             "model",
             config,
+            "seed",
+            set_seed=set_seed,
             import_object=import_object,
             get_dims=get_dims,
             get_initial_guess=get_initial_guess,
@@ -29,6 +31,10 @@ class TestGradientAscent:
         return dict(
             optim_kwargs=None, transform=None, regularization="module.function", gradient_f=None, post_update=None
         )
+
+    @pytest.fixture
+    def set_seed(self):
+        return MagicMock()
 
     @pytest.fixture
     def import_object(self):
@@ -72,3 +78,7 @@ class TestGradientAscent:
 
     def test_if_mei_and_evaluations_are_returned(self, gradient_ascent):
         assert gradient_ascent() == ("mei", "evaluations")
+
+    def test_if_seed_is_correctly_set(self, gradient_ascent, set_seed):
+        gradient_ascent()
+        set_seed.assert_called_once_with("seed")
