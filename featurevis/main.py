@@ -1,7 +1,6 @@
 import datajoint as dj
 
 from nnfabrik.main import Dataset, schema
-from . import handlers
 from . import tables
 
 
@@ -21,7 +20,7 @@ class TrainedEnsembleModelTemplate(tables.TrainedEnsembleModelTemplate, dj.Manua
         """Member table template."""
 
 
-class CSRFV1SelectorTemplate(dj.Computed):
+class CSRFV1SelectorTemplate(tables.CSRFV1SelectorTemplate, dj.Computed):
     """CSRF V1 selector table template.
 
     To create a functional "CSRFV1Selector" table, create a new class that inherits from this template and decorate it
@@ -30,28 +29,7 @@ class CSRFV1SelectorTemplate(dj.Computed):
     "dataset_table".
     """
 
-    definition = """
-    # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
-    # the model. 
-    -> self.dataset_table
-    neuron_id       : smallint unsigned # unique neuron identifier
-    ---
-    neuron_position : smallint unsigned # integer position of the neuron in the model's output 
-    session_id      : varchar(13)       # unique session identifier
-    """
-
     dataset_table = Dataset
-    _key_source = dataset_table & dict(dataset_fn="csrf_v1")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.handler = handlers.CSRFV1SelectorHandler(self)
-
-    def make(self, *args, **kwargs):
-        return self.handler.make(*args, **kwargs)
-
-    def get_output_selected_model(self, *args, **kwargs):
-        return self.handler.get_output_selected_model(*args, **kwargs)
 
 
 @schema
