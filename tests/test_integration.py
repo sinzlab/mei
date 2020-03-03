@@ -166,3 +166,30 @@ class TestEnsembleModel:
         ensemble.cuda()
         for member in members:
             member.cuda.assert_called_once_with()
+
+
+class TestConstrainedOutputModel:
+    @pytest.fixture
+    def model(self):
+        return MagicMock(return_value=torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0]))
+
+    def test_if_input_is_passed_to_model(self, model):
+        constrained_model = integration.ConstrainedOutputModel(model, 0)
+        constrained_model("x", "arg", kwarg="kwarg")
+        model.assert_called_once_with("x", "arg", kwarg="kwarg")
+
+    @pytest.mark.parametrize("constraint,expected", [(0, 1.0), (1, 2.0), (2, 3.0), (3, 4.0), (4, 5.0)])
+    def test_if_output_constraint_is_correct(self, model, constraint, expected):
+        constrained_model = integration.ConstrainedOutputModel(model, constraint)
+        output = constrained_model("x")
+        assert torch.allclose(output, torch.tensor([expected]))
+
+    def test_if_eval_mode_is_passed_to_model(self, model):
+        constrained_model = integration.ConstrainedOutputModel(model, 0)
+        constrained_model.eval()
+        model.eval.assert_called_once_with()
+
+    def test_if_cuda_is_passed_to_model(self, model):
+        constrained_model = integration.ConstrainedOutputModel(model, 0)
+        constrained_model.cuda()
+        model.cuda.assert_called_once_with()
