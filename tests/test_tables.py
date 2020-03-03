@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, call
 from contextlib import contextmanager
 
 import pytest
-import torch
 
 from featurevis import tables
 
@@ -14,10 +13,13 @@ def does_not_raise():
 
 class TestTrainedEnsembleModelTemplate:
     @pytest.fixture
-    def trained_ensemble_model_template(self, dataset_table, trained_model_table, insert1, insert):
+    def trained_ensemble_model_template(
+        self, dataset_table, trained_model_table, ensemble_model_class, insert1, insert
+    ):
         trained_ensemble_model_template = tables.TrainedEnsembleModelTemplate
         trained_ensemble_model_template.dataset_table = dataset_table
         trained_ensemble_model_template.trained_model_table = trained_model_table
+        trained_ensemble_model_template.ensemble_model_class = ensemble_model_class
         trained_ensemble_model_template.insert1 = insert1
         trained_ensemble_model_template.Member.insert = insert
         return trained_ensemble_model_template
@@ -30,7 +32,7 @@ class TestTrainedEnsembleModelTemplate:
         return dataset_table
 
     @pytest.fixture
-    def trained_model_table(self, model):
+    def trained_model_table(self):
         trained_model_table = MagicMock()
         trained_model_table.return_value.proj.return_value.__and__.return_value.fetch.return_value = [
             dict(m=0),
@@ -38,13 +40,13 @@ class TestTrainedEnsembleModelTemplate:
         ]
         trained_model_table.return_value.__and__.return_value.fetch.return_value = [dict(m=0, a=0), dict(m=1, a=1)]
         trained_model_table.return_value.load_model = MagicMock(
-            side_effect=[("dataloaders1", model), ("dataloaders2", model)]
+            side_effect=[("dataloaders1", "model1"), ("dataloaders2", "model2")]
         )
         return trained_model_table
 
-    @pytest.fixture
-    def model(self):
-        return MagicMock(side_effect=[torch.tensor([4.0, 7.0]), torch.tensor([6.0, 8.0])])
+    @pytest.fixture()
+    def ensemble_model_class(self):
+        return MagicMock()
 
     @pytest.fixture
     def insert1(self):
@@ -103,13 +105,9 @@ class TestTrainedEnsembleModelTemplate:
             [call(key=dict(m=0, a=0)), call(key=dict(m=1, a=1))]
         )
 
-    def test_if_models_are_switched_to_eval_mode(self, trained_ensemble_model_template, model):
+    def test_if_ensemble_model_is_correctly_initialized(self, trained_ensemble_model_template, ensemble_model_class):
         trained_ensemble_model_template().load_model("key")
-        model.eval.assert_has_calls([call(), call()])
-
-    def test_if_ensemble_model_averaging_is_correct(self, trained_ensemble_model_template):
-        _, model = trained_ensemble_model_template().load_model("key")
-        assert torch.allclose(model("x"), torch.tensor([5.0, 7.5]))
+        ensemble_model_class.assert_called_once_with("model1", "model2")
 
     def test_if_only_first_dataloader_is_returned(self, trained_ensemble_model_template):
         dataloaders, _ = trained_ensemble_model_template().load_model("key")
