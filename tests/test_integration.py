@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 import pytest
 import torch
@@ -134,3 +134,42 @@ class TestHashListOfDictionaries:
         list_of_dicts1 = [dict(a=3, b=5), dict(a=1, b=2), dict(a=2, b=8)]
         list_of_dicts2 = [dict(a=1, b=2), dict(a=3, b=5), dict(a=2, b=8)]
         assert self.hash_and_compare(list_of_dicts1, list_of_dicts2)
+
+
+class TestEnsembleModel:
+    @pytest.fixture
+    def members(self):
+        member1 = MagicMock(return_value=torch.tensor([1.0, 2.0, 3.0]))
+        member2 = MagicMock(return_value=torch.tensor([4.0, 5.0, 6.0]))
+        member3 = MagicMock(return_value=torch.tensor([7.0, 8.0, 9.0]))
+        return member1, member2, member3
+
+    @pytest.mark.parametrize("selected_unit", [None, 1])
+    def test_if_input_is_passed_to_ensemble_members(self, members, selected_unit):
+        ensemble = integration.EnsembleModel(*members, selected_unit=selected_unit)
+        ensemble("x", "arg", kwarg="kwarg")
+        for member in members:
+            member.assert_called_once_with("x", "arg", kwarg="kwarg")
+
+    def test_if_outputs_of_ensemble_members_is_correctly_averaged(self, members):
+        ensemble = integration.EnsembleModel(*members)
+        output = ensemble("x")
+        assert torch.allclose(output, torch.tensor([4.0, 5.0, 6.0]))
+
+    def test_if_eval_mode_is_passed_to_ensemble_members(self, members):
+        ensemble = integration.EnsembleModel(*members)
+        ensemble.eval()
+        for member in members:
+            member.eval.assert_called_once_with()
+
+    def test_if_ensemble_members_are_switched_to_cuda(self, members):
+        ensemble = integration.EnsembleModel(*members)
+        ensemble.cuda()
+        for member in members:
+            member.cuda.assert_called_once_with()
+
+    @pytest.mark.parametrize("selected_unit,expected", [(0, 4.0), (1, 5.0), (2, 6.0)])
+    def test_if_correct_output_gets_selected(self, members, selected_unit, expected):
+        ensemble = integration.EnsembleModel(*members, selected_unit=selected_unit)
+        output = ensemble("x")
+        assert torch.allclose(output, torch.tensor([expected]))
