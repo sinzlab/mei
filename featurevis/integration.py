@@ -143,3 +143,40 @@ class EnsembleModel:
         """Transfers the parameters of all ensemble members a CUDA device."""
         for member in self.members:
             member.cuda()
+
+
+class ConstrainedOutputModel:
+    """A model that has its output constrained.
+
+    Attributes:
+          model: A PyTorch module.
+          constraint: An integer representing the index of a neuron in the model's output. Only the value corresponding
+            to that index will be returned.
+    """
+
+    def __init__(self, model, constraint):
+        """Initializes ConstrainedOutputModel."""
+        self.model = model
+        self.constraint = constraint
+
+    def __call__(self, x, *args, **kwargs):
+        """Computes the constrained output of the model.
+
+        Args:
+            x: A tensor representing the input to the model.
+            *args: Additional arguments will be passed to the model.
+            **kwargs: Additional keyword arguments will be passed to the model.
+
+        Returns:
+            A tensor representing the constrained output of the model.
+        """
+        output = self.model(x, *args, **kwargs)
+        return output[self.constraint]
+
+    def eval(self):
+        """Switches the model to evaluation mode."""
+        self.model.eval()
+
+    def cuda(self):
+        """Transfers the parameters of the model to a CUDA device."""
+        self.model.cuda()
