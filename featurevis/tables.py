@@ -13,7 +13,9 @@ class TrainedEnsembleModelTemplate:
     definition = """
     # contains ensemble ids
     -> self.dataset_table
-    ensemble_hash : char(32) # the hash of the ensemble
+    ensemble_hash                   : char(32)      # the hash of the ensemble
+    ---
+    ensemble_comment        = ''    : varchar(256)  # a short comment describing the ensemble
     """
 
     class Member:
@@ -30,14 +32,14 @@ class TrainedEnsembleModelTemplate:
 
     insert1: Callable[[Dict], None]
 
-    def create_ensemble(self, key):
+    def create_ensemble(self, key, comment=""):
         if len(self.dataset_table() & key) != 1:
             raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
         dataset_key = (self.dataset_table().proj() & key).fetch1()
         models = (self.trained_model_table().proj() & key).fetch(as_dict=True)
-        ensemble_table_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
-        self.insert1(ensemble_table_key)
-        self.Member().insert([{**ensemble_table_key, **m} for m in models])
+        primary_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
+        self.insert1(dict(primary_key, ensemble_comment=comment))
+        self.Member().insert([{**primary_key, **m} for m in models])
 
     def load_model(self, key=None):
         return self._load_ensemble_model(key=key)
