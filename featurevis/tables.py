@@ -57,6 +57,37 @@ class TrainedEnsembleModelTemplate:
         return dataloaders[0], ensemble_model
 
 
+class CSRFV1SelectorTemplate:
+    definition = """
+    # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
+    # the model. 
+    -> self.dataset_table
+    neuron_id       : smallint unsigned # unique neuron identifier
+    ---
+    neuron_position : smallint unsigned # integer position of the neuron in the model's output 
+    session_id      : varchar(13)       # unique session identifier
+    """
+
+    dataset_table = None
+    dataset_fn = "csrf_v1"
+
+    insert: Callable[[Dict], None]
+    __and__: Callable[[Dict], CSRFV1SelectorTemplate]
+
+    @property
+    def _key_source(self):
+        return self.dataset_table() & dict(dataset_fn=self.dataset_fn)
+
+    def make(self, key, get_mappings=integration.get_mappings):
+        dataset_config = (self.dataset_table() & key).fetch1("dataset_config")
+        mappings = get_mappings(dataset_config, key)
+        self.insert(mappings)
+
+    def get_output_selected_model(self, model, key, get_output_selected_model=integration.get_output_selected_model):
+        neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
+        return get_output_selected_model(neuron_pos, session_id, model)
+
+
 class MEIMethod:
     definition = """
     # contains methods for generating MEIs and their configurations.
