@@ -149,15 +149,18 @@ class ConstrainedOutputModel:
     """A model that has its output constrained.
 
     Attributes:
-          model: A PyTorch module.
-          constraint: An integer representing the index of a neuron in the model's output. Only the value corresponding
+        model: A PyTorch module.
+        constraint: An integer representing the index of a neuron in the model's output. Only the value corresponding
             to that index will be returned.
+        forward_kwargs: A dictionary containing keyword arguments that will be passed to the model every time it is
+            called. Optional.
     """
 
-    def __init__(self, model, constraint):
+    def __init__(self, model, constraint, forward_kwargs=None):
         """Initializes ConstrainedOutputModel."""
         self.model = model
         self.constraint = constraint
+        self.forward_kwargs = forward_kwargs if forward_kwargs else dict()
 
     def __call__(self, x, *args, **kwargs):
         """Computes the constrained output of the model.
@@ -170,7 +173,7 @@ class ConstrainedOutputModel:
         Returns:
             A tensor representing the constrained output of the model.
         """
-        output = self.model(x, *args, **kwargs)
+        output = self.model(x, *args, **self.forward_kwargs, **kwargs)
         return output[self.constraint]
 
     def eval(self):
