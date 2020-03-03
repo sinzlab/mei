@@ -66,6 +66,7 @@ class CSRFV1SelectorTemplate:
 
     dataset_table = None
     dataset_fn = "csrf_v1"
+    constrained_output_model = integration.ConstrainedOutputModel
 
     insert: Callable[[Dict], None]
     __and__: Callable[[Dict], CSRFV1SelectorTemplate]
@@ -79,9 +80,9 @@ class CSRFV1SelectorTemplate:
         mappings = get_mappings(dataset_config, key)
         self.insert(mappings)
 
-    def get_output_selected_model(self, model, key, get_output_selected_model=integration.get_output_selected_model):
+    def get_output_selected_model(self, model, key):
         neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
-        return get_output_selected_model(neuron_pos, session_id, model)
+        return self.constrained_output_model(model, neuron_pos, forward_kwargs=dict(session_id=session_id))
 
 
 class MEIMethod:
