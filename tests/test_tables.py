@@ -186,10 +186,10 @@ class TestCSRFV1SelectorTemplate:
 
 class TestMEIMethod:
     @pytest.fixture
-    def mei_method(self, insert1, __and__, import_func):
+    def mei_method(self, insert1, magic_and, import_func):
         mei_method = tables.MEIMethod
         mei_method.insert1 = insert1
-        mei_method.__and__ = __and__
+        mei_method.__and__ = magic_and
         mei_method.import_func = import_func
         return mei_method
 
@@ -198,10 +198,10 @@ class TestMEIMethod:
         return MagicMock()
 
     @pytest.fixture
-    def __and__(self):
-        __and__ = MagicMock()
-        __and__.return_value.fetch1.return_value = "method_fn", "method_config"
-        return __and__
+    def magic_and(self):
+        magic_and = MagicMock()
+        magic_and.return_value.fetch1.return_value = "method_fn", "method_config"
+        return magic_and
 
     @pytest.fixture
     def import_func(self, method_fn):
@@ -217,10 +217,10 @@ class TestMEIMethod:
             dict(method_fn="method_fn", method_hash="57f270bf813f42465bd9c21a364bdb2b", method_config="method_config")
         )
 
-    def test_that_method_is_correctly_fetched(self, mei_method, __and__):
+    def test_that_method_is_correctly_fetched(self, mei_method, magic_and):
         mei_method().generate_mei("dataloader", "model", dict(key="key"))
-        __and__.assert_called_once_with(dict(key="key"))
-        __and__.return_value.fetch1.assert_called_once_with("method_fn", "method_config")
+        magic_and.assert_called_once_with(dict(key="key"))
+        magic_and.return_value.fetch1.assert_called_once_with("method_fn", "method_config")
 
     def test_if_method_function_is_correctly_imported(self, mei_method, import_func):
         mei_method().generate_mei("dataloader", "model", dict(key="key"))
