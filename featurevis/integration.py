@@ -1,7 +1,5 @@
 import pickle
 
-import torch
-
 from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
