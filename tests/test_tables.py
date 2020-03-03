@@ -14,6 +14,15 @@ def does_not_raise():
 
 class TestTrainedEnsembleModelTemplate:
     @pytest.fixture
+    def trained_ensemble_model_template(self, dataset_table, trained_model_table, insert1, insert):
+        trained_ensemble_model_template = tables.TrainedEnsembleModelTemplate
+        trained_ensemble_model_template.dataset_table = dataset_table
+        trained_ensemble_model_template.trained_model_table = trained_model_table
+        trained_ensemble_model_template.insert1 = insert1
+        trained_ensemble_model_template.Member.insert = insert
+        return trained_ensemble_model_template
+
+    @pytest.fixture
     def dataset_table(self):
         dataset_table = MagicMock()
         dataset_table.return_value.__and__.return_value.__len__.return_value = 1
@@ -44,15 +53,6 @@ class TestTrainedEnsembleModelTemplate:
     @pytest.fixture
     def insert(self):
         return MagicMock()
-
-    @pytest.fixture
-    def trained_ensemble_model_template(self, dataset_table, trained_model_table, insert1, insert):
-        trained_ensemble_model_template = tables.TrainedEnsembleModelTemplate
-        trained_ensemble_model_template.dataset_table = dataset_table
-        trained_ensemble_model_template.trained_model_table = trained_model_table
-        trained_ensemble_model_template.insert1 = insert1
-        trained_ensemble_model_template.Member.insert = insert
-        return trained_ensemble_model_template
 
     @pytest.mark.parametrize(
         "n_datasets,expectation",
