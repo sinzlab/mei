@@ -116,9 +116,10 @@ class TestTrainedEnsembleModelTemplate:
 
 class TestCSRFV1SelectorTemplate:
     @pytest.fixture
-    def selector_template(self, dataset_table, insert, magic_and):
+    def selector_template(self, dataset_table, constrained_output_model, insert, magic_and):
         selector_template = tables.CSRFV1SelectorTemplate
         selector_template.dataset_table = dataset_table
+        selector_template.constrained_output_model = constrained_output_model
         selector_template.dataset_fn = "dataset_fn"
         selector_template.insert = insert
         selector_template.__and__ = magic_and
@@ -129,6 +130,10 @@ class TestCSRFV1SelectorTemplate:
         dataset_table = MagicMock()
         dataset_table.return_value.__and__.return_value.fetch1.return_value = "dataset_config"
         return dataset_table
+
+    @pytest.fixture
+    def constrained_output_model(self):
+        return MagicMock(return_value="constrained_output_model")
 
     @pytest.fixture
     def insert(self):
@@ -143,10 +148,6 @@ class TestCSRFV1SelectorTemplate:
     @pytest.fixture
     def get_mappings(self):
         return MagicMock(return_value="mappings")
-
-    @pytest.fixture
-    def get_output_selected_model(self):
-        return MagicMock(return_value="output_selected_model")
 
     def test_if_key_source_is_correct(self, selector_template, dataset_table):
         dataset_table.return_value.__and__.return_value = "key_source"
@@ -171,17 +172,15 @@ class TestCSRFV1SelectorTemplate:
         magic_and.assert_called_once_with("key")
         magic_and.return_value.fetch1.assert_called_once_with("neuron_position", "session_id")
 
-    def test_if_get_output_selected_model_is_called_correctly(self, selector_template, get_output_selected_model):
-        selector_template().get_output_selected_model(
-            "model", "key", get_output_selected_model=get_output_selected_model
+    def test_if_constrained_output_model_is_correctly_initialized(self, selector_template, constrained_output_model):
+        selector_template().get_output_selected_model("model", "key")
+        constrained_output_model.assert_called_once_with(
+            "model", "neuron_pos", forward_kwargs=dict(session_id="session_id")
         )
-        get_output_selected_model.assert_called_once_with("neuron_pos", "session_id", "model")
 
-    def test_if_output_selected_model_is_correctly_returned(self, selector_template, get_output_selected_model):
-        output_selected_model = selector_template().get_output_selected_model(
-            "model", "key", get_output_selected_model=get_output_selected_model
-        )
-        assert output_selected_model == "output_selected_model"
+    def test_if_output_selected_model_is_correctly_returned(self, selector_template):
+        output_selected_model = selector_template().get_output_selected_model("model", "key")
+        assert output_selected_model == "constrained_output_model"
 
 
 class TestMEIMethod:
