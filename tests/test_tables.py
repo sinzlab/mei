@@ -310,7 +310,7 @@ class TestMEITemplate:
     def test_if_seed_is_correctly_fetched(self, mei_template, seed_table):
         mei_template().make("key")
         seed_table.return_value.__and__.assert_called_once_with("key")
-        seed_table.return_value.__and__.return_value.fetch1.assert_called_once_with("seed")
+        seed_table.return_value.__and__.return_value.fetch1.assert_called_once_with("mei_seed")
 
     def test_if_mei_is_correctly_generated(self, mei_template, method_table):
         mei_template().make("key")

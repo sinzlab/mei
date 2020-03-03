@@ -149,7 +149,7 @@ class MEITemplate:
 
     def make(self, key):
         dataloaders, model = self.model_loader.load(key=key)
-        seed = (self.seed_table() & key).fetch1("seed")
+        seed = (self.seed_table() & key).fetch1("mei_seed")
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
         self._insert_mei(mei_entity)
