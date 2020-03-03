@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import tempfile
 from typing import Callable, Dict
@@ -54,6 +55,31 @@ class TrainedEnsembleModelTemplate:
         for model in models:
             model.eval()
         return dataloaders[0], ensemble_model
+
+
+class MEIMethod:
+    definition = """
+    # contains methods for generating MEIs and their configurations.
+    method_fn                           : varchar(64)   # name of the method function
+    method_hash                         : varchar(32)   # hash of the method config
+    ---
+    method_config                       : longblob      # method configuration object
+    method_ts       = CURRENT_TIMESTAMP : timestamp     # UTZ timestamp at time of insertion
+    """
+
+    insert1: Callable[[Dict], None]
+    __and__: Callable[[Dict], MEIMethod]
+
+    import_func = staticmethod(integration.import_module)
+
+    def add_method(self, method_fn, method_config):
+        self.insert1(dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config))
+
+    def generate_mei(self, dataloader, model, key):
+        method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
+        method_fn = self.import_func(method_fn)
+        mei, evaluations = method_fn(dataloader, model, method_config)
+        return dict(key, evaluations=evaluations, mei=mei)
 
 
 class MEITemplate:
