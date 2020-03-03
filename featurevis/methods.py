@@ -13,6 +13,8 @@ def gradient_ascent(
     dataloaders,
     model,
     config,
+    seed,
+    set_seed=torch.manual_seed,
     import_object=import_path,
     get_dims=get_dims_for_loader_dict,
     get_initial_guess=torch.randn,
@@ -24,6 +26,8 @@ def gradient_ascent(
         dataloaders: NNFabrik style dataloader dictionary.
         model: Callable object that returns a single number.
         config: Dictionary of arguments for the gradient ascent function.
+        seed: Integer used to make the MEI generation process reproducible.
+        set_seed: Function used to set the seed. For testing purposes.
         import_object: Function used to import functions given a path as a string. For testing purposes.
         get_dims: Function used to get the input and output dimensions for all dataloaders. For testing purposes.
         get_initial_guess: Function used to get the initial random guess for the gradient ascent. For testing purposes.
@@ -33,6 +37,7 @@ def gradient_ascent(
         The MEI as a tensor and a list of model evaluations at each step of the gradient ascent process.
     """
 
+    set_seed(seed)
     config = prepare_config(config, import_object)
     mei_shape = get_input_dimensions(dataloaders, get_dims)
     initial_guess = get_initial_guess(1, *mei_shape[1:])
