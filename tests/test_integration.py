@@ -144,9 +144,8 @@ class TestEnsembleModel:
         member3 = MagicMock(return_value=torch.tensor([7.0, 8.0, 9.0]))
         return member1, member2, member3
 
-    @pytest.mark.parametrize("selected_unit", [None, 1])
-    def test_if_input_is_passed_to_ensemble_members(self, members, selected_unit):
-        ensemble = integration.EnsembleModel(*members, selected_unit=selected_unit)
+    def test_if_input_is_passed_to_ensemble_members(self, members):
+        ensemble = integration.EnsembleModel(*members)
         ensemble("x", "arg", kwarg="kwarg")
         for member in members:
             member.assert_called_once_with("x", "arg", kwarg="kwarg")
@@ -167,9 +166,3 @@ class TestEnsembleModel:
         ensemble.cuda()
         for member in members:
             member.cuda.assert_called_once_with()
-
-    @pytest.mark.parametrize("selected_unit,expected", [(0, 4.0), (1, 5.0), (2, 6.0)])
-    def test_if_correct_output_gets_selected(self, members, selected_unit, expected):
-        ensemble = integration.EnsembleModel(*members, selected_unit=selected_unit)
-        output = ensemble("x")
-        assert torch.allclose(output, torch.tensor([expected]))

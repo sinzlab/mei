@@ -111,20 +111,16 @@ class EnsembleModel:
 
     Attributes:
         *members: PyTorch modules representing the members of the ensemble.
-        selected_unit: An integer corresponding to the index of a unit in the output of the ensemble. Optional.
     """
 
-    def __init__(self, *members, selected_unit=None):
+    def __init__(self, *members):
         """Initializes EnsembleModel."""
         self.members = members
-        self.selected_unit = selected_unit
 
     def __call__(self, x, *args, **kwargs):
         """Calculates the forward pass through the ensemble.
 
-        The input is passed through all individual members of the ensemble and their outputs are averaged. Only a
-        single unit in the averaged output is returned if `self.selected_unit` is not `None`. Otherwise all units are
-        returned.
+        The input is passed through all individual members of the ensemble and their outputs are averaged.
 
         Args:
             x: A tensor representing the input to the ensemble.
@@ -134,17 +130,6 @@ class EnsembleModel:
         Returns:
             A tensor representing the ensemble's output.
         """
-        if self.selected_unit is not None:
-            return self._get_selected_output(x, *args, **kwargs)
-        return self._get_full_output(x, *args, **kwargs)
-
-    def _get_full_output(self, x, *args, **kwargs):
-        return self._get_mean_output(x, *args, **kwargs)
-
-    def _get_selected_output(self, x, *args, **kwargs):
-        return self._get_mean_output(x, *args, **kwargs)[self.selected_unit]
-
-    def _get_mean_output(self, x, *args, **kwargs):
         outputs = [m(x, *args, **kwargs) for m in self.members]
         mean_output = torch.stack(outputs, dim=0).mean(dim=0)
         return mean_output
