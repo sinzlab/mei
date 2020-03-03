@@ -186,12 +186,19 @@ class TestCSRFV1SelectorTemplate:
 
 class TestMEIMethod:
     @pytest.fixture
-    def mei_method(self, insert1, magic_and, import_func):
+    def mei_method(self, seed_table, insert1, magic_and, import_func):
         mei_method = tables.MEIMethod
+        mei_method.seed_table = seed_table
         mei_method.insert1 = insert1
         mei_method.__and__ = magic_and
         mei_method.import_func = import_func
         return mei_method
+
+    @pytest.fixture
+    def seed_table(self):
+        seed_table = MagicMock()
+        seed_table.return_value.__and__.return_value.fetch1.return_value = "mei_seed"
+        return seed_table
 
     @pytest.fixture
     def insert1(self):
@@ -222,13 +229,18 @@ class TestMEIMethod:
         magic_and.assert_called_once_with(dict(key="key"))
         magic_and.return_value.fetch1.assert_called_once_with("method_fn", "method_config")
 
+    def test_that_seed_is_correctly_fetched(self, mei_method, seed_table):
+        mei_method().generate_mei("dataloader", "model", dict(key="key"))
+        seed_table.return_value.__and__.assert_called_once_with(dict(key="key"))
+        seed_table.return_value.__and__.return_value.fetch1.assert_called_once_with("mei_seed")
+
     def test_if_method_function_is_correctly_imported(self, mei_method, import_func):
         mei_method().generate_mei("dataloader", "model", dict(key="key"))
         import_func.assert_called_once_with("method_fn")
 
     def test_if_method_function_is_correctly_called(self, mei_method, method_fn):
         mei_method().generate_mei("dataloader", "model", dict(key="key"))
-        method_fn.assert_called_once_with("dataloader", "model", "method_config")
+        method_fn.assert_called_once_with("dataloader", "model", "method_config", "mei_seed")
 
     def test_if_returned_mei_entity_is_correct(self, mei_method):
         mei_entity = mei_method().generate_mei("dataloader", "model", dict(key="key"))
