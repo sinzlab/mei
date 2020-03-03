@@ -8,11 +8,11 @@ from featurevis import methods
 
 class TestGradientAscent:
     @pytest.fixture
-    def gradient_ascent(self, dataloaders, config, set_seed, import_object, get_dims, get_initial_guess, ascend):
+    def gradient_ascent(self, dataloaders, model, config, set_seed, import_object, get_dims, get_initial_guess, ascend):
         return partial(
             methods.gradient_ascent,
             dataloaders,
-            "model",
+            model,
             config,
             "seed",
             set_seed=set_seed,
@@ -25,6 +25,10 @@ class TestGradientAscent:
     @pytest.fixture
     def dataloaders(self):
         return dict(train=dict(session1=None))
+
+    @pytest.fixture
+    def model(self):
+        return MagicMock()
 
     @pytest.fixture
     def config(self):
@@ -64,10 +68,10 @@ class TestGradientAscent:
         gradient_ascent()
         get_initial_guess.assert_called_once_with(1, 10, 24, 24)
 
-    def test_if_ascend_is_correctly_called(self, gradient_ascent, ascend):
+    def test_if_ascend_is_correctly_called(self, gradient_ascent, ascend, model):
         gradient_ascent()
         ascend.assert_called_once_with(
-            "model",
+            model,
             "initial_guess",
             optim_kwargs=dict(),
             transform=None,
@@ -82,3 +86,7 @@ class TestGradientAscent:
     def test_if_seed_is_correctly_set(self, gradient_ascent, set_seed):
         gradient_ascent()
         set_seed.assert_called_once_with("seed")
+
+    def test_if_eval_method_of_model_is_called(self, gradient_ascent, model):
+        gradient_ascent()
+        model.eval.assert_called_once_with()
