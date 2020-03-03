@@ -101,6 +101,7 @@ class MEIMethod:
     insert1: Callable[[Dict], None]
     __and__: Callable[[Dict], MEIMethod]
 
+    seed_table = None
     import_func = staticmethod(integration.import_module)
 
     def add_method(self, method_fn, method_config):
@@ -108,9 +109,17 @@ class MEIMethod:
 
     def generate_mei(self, dataloader, model, key):
         method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
+        mei_seed = (self.seed_table() & key).fetch1("mei_seed")
         method_fn = self.import_func(method_fn)
-        mei, evaluations = method_fn(dataloader, model, method_config)
+        mei, evaluations = method_fn(dataloader, model, method_config, mei_seed)
         return dict(key, evaluations=evaluations, mei=mei)
+
+
+class MEISeed:
+    definition = """
+    # contains seeds used to make the MEI generation process reproducible
+    mei_seed    : tinyint unsigned  # MEI seed
+    """
 
 
 class MEITemplate:
