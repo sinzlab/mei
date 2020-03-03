@@ -41,8 +41,6 @@ class MEISeed(tables.MEISeed, dj.Lookup):
 class MEIMethod(tables.MEIMethod, dj.Lookup):
     """Table that contains MEI methods and their configurations."""
 
-    seed_table = MEISeed
-
 
 class MEITemplate(tables.MEITemplate, dj.Computed):
     """MEI table template.
@@ -55,3 +53,4 @@ class MEITemplate(tables.MEITemplate, dj.Computed):
     """
 
     method_table = MEIMethod
+    seed_table = MEISeed

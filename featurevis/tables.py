@@ -107,11 +107,10 @@ class MEIMethod:
     def add_method(self, method_fn, method_config):
         self.insert1(dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config))
 
-    def generate_mei(self, dataloader, model, key):
+    def generate_mei(self, dataloader, model, key, seed):
         method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
-        mei_seed = (self.seed_table() & key).fetch1("mei_seed")
         method_fn = self.import_func(method_fn)
-        mei, evaluations = method_fn(dataloader, model, method_config, mei_seed)
+        mei, evaluations = method_fn(dataloader, model, method_config, seed)
         return dict(key, evaluations=evaluations, mei=mei)
 
 
@@ -128,6 +127,7 @@ class MEITemplate:
     -> self.method_table
     -> self.trained_model_table
     -> self.selector_table
+    -> self.seed_table
     ---
     mei                 : attach@minio  # the MEI as a tensor
     evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
@@ -136,6 +136,7 @@ class MEITemplate:
     trained_model_table = None
     selector_table = None
     method_table = None
+    seed_table = None
     model_loader_class = integration.ModelLoader
     save_func = staticmethod(torch.save)
     temp_dir_func = tempfile.TemporaryDirectory
@@ -148,8 +149,9 @@ class MEITemplate:
 
     def make(self, key):
         dataloaders, model = self.model_loader.load(key=key)
+        seed = (self.seed_table() & key).fetch1("seed")
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
-        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key)
+        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
         self._insert_mei(mei_entity)
 
     def _insert_mei(self, mei_entity):
