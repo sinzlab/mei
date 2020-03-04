@@ -77,9 +77,12 @@ class TestGradientAscent:
         gradient_ascent()
         get_dims.assert_called_once_with(dict(session1=None))
 
-    def test_if_get_initial_guess_is_correctly_called(self, gradient_ascent, get_initial_guess):
+    def test_if_get_initial_guess_is_correctly_called(self, gradient_ascent, get_initial_guess, cuda):
         gradient_ascent()
-        get_initial_guess.assert_called_once_with(1, 10, 24, 24)
+        if cuda:
+            get_initial_guess.assert_called_once_with(1, 10, 24, 24, device="cuda")
+        else:
+            get_initial_guess.assert_called_once_with(1, 10, 24, 24, device="cpu")
 
     def test_if_ascend_is_correctly_called(self, gradient_ascent, ascend, model, initial_guess):
         gradient_ascent()
@@ -108,10 +111,3 @@ class TestGradientAscent:
         gradient_ascent()
         if cuda:
             model.cuda.assert_called_once_with()
-
-    def test_if_cuda_method_of_initial_guess_is_called_depending_on_cuda_flag(
-        self, gradient_ascent, cuda, initial_guess
-    ):
-        gradient_ascent()
-        if cuda:
-            initial_guess.cuda.assert_called_once_with()
