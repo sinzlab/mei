@@ -47,7 +47,7 @@ def gradient_ascent(
     else:
         initial_guess = get_initial_guess(1, *mei_shape[1:], device="cpu")
     mei, evaluations, _ = ascend(model, initial_guess, **config)
-    return mei, evaluations
+    return mei.cpu(), evaluations
 
 
 def prepare_config(config, import_object):

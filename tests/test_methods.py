@@ -66,8 +66,14 @@ class TestGradientAscent:
         return MagicMock()
 
     @pytest.fixture
-    def ascend(self):
-        return MagicMock(return_value=("mei", "evaluations", "_"))
+    def ascend(self, mei):
+        return MagicMock(return_value=(mei, "evaluations", "_"))
+
+    @pytest.fixture
+    def mei(self):
+        mei = MagicMock()
+        mei.cpu.return_value = "mei"
+        return mei
 
     def test_if_import_object_is_correctly_called(self, gradient_ascent, import_object):
         gradient_ascent()
