@@ -161,11 +161,11 @@ class TestEnsembleModel:
         for member in members:
             member.eval.assert_called_once_with()
 
-    def test_if_ensemble_members_are_switched_to_cuda(self, members):
+    def test_if_to_is_correctly_called_on_all_ensemble_members(self, members):
         ensemble = integration.EnsembleModel(*members)
-        ensemble.cuda()
+        ensemble.to("arg", kwarg="kwarg")
         for member in members:
-            member.cuda.assert_called_once_with()
+            member.to.assert_called_once_with("arg", kwarg="kwarg")
 
 
 class TestConstrainedOutputModel:

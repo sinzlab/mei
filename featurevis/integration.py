@@ -139,10 +139,10 @@ class EnsembleModel:
         for member in self.members:
             member.eval()
 
-    def cuda(self):
-        """Transfers the parameters of all ensemble members a CUDA device."""
+    def to(self, *args, **kwargs):
+        """Moves and/or casts the parameters and buffers of all ensemble members."""
         for member in self.members:
-            member.cuda()
+            member.to(*args, **kwargs)
 
 
 class ConstrainedOutputModel:
