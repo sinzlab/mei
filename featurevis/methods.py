@@ -44,8 +44,9 @@ def gradient_ascent(
     device = config.pop("device")
     initial_guess = get_initial_guess(1, *mei_shape[1:], device=device)
     model.to(device)
-    mei, evaluations, _ = ascend(model, initial_guess, **config)
-    return mei.cpu(), evaluations
+    mei, function_evaluations, regularization_terms = ascend(model, initial_guess, **config)
+    output = dict(function_evaluations=function_evaluations, regularization_terms=regularization_terms)
+    return mei.cpu(), function_evaluations[-1], output
 
 
 def prepare_config(config, import_object):

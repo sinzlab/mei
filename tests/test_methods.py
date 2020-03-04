@@ -63,7 +63,7 @@ class TestGradientAscent:
 
     @pytest.fixture
     def ascend(self, mei):
-        return MagicMock(return_value=(mei, "evaluations", "_"))
+        return MagicMock(return_value=(mei, [1, 2, 3, 4, 5], []))
 
     @pytest.fixture
     def mei(self):
@@ -96,7 +96,7 @@ class TestGradientAscent:
         )
 
     def test_if_mei_and_evaluations_are_returned(self, gradient_ascent):
-        assert gradient_ascent() == ("mei", "evaluations")
+        assert gradient_ascent() == ("mei", 5, dict(function_evaluations=[1, 2, 3, 4, 5], regularization_terms=[]))
 
     def test_if_seed_is_correctly_set(self, gradient_ascent, set_seed):
         gradient_ascent()
