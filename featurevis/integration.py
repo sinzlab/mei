@@ -144,6 +144,9 @@ class EnsembleModel:
         for member in self.members:
             member.to(*args, **kwargs)
 
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}({', '.join(self.members)})"
+
 
 class ConstrainedOutputModel:
     """A model that has its output constrained.

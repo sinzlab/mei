@@ -167,6 +167,10 @@ class TestEnsembleModel:
         for member in members:
             member.to.assert_called_once_with("arg", kwarg="kwarg")
 
+    def test_repr(self):
+        ensemble = integration.EnsembleModel("member1", "member2", "member3")
+        assert str(ensemble) == "EnsembleModel(member1, member2, member3)"
+
 
 class TestConstrainedOutputModel:
     @pytest.fixture
