@@ -208,7 +208,7 @@ class TestMEIMethodMixin:
 
     @pytest.fixture
     def method_fn(self):
-        return MagicMock(return_value=("mei", "evaluations"))
+        return MagicMock(return_value=("mei", "score", "output"))
 
     def test_that_method_is_correctly_inserted(self, mei_method, insert1):
         mei_method().add_method("method_fn", "method_config")
@@ -231,7 +231,7 @@ class TestMEIMethodMixin:
 
     def test_if_returned_mei_entity_is_correct(self, mei_method):
         mei_entity = mei_method().generate_mei("dataloader", "model", dict(key="key"), "seed")
-        assert mei_entity == dict(key="key", evaluations="evaluations", mei="mei")
+        assert mei_entity == dict(key="key", mei="mei", score="score", output="output")
 
 
 class TestMEITemplateMixin:

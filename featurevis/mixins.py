@@ -107,8 +107,8 @@ class MEIMethodMixin:
     def generate_mei(self, dataloader, model, key, seed):
         method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
         method_fn = self.import_func(method_fn)
-        mei, evaluations = method_fn(dataloader, model, method_config, seed)
-        return dict(key, evaluations=evaluations, mei=mei)
+        mei, score, output = method_fn(dataloader, model, method_config, seed)
+        return dict(key, mei=mei, score=score, output=output)
 
 
 class MEISeedMixin:
