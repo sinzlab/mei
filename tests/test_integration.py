@@ -200,3 +200,7 @@ class TestConstrainedOutputModel:
         )
         constrained_model("x")
         model.assert_called_once_with("x", forward_kwarg="forward_kwarg")
+
+    def test_repr(self):
+        constrained_model = integration.ConstrainedOutputModel("model", 0, forward_kwargs=dict(kwarg="kwarg"))
+        assert str(constrained_model) == "ConstrainedOutputModel(model, 0, forward_kwargs={'kwarg': 'kwarg'})"
