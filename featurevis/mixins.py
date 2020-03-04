@@ -127,7 +127,8 @@ class MEITemplateMixin:
     -> self.seed_table
     ---
     mei                 : attach@minio  # the MEI as a tensor
-    evaluations         : longblob      # list of function evaluations at each iteration in the mei generation process 
+    score               : float         # some score depending on the used method function
+    output              : longblob      # object returned by the method function
     """
 
     trained_model_table = None
