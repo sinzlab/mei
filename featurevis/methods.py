@@ -42,6 +42,9 @@ def gradient_ascent(
     config = prepare_config(config, import_object)
     mei_shape = get_input_dimensions(dataloaders, get_dims)
     initial_guess = get_initial_guess(1, *mei_shape[1:])
+    if config.pop("cuda"):
+        model.cuda()
+        initial_guess.cuda()
     mei, evaluations, _ = ascend(model, initial_guess, **config)
     return mei, evaluations
 
