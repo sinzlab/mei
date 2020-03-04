@@ -191,8 +191,8 @@ class TestConstrainedOutputModel:
 
     def test_if_cuda_is_passed_to_model(self, model):
         constrained_model = integration.ConstrainedOutputModel(model, 0)
-        constrained_model.cuda()
-        model.cuda.assert_called_once_with()
+        constrained_model.to("arg", kwarg="kwarg")
+        model.to.assert_called_once_with("arg", kwarg="kwarg")
 
     def test_if_forward_kwargs_are_passed_to_model(self, model):
         constrained_model = integration.ConstrainedOutputModel(

@@ -180,6 +180,6 @@ class ConstrainedOutputModel:
         """Switches the model to evaluation mode."""
         self.model.eval()
 
-    def cuda(self):
-        """Transfers the parameters of the model to a CUDA device."""
-        self.model.cuda()
+    def to(self, *args, **kwargs):
+        """Moves and/or casts the parameters and buffers of the model."""
+        self.model.to(*args, **kwargs)
