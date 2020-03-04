@@ -175,7 +175,7 @@ class TestCSRFV1SelectorTemplate:
     def test_if_constrained_output_model_is_correctly_initialized(self, selector_template, constrained_output_model):
         selector_template().get_output_selected_model("model", "key")
         constrained_output_model.assert_called_once_with(
-            "model", "neuron_pos", forward_kwargs=dict(session_id="session_id")
+            "model", "neuron_pos", forward_kwargs=dict(data_key="session_id")
         )
 
     def test_if_output_selected_model_is_correctly_returned(self, selector_template):

@@ -82,7 +82,7 @@ class CSRFV1SelectorTemplate:
 
     def get_output_selected_model(self, model, key):
         neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
-        return self.constrained_output_model(model, neuron_pos, forward_kwargs=dict(session_id=session_id))
+        return self.constrained_output_model(model, neuron_pos, forward_kwargs=dict(data_key=session_id))
 
 
 class MEIMethod:
