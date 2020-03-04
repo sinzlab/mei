@@ -174,7 +174,7 @@ class ConstrainedOutputModel:
             A tensor representing the constrained output of the model.
         """
         output = self.model(x, *args, **self.forward_kwargs, **kwargs)
-        return output[self.constraint]
+        return output[:, self.constraint]
 
     def eval(self):
         """Switches the model to evaluation mode."""

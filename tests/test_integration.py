@@ -171,7 +171,7 @@ class TestEnsembleModel:
 class TestConstrainedOutputModel:
     @pytest.fixture
     def model(self):
-        return MagicMock(return_value=torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0]))
+        return MagicMock(return_value=torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]]))
 
     def test_if_input_is_passed_to_model(self, model):
         constrained_model = integration.ConstrainedOutputModel(model, 0)
