@@ -11,7 +11,7 @@ def does_not_raise():
     yield
 
 
-class TestTrainedEnsembleModelTemplate:
+class TestTrainedEnsembleModelTemplateMixin:
     @pytest.fixture
     def trained_ensemble_model_template(
         self, dataset_table, trained_model_table, ensemble_model_class, insert1, insert
@@ -114,7 +114,7 @@ class TestTrainedEnsembleModelTemplate:
         assert dataloaders == "dataloaders1"
 
 
-class TestCSRFV1SelectorTemplate:
+class TestCSRFV1SelectorTemplateMixin:
     @pytest.fixture
     def selector_template(self, dataset_table, constrained_output_model, insert, magic_and):
         selector_template = mixins.CSRFV1SelectorTemplateMixin
@@ -183,7 +183,7 @@ class TestCSRFV1SelectorTemplate:
         assert output_selected_model == "constrained_output_model"
 
 
-class TestMEIMethod:
+class TestMEIMethodMixin:
     @pytest.fixture
     def mei_method(self, insert1, magic_and, import_func):
         mei_method = mixins.MEIMethodMixin
@@ -234,7 +234,7 @@ class TestMEIMethod:
         assert mei_entity == dict(key="key", evaluations="evaluations", mei="mei")
 
 
-class TestMEITemplate:
+class TestMEITemplateMixin:
     @pytest.fixture
     def mei_template(
         self, trained_model_table, selector_table, method_table, seed_table, insert1, save_func, model_loader_class
