@@ -183,3 +183,6 @@ class ConstrainedOutputModel:
     def to(self, *args, **kwargs):
         """Moves and/or casts the parameters and buffers of the model."""
         self.model.to(*args, **kwargs)
+
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}({self.model}, {self.constraint}, forward_kwargs={self.forward_kwargs})"
