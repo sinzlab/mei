@@ -9,7 +9,7 @@ from nnfabrik.utility.dj_helpers import make_hash
 from . import integration
 
 
-class TrainedEnsembleModelTemplate:
+class TrainedEnsembleModelTemplateMixin:
     definition = """
     # contains ensemble ids
     -> self.dataset_table
@@ -53,7 +53,7 @@ class TrainedEnsembleModelTemplate:
         return dataloaders[0], self.ensemble_model_class(*models)
 
 
-class CSRFV1SelectorTemplate:
+class CSRFV1SelectorTemplateMixin:
     definition = """
     # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
     # the model. 
@@ -69,7 +69,7 @@ class CSRFV1SelectorTemplate:
     constrained_output_model = integration.ConstrainedOutputModel
 
     insert: Callable[[Dict], None]
-    __and__: Callable[[Dict], CSRFV1SelectorTemplate]
+    __and__: Callable[[Dict], CSRFV1SelectorTemplateMixin]
 
     @property
     def _key_source(self):
@@ -85,7 +85,7 @@ class CSRFV1SelectorTemplate:
         return self.constrained_output_model(model, neuron_pos, forward_kwargs=dict(data_key=session_id))
 
 
-class MEIMethod:
+class MEIMethodMixin:
     definition = """
     # contains methods for generating MEIs and their configurations.
     method_fn                           : varchar(64)   # name of the method function
@@ -96,7 +96,7 @@ class MEIMethod:
     """
 
     insert1: Callable[[Dict], None]
-    __and__: Callable[[Dict], MEIMethod]
+    __and__: Callable[[Dict], MEIMethodMixin]
 
     seed_table = None
     import_func = staticmethod(integration.import_module)
@@ -111,14 +111,14 @@ class MEIMethod:
         return dict(key, evaluations=evaluations, mei=mei)
 
 
-class MEISeed:
+class MEISeedMixin:
     definition = """
     # contains seeds used to make the MEI generation process reproducible
     mei_seed    : tinyint unsigned  # MEI seed
     """
 
 
-class MEITemplate:
+class MEITemplateMixin:
     definition = """
     # contains maximally exciting images (MEIs)
     -> self.method_table

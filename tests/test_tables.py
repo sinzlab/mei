@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from featurevis import tables
+from featurevis import mixins
 
 
 @contextmanager
@@ -16,7 +16,7 @@ class TestTrainedEnsembleModelTemplate:
     def trained_ensemble_model_template(
         self, dataset_table, trained_model_table, ensemble_model_class, insert1, insert
     ):
-        trained_ensemble_model_template = tables.TrainedEnsembleModelTemplate
+        trained_ensemble_model_template = mixins.TrainedEnsembleModelTemplateMixin
         trained_ensemble_model_template.dataset_table = dataset_table
         trained_ensemble_model_template.trained_model_table = trained_model_table
         trained_ensemble_model_template.ensemble_model_class = ensemble_model_class
@@ -117,7 +117,7 @@ class TestTrainedEnsembleModelTemplate:
 class TestCSRFV1SelectorTemplate:
     @pytest.fixture
     def selector_template(self, dataset_table, constrained_output_model, insert, magic_and):
-        selector_template = tables.CSRFV1SelectorTemplate
+        selector_template = mixins.CSRFV1SelectorTemplateMixin
         selector_template.dataset_table = dataset_table
         selector_template.constrained_output_model = constrained_output_model
         selector_template.dataset_fn = "dataset_fn"
@@ -186,7 +186,7 @@ class TestCSRFV1SelectorTemplate:
 class TestMEIMethod:
     @pytest.fixture
     def mei_method(self, insert1, magic_and, import_func):
-        mei_method = tables.MEIMethod
+        mei_method = mixins.MEIMethodMixin
         mei_method.insert1 = insert1
         mei_method.__and__ = magic_and
         mei_method.import_func = import_func
@@ -239,7 +239,7 @@ class TestMEITemplate:
     def mei_template(
         self, trained_model_table, selector_table, method_table, seed_table, insert1, save_func, model_loader_class
     ):
-        mei_template = tables.MEITemplate
+        mei_template = mixins.MEITemplateMixin
         mei_template.trained_model_table = trained_model_table
         mei_template.selector_table = selector_table
         mei_template.method_table = method_table

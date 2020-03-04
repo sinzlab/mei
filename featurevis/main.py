@@ -1,10 +1,10 @@
 import datajoint as dj
 
 from nnfabrik.main import Dataset, schema
-from . import tables
+from . import mixins
 
 
-class TrainedEnsembleModelTemplate(tables.TrainedEnsembleModelTemplate, dj.Manual):
+class TrainedEnsembleModelTemplate(mixins.TrainedEnsembleModelTemplateMixin, dj.Manual):
     """TrainedEnsembleModel table template.
 
     To create a functional "TrainedEnsembleModel" table, create a new class that inherits from this template and
@@ -16,11 +16,11 @@ class TrainedEnsembleModelTemplate(tables.TrainedEnsembleModelTemplate, dj.Manua
 
     dataset_table = Dataset
 
-    class Member(tables.TrainedEnsembleModelTemplate.Member, dj.Part):
+    class Member(mixins.TrainedEnsembleModelTemplateMixin.Member, dj.Part):
         """Member table template."""
 
 
-class CSRFV1SelectorTemplate(tables.CSRFV1SelectorTemplate, dj.Computed):
+class CSRFV1SelectorTemplate(mixins.CSRFV1SelectorTemplateMixin, dj.Computed):
     """CSRF V1 selector table template.
 
     To create a functional "CSRFV1Selector" table, create a new class that inherits from this template and decorate it
@@ -33,16 +33,16 @@ class CSRFV1SelectorTemplate(tables.CSRFV1SelectorTemplate, dj.Computed):
 
 
 @schema
-class MEISeed(tables.MEISeed, dj.Lookup):
+class MEISeed(mixins.MEISeedMixin, dj.Lookup):
     """Seed table for MEI method."""
 
 
 @schema
-class MEIMethod(tables.MEIMethod, dj.Lookup):
+class MEIMethod(mixins.MEIMethodMixin, dj.Lookup):
     """Table that contains MEI methods and their configurations."""
 
 
-class MEITemplate(tables.MEITemplate, dj.Computed):
+class MEITemplate(mixins.MEITemplateMixin, dj.Computed):
     """MEI table template.
 
     To create a functional "MEI" table, create a new class that inherits from this template and decorate it with your
