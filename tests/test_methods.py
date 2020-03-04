@@ -31,19 +31,15 @@ class TestGradientAscent:
         return MagicMock()
 
     @pytest.fixture
-    def config(self, cuda):
+    def config(self):
         return dict(
             optim_kwargs=None,
             transform=None,
             regularization="module.function",
             gradient_f=None,
             post_update=None,
-            cuda=cuda,
+            device="device",
         )
-
-    @pytest.fixture(params=[True, False])
-    def cuda(self, request):
-        return request.param
 
     @pytest.fixture
     def set_seed(self):
@@ -83,12 +79,9 @@ class TestGradientAscent:
         gradient_ascent()
         get_dims.assert_called_once_with(dict(session1=None))
 
-    def test_if_get_initial_guess_is_correctly_called(self, gradient_ascent, get_initial_guess, cuda):
+    def test_if_get_initial_guess_is_correctly_called(self, gradient_ascent, get_initial_guess):
         gradient_ascent()
-        if cuda:
-            get_initial_guess.assert_called_once_with(1, 10, 24, 24, device="cuda")
-        else:
-            get_initial_guess.assert_called_once_with(1, 10, 24, 24, device="cpu")
+        get_initial_guess.assert_called_once_with(1, 10, 24, 24, device="device")
 
     def test_if_ascend_is_correctly_called(self, gradient_ascent, ascend, model, initial_guess):
         gradient_ascent()
@@ -113,7 +106,6 @@ class TestGradientAscent:
         gradient_ascent()
         model.eval.assert_called_once_with()
 
-    def test_if_cuda_method_of_model_is_called_depending_on_cuda_flag(self, gradient_ascent, cuda, model):
+    def test_if_model_is_transferred_to_device(self, gradient_ascent, model):
         gradient_ascent()
-        if cuda:
-            model.cuda.assert_called_once_with()
+        model.to.assert_called_once_with("device")
