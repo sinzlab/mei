@@ -6,6 +6,50 @@ import pytest
 from featurevis import methods
 
 
+class TestAscend:
+    @pytest.fixture
+    def config(self):
+        return dict(key1="value1", key2="value2")
+
+    @pytest.fixture
+    def ascending_func(self, progression, regularization):
+        function_evaluations = ["initial_evaluation", "intermittent_evaluation", "final_evaluation"]
+        if progression:
+            mei = ["initial_mei", "intermittent_mei", "final_mei"]
+        else:
+            mei = "final_mei"
+        if regularization:
+            regularization_terms = ["initial_term", "intermittent_term", "final_term"]
+        else:
+            regularization_terms = []
+        return MagicMock(return_value=(mei, function_evaluations, regularization_terms))
+
+    @pytest.fixture(params=[True, False])
+    def progression(self, request):
+        return request.param
+
+    @pytest.fixture(params=[True, False])
+    def regularization(self, request):
+        return request.param
+
+    def test_if_gradient_ascent_is_correctly_called(self, config, ascending_func):
+        methods.ascend("model", "initial_guess", config, ascending_func=ascending_func)
+        ascending_func.assert_called_once_with("model", "initial_guess", key1="value1", key2="value2")
+
+    def test_if_result_is_correctly_returned(self, config, ascending_func, progression, regularization):
+        expected_output = dict(
+            function_evaluations=["initial_evaluation", "intermittent_evaluation", "final_evaluation"]
+        )
+        if progression:
+            expected_output["progression"] = ["initial_mei", "intermittent_mei", "final_mei"]
+        if regularization:
+            expected_output["regularization_terms"] = ["initial_term", "intermittent_term", "final_term"]
+        mei, score, output = methods.ascend("model", "initial_guess", config, ascending_func=ascending_func)
+        assert mei == "final_mei"
+        assert score == "final_evaluation"
+        assert output == expected_output
+
+
 class TestGradientAscent:
     @pytest.fixture
     def gradient_ascent(self, dataloaders, model, config, set_seed, import_object, get_dims, get_initial_guess, ascend):

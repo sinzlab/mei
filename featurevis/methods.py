@@ -9,6 +9,18 @@ def import_path(path):
     return dynamic_import(*split_module_name(path))
 
 
+def ascend(model, initial_guess, config, ascending_func=core.gradient_ascent):
+    """Wrapper around original gradient ascent used to package up the returned result."""
+    mei, function_evaluations, regularization_terms = ascending_func(model, initial_guess, **config)
+    output = dict(function_evaluations=function_evaluations)
+    if isinstance(mei, list):
+        output["progression"] = mei
+        mei = mei[-1]
+    if regularization_terms:
+        output["regularization_terms"] = regularization_terms
+    return mei, function_evaluations[-1], output
+
+
 def gradient_ascent(
     dataloaders,
     model,
