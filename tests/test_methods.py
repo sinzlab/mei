@@ -52,7 +52,9 @@ class TestAscend:
 
 class TestGradientAscent:
     @pytest.fixture
-    def gradient_ascent(self, dataloaders, model, config, set_seed, import_object, get_dims, get_initial_guess, ascend):
+    def gradient_ascent(
+        self, dataloaders, model, config, set_seed, import_object, get_dims, get_initial_guess, ascend_func
+    ):
         return partial(
             methods.gradient_ascent,
             dataloaders,
@@ -63,7 +65,7 @@ class TestGradientAscent:
             import_object=import_object,
             get_dims=get_dims,
             get_initial_guess=get_initial_guess,
-            ascend=ascend,
+            ascend_func=ascend_func,
         )
 
     @pytest.fixture
@@ -106,14 +108,8 @@ class TestGradientAscent:
         return MagicMock()
 
     @pytest.fixture
-    def ascend(self, mei):
-        return MagicMock(return_value=(mei, [1, 2, 3, 4, 5], []))
-
-    @pytest.fixture
-    def mei(self):
-        mei = MagicMock()
-        mei.cpu.return_value = "mei"
-        return mei
+    def ascend_func(self):
+        return MagicMock(return_value=("mei", "score", "output"))
 
     def test_if_import_object_is_correctly_called(self, gradient_ascent, import_object):
         gradient_ascent()
@@ -127,20 +123,22 @@ class TestGradientAscent:
         gradient_ascent()
         get_initial_guess.assert_called_once_with(1, 10, 24, 24, device="device")
 
-    def test_if_ascend_is_correctly_called(self, gradient_ascent, ascend, model, initial_guess):
+    def test_if_ascend_is_correctly_called(self, gradient_ascent, ascend_func, model, initial_guess):
         gradient_ascent()
-        ascend.assert_called_once_with(
+        ascend_func.assert_called_once_with(
             model,
             initial_guess,
-            optim_kwargs=dict(),
-            transform=None,
-            regularization="imported_function",
-            gradient_f=None,
-            post_update=None,
+            dict(
+                optim_kwargs=dict(),
+                transform=None,
+                regularization="imported_function",
+                gradient_f=None,
+                post_update=None,
+            ),
         )
 
     def test_if_mei_and_evaluations_are_returned(self, gradient_ascent):
-        assert gradient_ascent() == ("mei", 5, dict(function_evaluations=[1, 2, 3, 4, 5], regularization_terms=[]))
+        assert gradient_ascent() == ("mei", "score", "output")
 
     def test_if_seed_is_correctly_set(self, gradient_ascent, set_seed):
         gradient_ascent()

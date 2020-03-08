@@ -30,7 +30,7 @@ def gradient_ascent(
     import_object=import_path,
     get_dims=get_dims_for_loader_dict,
     get_initial_guess=torch.randn,
-    ascend=core.gradient_ascent,
+    ascend_func=ascend,
 ):
     """Generates MEIs.
 
@@ -43,7 +43,7 @@ def gradient_ascent(
         import_object: Function used to import functions given a path as a string. For testing purposes.
         get_dims: Function used to get the input and output dimensions for all dataloaders. For testing purposes.
         get_initial_guess: Function used to get the initial random guess for the gradient ascent. For testing purposes.
-        ascend: Function used to do the actual ascending. For testing purposes.
+        ascend_func: Function used to do the actual ascending. For testing purposes.
 
     Returns:
         The MEI as a tensor and a list of model evaluations at each step of the gradient ascent process.
@@ -56,9 +56,7 @@ def gradient_ascent(
     device = config.pop("device")
     initial_guess = get_initial_guess(1, *mei_shape[1:], device=device)
     model.to(device)
-    mei, function_evaluations, regularization_terms = ascend(model, initial_guess, **config)
-    output = dict(function_evaluations=function_evaluations, regularization_terms=regularization_terms)
-    return mei.cpu(), function_evaluations[-1], output
+    return ascend_func(model, initial_guess, config)
 
 
 def prepare_config(config, import_object):
