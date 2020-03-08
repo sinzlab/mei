@@ -250,7 +250,7 @@ class TestMEITemplateMixin:
         temp_dir_func = MagicMock()
         temp_dir_func.return_value.__enter__.return_value = "/temp_dir"
         mei_template.temp_dir_func = temp_dir_func
-        mei_template.create_random_filename = MagicMock(return_value="filename")
+        mei_template._create_random_filename = MagicMock(return_value="filename")
         return mei_template
 
     @pytest.fixture

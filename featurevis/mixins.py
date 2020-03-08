@@ -120,10 +120,6 @@ class MEISeedMixin:
     """
 
 
-def create_random_filename(length=32):
-    return "".join(choice(ascii_letters) for _ in range(length))
-
-
 class MEITemplateMixin:
     definition = """
     # contains maximally exciting images (MEIs)
@@ -143,7 +139,6 @@ class MEITemplateMixin:
     seed_table = None
     model_loader_class = integration.ModelLoader
     save_func = staticmethod(torch.save)
-    create_random_filename = staticmethod(create_random_filename)
     temp_dir_func = tempfile.TemporaryDirectory
 
     insert1: Callable[[Dict], None]
@@ -162,9 +157,13 @@ class MEITemplateMixin:
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
         mei = mei_entity.pop("mei").squeeze()
-        filename = self.create_random_filename() + ".pth.tar"
+        filename = self._create_random_filename() + ".pth.tar"
         with self.temp_dir_func() as temp_dir:
             filepath = os.path.join(temp_dir, filename)
             self.save_func(mei, filepath)
             mei_entity["mei"] = filepath
             self.insert1(mei_entity)
+
+    @staticmethod
+    def _create_random_filename(length=32):
+        return "".join(choice(ascii_letters) for _ in range(length))
