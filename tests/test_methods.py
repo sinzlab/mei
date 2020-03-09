@@ -12,40 +12,47 @@ class TestAscend:
         return dict(key1="value1", key2="value2")
 
     @pytest.fixture
-    def ascending_func(self, progression, regularization):
+    def ascending_func(self, mei, regularization):
         function_evaluations = ["initial_evaluation", "intermittent_evaluation", "final_evaluation"]
-        if progression:
-            mei = ["initial_mei", "intermittent_mei", "final_mei"]
-        else:
-            mei = "final_mei"
         if regularization:
             regularization_terms = ["initial_term", "intermittent_term", "final_term"]
         else:
             regularization_terms = []
         return MagicMock(return_value=(mei, function_evaluations, regularization_terms))
 
-    @pytest.fixture(params=[True, False])
-    def progression(self, request):
-        return request.param
+    @pytest.fixture
+    def mei(self, final_mei, progression):
+        if progression:
+            return [MagicMock(name="initial_mei"), MagicMock(name="intermittent_mei"), final_mei]
+        else:
+            return final_mei
 
     @pytest.fixture(params=[True, False])
     def regularization(self, request):
         return request.param
 
+    @pytest.fixture(params=[True, False])
+    def progression(self, request):
+        return request.param
+
+    @pytest.fixture
+    def final_mei(self):
+        return MagicMock(name="final_mei")
+
     def test_if_gradient_ascent_is_correctly_called(self, config, ascending_func):
         methods.ascend("model", "initial_guess", config, ascending_func=ascending_func)
         ascending_func.assert_called_once_with("model", "initial_guess", key1="value1", key2="value2")
 
-    def test_if_result_is_correctly_returned(self, config, ascending_func, progression, regularization):
+    def test_if_result_is_correctly_returned(self, config, ascending_func, progression, regularization, mei, final_mei):
         expected_output = dict(
             function_evaluations=["initial_evaluation", "intermittent_evaluation", "final_evaluation"]
         )
         if progression:
-            expected_output["progression"] = ["initial_mei", "intermittent_mei", "final_mei"]
+            expected_output["progression"] = mei
         if regularization:
             expected_output["regularization_terms"] = ["initial_term", "intermittent_term", "final_term"]
         mei, score, output = methods.ascend("model", "initial_guess", config, ascending_func=ascending_func)
-        assert mei == "final_mei"
+        assert mei is final_mei
         assert score == "final_evaluation"
         assert output == expected_output
 
