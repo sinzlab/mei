@@ -14,8 +14,11 @@ def ascend(model, initial_guess, config, ascending_func=core.gradient_ascent):
     mei, function_evaluations, regularization_terms = ascending_func(model, initial_guess, **config)
     output = dict(function_evaluations=function_evaluations)
     if isinstance(mei, list):
+        mei = [m.cpu().squeeze() for m in mei]
         output["progression"] = mei
         mei = mei[-1]
+    else:
+        mei = mei.cpu().squeeze()
     if regularization_terms:
         output["regularization_terms"] = regularization_terms
     return mei, function_evaluations[-1], output

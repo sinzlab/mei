@@ -23,7 +23,11 @@ class TestAscend:
     @pytest.fixture
     def mei(self, final_mei, progression):
         if progression:
-            return [MagicMock(name="initial_mei"), MagicMock(name="intermittent_mei"), final_mei]
+            initial_mei = MagicMock()
+            initial_mei.cpu.return_value.squeeze.return_value = "initial_mei"
+            intermittent_mei = MagicMock()
+            intermittent_mei.cpu.return_value.squeeze.return_value = "intermittent_mei"
+            return [initial_mei, intermittent_mei, final_mei]
         else:
             return final_mei
 
@@ -37,24 +41,34 @@ class TestAscend:
 
     @pytest.fixture
     def final_mei(self):
-        return MagicMock(name="final_mei")
+        final_mei = MagicMock(name="final_mei")
+        final_mei.cpu.return_value.squeeze.return_value = "final_mei"
+        return final_mei
 
     def test_if_gradient_ascent_is_correctly_called(self, config, ascending_func):
         methods.ascend("model", "initial_guess", config, ascending_func=ascending_func)
         ascending_func.assert_called_once_with("model", "initial_guess", key1="value1", key2="value2")
 
-    def test_if_result_is_correctly_returned(self, config, ascending_func, progression, regularization, mei, final_mei):
+    def test_if_result_is_correctly_returned(self, config, ascending_func, progression, regularization):
         expected_output = dict(
             function_evaluations=["initial_evaluation", "intermittent_evaluation", "final_evaluation"]
         )
         if progression:
-            expected_output["progression"] = mei
+            expected_output["progression"] = ["initial_mei", "intermittent_mei", "final_mei"]
         if regularization:
             expected_output["regularization_terms"] = ["initial_term", "intermittent_term", "final_term"]
         mei, score, output = methods.ascend("model", "initial_guess", config, ascending_func=ascending_func)
-        assert mei is final_mei
+        assert mei == "final_mei"
         assert score == "final_evaluation"
         assert output == expected_output
+
+    def test_if_mei_is_transferred_to_cpu(self, config, ascending_func, progression, mei, final_mei):
+        methods.ascend("model", "initial_guess", config, ascending_func=ascending_func)
+        final_mei.cpu.assert_called_once_with()
+        if progression:
+            meis = mei
+            for mei in meis:
+                mei.cpu.assert_called_once_with()
 
 
 class TestGradientAscent:
