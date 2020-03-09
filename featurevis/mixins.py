@@ -156,18 +156,17 @@ class MEITemplateMixin:
 
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
-        mei = mei_entity.pop("mei")
-        output = mei_entity.pop("output")
-        mei_filename = "mei_" + self._create_random_filename() + ".pth.tar"
-        output_filename = "output_" + self._create_random_filename() + ".pth.tar"
         with self.temp_dir_func() as temp_dir:
-            mei_filepath = os.path.join(temp_dir, mei_filename)
-            output_filepath = os.path.join(temp_dir, output_filename)
-            self.save_func(mei, mei_filepath)
-            self.save_func(output, output_filepath)
-            mei_entity["mei"] = mei_filepath
-            mei_entity["output"] = output_filepath
+            for name in ("mei", "output"):
+                self._save_to_disk(mei_entity, temp_dir, name)
             self.insert1(mei_entity)
+
+    def _save_to_disk(self, mei_entity, temp_dir, name):
+        data = mei_entity.pop(name)
+        filename = name + "_" + self._create_random_filename() + ".pth.tar"
+        filepath = os.path.join(temp_dir, filename)
+        self.save_func(data, filepath)
+        mei_entity[name] = filepath
 
     @staticmethod
     def _create_random_filename(length=32):
