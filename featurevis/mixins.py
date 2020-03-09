@@ -130,7 +130,7 @@ class MEITemplateMixin:
     ---
     mei                 : attach@minio  # the MEI as a tensor
     score               : float         # some score depending on the used method function
-    output              : longblob      # object returned by the method function
+    output              : attach@minio  # object returned by the method function
     """
 
     trained_model_table = None
@@ -157,11 +157,16 @@ class MEITemplateMixin:
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
         mei = mei_entity.pop("mei")
-        filename = self._create_random_filename() + ".pth.tar"
+        output = mei_entity.pop("output")
+        mei_filename = "mei_" + self._create_random_filename() + ".pth.tar"
+        output_filename = "output_" + self._create_random_filename() + ".pth.tar"
         with self.temp_dir_func() as temp_dir:
-            filepath = os.path.join(temp_dir, filename)
-            self.save_func(mei, filepath)
-            mei_entity["mei"] = filepath
+            mei_filepath = os.path.join(temp_dir, mei_filename)
+            output_filepath = os.path.join(temp_dir, output_filename)
+            self.save_func(mei, mei_filepath)
+            self.save_func(output, output_filepath)
+            mei_entity["mei"] = mei_filepath
+            mei_entity["output"] = output_filepath
             self.insert1(mei_entity)
 
     @staticmethod

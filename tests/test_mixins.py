@@ -250,7 +250,7 @@ class TestMEITemplateMixin:
         temp_dir_func = MagicMock()
         temp_dir_func.return_value.__enter__.return_value = "/temp_dir"
         mei_template.temp_dir_func = temp_dir_func
-        mei_template._create_random_filename = MagicMock(return_value="filename")
+        mei_template._create_random_filename = MagicMock(side_effect=["filename1", "filename2"])
         return mei_template
 
     @pytest.fixture
@@ -266,7 +266,7 @@ class TestMEITemplateMixin:
     @pytest.fixture
     def method_table(self):
         method_table = MagicMock()
-        method_table.return_value.generate_mei.return_value = dict(mei="mei")
+        method_table.return_value.generate_mei.return_value = dict(mei="mei", output="output")
         return method_table
 
     @pytest.fixture
@@ -318,8 +318,13 @@ class TestMEITemplateMixin:
 
     def test_if_mei_is_correctly_saved(self, mei_template, save_func):
         mei_template().make("key")
-        save_func.assert_called_once_with("mei", "/temp_dir/filename.pth.tar")
+        assert save_func.call_count == 2
+        save_func.has_calls(
+            call("mei", "/temp_dir/mei_filename1.pth.tar"), call("output", "/temp_dir/output_filename2.pth.tar")
+        )
 
     def test_if_mei_entity_is_correctly_saved(self, mei_template, insert1):
         mei_template().make("key")
-        insert1.assert_called_once_with(dict(mei="/temp_dir/filename.pth.tar"))
+        insert1.assert_called_once_with(
+            dict(mei="/temp_dir/mei_filename1.pth.tar", output="/temp_dir/output_filename2.pth.tar")
+        )
