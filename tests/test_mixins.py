@@ -266,9 +266,7 @@ class TestMEITemplateMixin:
     @pytest.fixture
     def method_table(self):
         method_table = MagicMock()
-        mei_entity = MagicMock()
-        mei_entity.squeeze.return_value = "mei"
-        method_table.return_value.generate_mei.return_value = dict(mei=mei_entity)
+        method_table.return_value.generate_mei.return_value = dict(mei="mei")
         return method_table
 
     @pytest.fixture

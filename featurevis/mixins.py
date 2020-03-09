@@ -156,7 +156,7 @@ class MEITemplateMixin:
 
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
-        mei = mei_entity.pop("mei").squeeze()
+        mei = mei_entity.pop("mei")
         filename = self._create_random_filename() + ".pth.tar"
         with self.temp_dir_func() as temp_dir:
             filepath = os.path.join(temp_dir, filename)
