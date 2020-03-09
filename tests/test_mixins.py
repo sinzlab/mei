@@ -237,7 +237,7 @@ class TestMEIMethodMixin:
 class TestMEITemplateMixin:
     @pytest.fixture
     def mei_template(
-        self, trained_model_table, selector_table, method_table, seed_table, insert1, save_func, model_loader_class
+        self, trained_model_table, selector_table, method_table, seed_table, insert1, save, model_loader_class
     ):
         mei_template = mixins.MEITemplateMixin
         mei_template.trained_model_table = trained_model_table
@@ -245,11 +245,11 @@ class TestMEITemplateMixin:
         mei_template.method_table = method_table
         mei_template.seed_table = seed_table
         mei_template.insert1 = insert1
-        mei_template.save_func = save_func
+        mei_template.save = save
         mei_template.model_loader_class = model_loader_class
-        temp_dir_func = MagicMock()
-        temp_dir_func.return_value.__enter__.return_value = "/temp_dir"
-        mei_template.temp_dir_func = temp_dir_func
+        get_temp_dir = MagicMock()
+        get_temp_dir.return_value.__enter__.return_value = "/temp_dir"
+        mei_template.get_temp_dir = get_temp_dir
         mei_template._create_random_filename = MagicMock(side_effect=["filename1", "filename2"])
         return mei_template
 
@@ -280,7 +280,7 @@ class TestMEITemplateMixin:
         return MagicMock()
 
     @pytest.fixture
-    def save_func(self):
+    def save(self):
         return MagicMock()
 
     @pytest.fixture
@@ -316,10 +316,10 @@ class TestMEITemplateMixin:
             "dataloaders", "output_selected_model", "key", "seed"
         )
 
-    def test_if_mei_is_correctly_saved(self, mei_template, save_func):
+    def test_if_mei_is_correctly_saved(self, mei_template, save):
         mei_template().make("key")
-        assert save_func.call_count == 2
-        save_func.has_calls(
+        assert save.call_count == 2
+        save.has_calls(
             call("mei", "/temp_dir/mei_filename1.pth.tar"), call("output", "/temp_dir/output_filename2.pth.tar")
         )
 

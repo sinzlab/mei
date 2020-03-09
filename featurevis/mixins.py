@@ -138,8 +138,8 @@ class MEITemplateMixin:
     method_table = None
     seed_table = None
     model_loader_class = integration.ModelLoader
-    save_func = staticmethod(torch.save)
-    temp_dir_func = tempfile.TemporaryDirectory
+    save = staticmethod(torch.save)
+    get_temp_dir = tempfile.TemporaryDirectory
 
     insert1: Callable[[Dict], None]
 
@@ -156,7 +156,7 @@ class MEITemplateMixin:
 
     def _insert_mei(self, mei_entity):
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
-        with self.temp_dir_func() as temp_dir:
+        with self.get_temp_dir() as temp_dir:
             for name in ("mei", "output"):
                 self._save_to_disk(mei_entity, temp_dir, name)
             self.insert1(mei_entity)
@@ -165,7 +165,7 @@ class MEITemplateMixin:
         data = mei_entity.pop(name)
         filename = name + "_" + self._create_random_filename() + ".pth.tar"
         filepath = os.path.join(temp_dir, filename)
-        self.save_func(data, filepath)
+        self.save(data, filepath)
         mei_entity[name] = filepath
 
     @staticmethod
