@@ -20,9 +20,11 @@ class TestNumIterations:
     @pytest.mark.parametrize("num_iterations", [0, 1, 1000])
     def test_call(self, optimized, num_iterations):
         optimized = optimized(num_iterations)
+        mei = MagicMock(name="mei")
+        evaluation = 0.5
         for _ in range(num_iterations):
-            assert optimized("current_optimum") is False
-        assert optimized("current_optimum") is True
+            assert optimized(mei, evaluation) is False
+        assert optimized(mei, evaluation) is True
 
     def test_repr(self, optimized):
         assert optimized(5).__repr__() == f"NumIterations(5)"
@@ -121,10 +123,10 @@ class TestOptimize:
     def num_iterations(self, request):
         return request.param
 
-    def test_if_optimized_is_called_correctly(self, optimize, mei, optimized):
+    def test_if_optimized_is_called_correctly(self, optimize, mei, optimized, evaluation):
         optimized = optimized()
         optimize(optimized)
-        optimized.assert_called_with(mei)
+        optimized.assert_called_with(mei, evaluation)
 
     def test_if_optimizer_gradient_gets_zeroed_correctly(self, optimize, optimizer, optimized):
         optimize(optimized())
@@ -159,7 +161,7 @@ class TestOptimize:
 
     def test_if_mei_is_evaluated_correct_number_of_times(self, optimize, mei, optimized, num_iterations):
         optimize(optimized(num_iterations))
-        assert mei.evaluate.call_count == num_iterations
+        assert mei.evaluate.call_count == num_iterations + 1
 
     def test_if_optimizer_takes_correct_number_of_steps(self, optimize, optimizer, optimized, num_iterations):
         optimize(optimized(num_iterations))

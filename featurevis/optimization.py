@@ -6,7 +6,7 @@ class OptimizationChecker(ABC):
     """Implements the interface used to check if the MEI optimization process has reached an acceptable result."""
 
     @abstractmethod
-    def __call__(self, mei: MEI) -> bool:
+    def __call__(self, mei: MEI, evaluation: float) -> bool:
         """Should return "True" if the MEI optimization process has reached an acceptable result."""
 
 
@@ -22,7 +22,7 @@ class NumIterations(OptimizationChecker):
         self.num_iterations = num_iterations
         self._current_iteration = 0
 
-    def __call__(self, mei: MEI) -> bool:
+    def __call__(self, mei: MEI, evaluation: float) -> bool:
         """Stops the optimization process after a set number of steps by returning True."""
         if self._current_iteration == self.num_iterations:
             return True
@@ -80,7 +80,8 @@ def optimize(mei, optimizer, optimized):
     Returns:
         A tensor of floats having the same shape as "initial_guess" representing the input that maximizes the function.
     """
-    while not optimized(mei):
+    evaluation = mei.evaluate()
+    while not optimized(mei, evaluation):
         optimizer.zero_grad()
         evaluation = mei.evaluate()
         (-evaluation).backward()
