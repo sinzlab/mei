@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class MEI:
     """Wrapper around the function and the MEI tensor."""
 
-    def __init__(self, func: Callable, initial_guess: Tensor):
+    def __init__(self, func: Callable[[Tensor], Tensor], initial_guess: Tensor):
         """Initializes MEI.
 
         Args:
