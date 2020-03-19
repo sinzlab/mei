@@ -10,7 +10,7 @@ class OptimizationChecker(ABC):
         """Should return "True" if the MEI optimization process has reached an acceptable result."""
 
 
-class NumIterations:
+class NumIterations(OptimizationChecker):
     """Callable that stops the optimization process after a specified number of steps."""
 
     def __init__(self, num_iterations):
@@ -23,7 +23,7 @@ class NumIterations:
         self._current_iteration = 0
 
     def __call__(self, mei: MEI) -> bool:
-        """Stops the optimization process after a set number of steps by returning False."""
+        """Stops the optimization process after a set number of steps by returning True."""
         if self._current_iteration == self.num_iterations:
             return True
         else:
