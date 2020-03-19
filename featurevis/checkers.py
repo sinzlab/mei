@@ -3,6 +3,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
+from torch import Tensor
+
 from .optimization import MEI
 
 
@@ -10,7 +12,7 @@ class OptimizationChecker(ABC):
     """Implements the interface used to check if the MEI optimization process has reached an acceptable result."""
 
     @abstractmethod
-    def __call__(self, mei: MEI, evaluation: float) -> bool:
+    def __call__(self, mei: MEI, evaluation: Tensor) -> bool:
         """Should return "True" if the MEI optimization process has reached an acceptable result."""
 
 
