@@ -49,8 +49,7 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> 
     Args:
         mei: An instance of the to be optimized MEI.
         optimizer: A PyTorch-style optimizer class.
-        optimized: A callable that receives the current optimal input as its argument before each optimization step
-            and returns a boolean. The optimization process will be stopped if it returns True.
+        optimized: A subclass of "OptimizationChecker" used to stop the optimization process.
 
     Returns:
         A tensor of floats having the same shape as "initial_guess" representing the input that maximizes the function.
