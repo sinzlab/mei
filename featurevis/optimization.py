@@ -1,3 +1,15 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+
+
+class OptimizationChecker(ABC):
+    """Implements the interface used to check if the MEI optimization process has reached an acceptable result."""
+
+    @abstractmethod
+    def __call__(self, mei: MEI) -> bool:
+        """Should return "True" if the MEI optimization process has reached an acceptable result."""
+
+
 class NumIterations:
     """Callable that stops the optimization process after a specified number of steps."""
 
@@ -10,7 +22,7 @@ class NumIterations:
         self.num_iterations = num_iterations
         self._current_iteration = 0
 
-    def __call__(self, current_optimum):
+    def __call__(self, mei: MEI) -> bool:
         """Stops the optimization process after a set number of steps by returning False."""
         if self._current_iteration == self.num_iterations:
             return True
