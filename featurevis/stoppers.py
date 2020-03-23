@@ -1,4 +1,4 @@
-"""Contains callable classes used to check if the MEI optimization process has reached an acceptable result."""
+"""Contains callable classes used to stop the MEI optimization process once it has reached an acceptable result."""
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
@@ -8,15 +8,15 @@ from torch import Tensor
 from .optimization import MEI
 
 
-class OptimizationChecker(ABC):
-    """Implements the interface used to check if the MEI optimization process has reached an acceptable result."""
+class OptimizationStopper(ABC):
+    """Implements the interface used to stop the MEI optimization process once it has reached an acceptable result."""
 
     @abstractmethod
     def __call__(self, mei: MEI, evaluation: Tensor) -> bool:
         """Should return "True" if the MEI optimization process has reached an acceptable result."""
 
 
-class NumIterations(OptimizationChecker):
+class NumIterations(OptimizationStopper):
     """Callable that stops the optimization process after a specified number of steps."""
 
     def __init__(self, num_iterations):

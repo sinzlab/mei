@@ -113,8 +113,8 @@ def ascend_gradient(
 
     optimizer_class = resolve_func(config["optimizer"], "torch.optim")
     optimizer = optimizer_class([initial_guess], **config["optimizer_kwargs"])
-    checker_class = resolve_func(config["checker"], "featurevis.checkers")
-    checker = checker_class(**config["checker_kwargs"])
+    stopper_class = resolve_func(config["stopper"], "featurevis.stoppers")
+    stopper = stopper_class(**config["stopper_kwargs"])
 
-    final_evaluation, mei = optimize_func(mei, optimizer, checker)
+    final_evaluation, mei = optimize_func(mei, optimizer, stopper)
     return mei, final_evaluation, dict()

@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from torch import Tensor
     from torch.optim.optimizer import Optimizer
 
-    from .checkers import OptimizationChecker
+    from .stoppers import OptimizationStopper
 
 
 class MEI:
@@ -43,13 +43,13 @@ class MEI:
         return f"{self.__class__.__qualname__}({self.func}, {self.initial_guess})"
 
 
-def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> Tuple[float, Tensor]:
+def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:
         mei: An instance of the to be optimized MEI.
         optimizer: A PyTorch-style optimizer class.
-        optimized: A subclass of "OptimizationChecker" used to stop the optimization process.
+        optimized: A subclass of "OptimizationStopper" used to stop the optimization process.
 
     Returns:
         A float representing the final evaluation and a tensor of floats having the same shape as "initial_guess"

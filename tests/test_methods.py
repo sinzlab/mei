@@ -206,8 +206,8 @@ class TestAscendGradient:
             device="cpu",
             optimizer="optimizer",
             optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
-            checker="checker",
-            checker_kwargs=dict(checker_kwarg1=0, checker_kwarg2=1),
+            stopper="stopper",
+            stopper_kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1),
         )
 
     @pytest.fixture
@@ -223,16 +223,16 @@ class TestAscendGradient:
         return MagicMock(name="mei_class", return_value="mei")
 
     @pytest.fixture
-    def resolve_func(self, optimizer_class, checker_class):
-        return MagicMock(name="resolve_func", side_effect=[optimizer_class, checker_class])
+    def resolve_func(self, optimizer_class, stopper_class):
+        return MagicMock(name="resolve_func", side_effect=[optimizer_class, stopper_class])
 
     @pytest.fixture
     def optimizer_class(self):
         return MagicMock(name="optimizer_class", return_value="optimizer")
 
     @pytest.fixture
-    def checker_class(self):
-        return MagicMock(name="checker_class", return_value="checker")
+    def stopper_class(self):
+        return MagicMock(name="stopper_class", return_value="stopper")
 
     @pytest.fixture
     def optimize_func(self):
@@ -265,19 +265,19 @@ class TestAscendGradient:
 
     def test_if_resolve_func_is_correctly_called(self, ascend_gradient, resolve_func):
         ascend_gradient()
-        resolve_func.assert_has_calls([call("optimizer", "torch.optim"), call("checker", "featurevis.checkers")])
+        resolve_func.assert_has_calls([call("optimizer", "torch.optim"), call("stopper", "featurevis.stoppers")])
 
     def test_if_optimizer_is_correctly_initialized(self, ascend_gradient, optimizer_class):
         ascend_gradient()
         optimizer_class.assert_called_once_with(["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)
 
-    def test_if_checker_is_correctly_initialized(self, ascend_gradient, checker_class):
+    def test_if_stopper_is_correctly_initialized(self, ascend_gradient, stopper_class):
         ascend_gradient()
-        checker_class.assert_called_once_with(checker_kwarg1=0, checker_kwarg2=1)
+        stopper_class.assert_called_once_with(stopper_kwarg1=0, stopper_kwarg2=1)
 
     def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
         ascend_gradient()
-        optimize_func.assert_called_once_with("mei", "optimizer", "checker")
+        optimize_func.assert_called_once_with("mei", "optimizer", "stopper")
 
     def test_if_result_is_returned(self, ascend_gradient):
-        assert ascend_gradient() == ("mei", "final_evaluation", dict())
+        assert ascend_gradient() == ("final_evaluation", "mei", dict())
