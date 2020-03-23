@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Tuple
 
 # Prevents circular import error
 if TYPE_CHECKING:
@@ -43,7 +43,7 @@ class MEI:
         return f"{self.__class__.__qualname__}({self.func}, {self.initial_guess})"
 
 
-def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> Tensor:
+def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> Tuple[Tensor, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:
@@ -52,7 +52,8 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> 
         optimized: A subclass of "OptimizationChecker" used to stop the optimization process.
 
     Returns:
-        A tensor of floats having the same shape as "initial_guess" representing the input that maximizes the function.
+        A tensor containing a single float representing the final evaluation and a tensor of floats having the same
+        shape as "initial_guess" representing the input that maximizes the function.
     """
     evaluation = mei.evaluate()
     while not optimized(mei, evaluation):
@@ -60,4 +61,4 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> 
         evaluation = mei.evaluate()
         (-evaluation).backward()
         optimizer.step()
-    return mei()
+    return evaluation, mei()

@@ -147,6 +147,6 @@ class TestOptimize:
         optimize(optimized())
         mei.assert_called_once_with()
 
-    def test_if_mei_is_returned(self, optimize, optimized):
-        mei = optimize(optimized())
-        assert mei == "mei"
+    def test_if_result_is_correctly_returned(self, optimize, optimized, evaluation):
+        result = optimize(optimized())
+        assert result == (evaluation, "mei")
