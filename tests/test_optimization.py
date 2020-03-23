@@ -19,12 +19,18 @@ class TestMEI:
         return func
 
     @pytest.fixture
-    def initial_guess(self):
+    def initial_guess(self, _mei):
         initial_guess = MagicMock()
         representation = MagicMock(return_value="initial_guess")
         initial_guess.__repr__ = representation
-        initial_guess.detach.return_value.clone.return_value.detach.return_value.clone.return_value = "cloned_mei"
+        initial_guess.detach.return_value.clone.return_value = _mei
         return initial_guess
+
+    @pytest.fixture
+    def _mei(self):
+        _mei = MagicMock(name="_mei")
+        _mei.detach.return_value.clone.return_value.squeeze.return_value.cpu.return_value = "final_mei"
+        return _mei
 
     def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
         assert mei.func is func
@@ -48,16 +54,24 @@ class TestMEI:
     def test_if_evaluate_returns_the_correct_value(self, mei):
         assert mei.evaluate() == "evaluation"
 
-    def test_if_mei_is_detached_when_retrieved(self, mei, initial_guess):
+    def test_if_mei_is_detached_when_retrieved(self, mei, _mei):
         mei()
-        initial_guess.detach.return_value.clone.return_value.detach.assert_called_once_with()
+        _mei.detach.assert_called_once_with()
 
-    def test_if_detached_mei_is_cloned_when_retrieved(self, mei, initial_guess):
+    def test_if_detached_mei_is_cloned_when_retrieved(self, mei, _mei):
         mei()
-        initial_guess.detach.return_value.clone.return_value.detach.return_value.clone.assert_called_once_with()
+        _mei.detach.return_value.clone.assert_called_once_with()
+
+    def test_if_cloned_mei_is_squeezed_when_retrieved(self, mei, _mei):
+        mei()
+        _mei.detach.return_value.clone.return_value.squeeze.assert_called_once_with()
+
+    def test_if_squeezed_mei_is_switched_to_cpu_when_retrieved(self, mei, _mei):
+        mei()
+        _mei.detach.return_value.clone.return_value.squeeze.return_value.cpu.assert_called_once_with()
 
     def test_if_cloned_mei_is_returned_when_retrieved(self, mei, initial_guess):
-        assert mei() == "cloned_mei"
+        assert mei() == "final_mei"
 
     def test_repr(self, mei):
         assert mei.__repr__() == "MEI(func, initial_guess)"

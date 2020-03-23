@@ -37,7 +37,7 @@ class MEI:
 
     def __call__(self) -> Tensor:
         """Detaches and clones the current MEI and returns it."""
-        return self._mei.detach().clone()
+        return self._mei.detach().clone().squeeze().cpu()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}({self.func}, {self.initial_guess})"
