@@ -1,8 +1,14 @@
+from typing import Tuple, Dict, Callable, Type
+
 import torch
+from torch import Tensor
+from torch.nn import Module
 
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
+from nnfabrik.builder import resolve_fn
 from . import core
+from . import optimization
 
 
 def import_path(path):
@@ -83,3 +89,32 @@ def import_functions(config, import_object):
 
 def get_input_dimensions(dataloaders, get_dims):
     return list(get_dims(dataloaders["train"]).values())[0]["inputs"]
+
+
+def ascend_gradient(
+    dataloaders: Dict,
+    model: Module,
+    config: Dict,
+    seed: int,
+    set_seed: Callable = torch.manual_seed,
+    get_dims: Callable = get_dims_for_loader_dict,
+    create_initial_guess: Callable = torch.randn,
+    mei_class: Type = optimization.MEI,
+    resolve_func: Callable = resolve_fn,
+    optimize_func: Callable = optimization.optimize,
+) -> Tuple[Tensor, float, Dict]:
+    set_seed(seed)
+    model.eval()
+    model.to(config["device"])
+    shape = get_input_dimensions(dataloaders, get_dims)
+    initial_guess = create_initial_guess(1, *shape[1:], device=config["device"])
+
+    mei = mei_class(model, initial_guess)
+
+    optimizer_class = resolve_func(config["optimizer"], "torch.optim")
+    optimizer = optimizer_class([initial_guess], **config["optimizer_kwargs"])
+    checker_class = resolve_func(config["checker"], "featurevis.checkers")
+    checker = checker_class(**config["checker_kwargs"])
+
+    final_evaluation, mei = optimize_func(mei, optimizer, checker)
+    return mei, final_evaluation, dict()

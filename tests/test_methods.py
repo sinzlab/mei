@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 from functools import partial
 
 import pytest
@@ -172,3 +172,112 @@ class TestGradientAscent:
     def test_if_model_is_transferred_to_device(self, gradient_ascent, model):
         gradient_ascent()
         model.to.assert_called_once_with("device")
+
+
+class TestAscendGradient:
+    @pytest.fixture
+    def ascend_gradient(
+        self, dataloaders, model, config, get_dims, create_initial_guess, mei_class, resolve_func, optimize_func
+    ):
+        return partial(
+            methods.ascend_gradient,
+            dataloaders,
+            model,
+            config,
+            42,
+            get_dims=get_dims,
+            create_initial_guess=create_initial_guess,
+            mei_class=mei_class,
+            resolve_func=resolve_func,
+            optimize_func=optimize_func,
+        )
+
+    @pytest.fixture
+    def dataloaders(self):
+        return dict(train="train_dataloaders")
+
+    @pytest.fixture
+    def model(self):
+        return MagicMock(name="model")
+
+    @pytest.fixture
+    def config(self):
+        return dict(
+            device="cpu",
+            optimizer="optimizer",
+            optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
+            checker="checker",
+            checker_kwargs=dict(checker_kwarg1=0, checker_kwarg2=1),
+        )
+
+    @pytest.fixture
+    def get_dims(self):
+        return MagicMock(name="get_dims", return_value=dict(dl1=dict(inputs=(10, 5, 15, 15))))
+
+    @pytest.fixture
+    def create_initial_guess(self):
+        return MagicMock(name="create_initial_guess", return_value="initial_guess")
+
+    @pytest.fixture
+    def mei_class(self):
+        return MagicMock(name="mei_class", return_value="mei")
+
+    @pytest.fixture
+    def resolve_func(self, optimizer_class, checker_class):
+        return MagicMock(name="resolve_func", side_effect=[optimizer_class, checker_class])
+
+    @pytest.fixture
+    def optimizer_class(self):
+        return MagicMock(name="optimizer_class", return_value="optimizer")
+
+    @pytest.fixture
+    def checker_class(self):
+        return MagicMock(name="checker_class", return_value="checker")
+
+    @pytest.fixture
+    def optimize_func(self):
+        return MagicMock(name="optimize_func", return_value=("mei", "final_evaluation"))
+
+    def test_if_seed_is_set(self, ascend_gradient):
+        set_seed = MagicMock(name="set_seed")
+        ascend_gradient(set_seed=set_seed)
+        set_seed.assert_called_once_with(42)
+
+    def test_model_is_switched_to_eval_mode(self, ascend_gradient, model):
+        ascend_gradient()
+        model.eval.assert_called_once_with()
+
+    def test_if_model_is_switched_to_device(self, ascend_gradient, model):
+        ascend_gradient()
+        model.to.assert_called_once_with("cpu")
+
+    def test_if_get_dims_is_correctly_called(self, ascend_gradient, get_dims):
+        ascend_gradient()
+        get_dims.assert_called_once_with("train_dataloaders")
+
+    def test_if_create_initial_guess_is_correctly_called(self, ascend_gradient, create_initial_guess):
+        ascend_gradient()
+        create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
+
+    def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class):
+        ascend_gradient()
+        mei_class.assert_called_once_with(model, "initial_guess")
+
+    def test_if_resolve_func_is_correctly_called(self, ascend_gradient, resolve_func):
+        ascend_gradient()
+        resolve_func.assert_has_calls([call("optimizer", "torch.optim"), call("checker", "featurevis.checkers")])
+
+    def test_if_optimizer_is_correctly_initialized(self, ascend_gradient, optimizer_class):
+        ascend_gradient()
+        optimizer_class.assert_called_once_with(["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)
+
+    def test_if_checker_is_correctly_initialized(self, ascend_gradient, checker_class):
+        ascend_gradient()
+        checker_class.assert_called_once_with(checker_kwarg1=0, checker_kwarg2=1)
+
+    def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
+        ascend_gradient()
+        optimize_func.assert_called_once_with("mei", "optimizer", "checker")
+
+    def test_if_result_is_returned(self, ascend_gradient):
+        assert ascend_gradient() == ("mei", "final_evaluation", dict())
