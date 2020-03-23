@@ -43,7 +43,7 @@ class MEI:
         return f"{self.__class__.__qualname__}({self.func}, {self.initial_guess})"
 
 
-def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> Tuple[Tensor, Tensor]:
+def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> Tuple[float, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:
@@ -52,8 +52,8 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> 
         optimized: A subclass of "OptimizationChecker" used to stop the optimization process.
 
     Returns:
-        A tensor containing a single float representing the final evaluation and a tensor of floats having the same
-        shape as "initial_guess" representing the input that maximizes the function.
+        A float representing the final evaluation and a tensor of floats having the same shape as "initial_guess"
+        representing the input that maximizes the function.
     """
     evaluation = mei.evaluate()
     while not optimized(mei, evaluation):
@@ -61,4 +61,4 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationChecker) -> 
         evaluation = mei.evaluate()
         (-evaluation).backward()
         optimizer.step()
-    return evaluation, mei()
+    return evaluation.item(), mei()

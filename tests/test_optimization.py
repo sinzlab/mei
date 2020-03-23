@@ -45,7 +45,7 @@ class TestMEI:
         mei.evaluate()
         func.assert_called_once_with(initial_guess.detach.return_value.clone.return_value)
 
-    def test_if_call_returns_the_correct_value(self, mei):
+    def test_if_evaluate_returns_the_correct_value(self, mei):
         assert mei.evaluate() == "evaluation"
 
     def test_if_mei_is_detached_when_retrieved(self, mei, initial_guess):
@@ -89,6 +89,7 @@ class TestOptimize:
     def evaluation(self, negated_evaluation):
         evaluation = MagicMock(name="evaluation")
         evaluation.__neg__.return_value = negated_evaluation
+        evaluation.item.return_value = "evaluation"
         return evaluation
 
     @pytest.fixture
@@ -147,6 +148,6 @@ class TestOptimize:
         optimize(optimized())
         mei.assert_called_once_with()
 
-    def test_if_result_is_correctly_returned(self, optimize, optimized, evaluation):
+    def test_if_result_is_correctly_returned(self, optimize, optimized):
         result = optimize(optimized())
-        assert result == (evaluation, "mei")
+        assert result == ("evaluation", "mei")
