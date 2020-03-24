@@ -22,7 +22,7 @@ class TestMEI:
     def initial_guess(self):
         initial_guess = MagicMock()
         initial_guess.__repr__ = MagicMock(return_value="initial_guess")
-        initial_guess.detach.return_value.clone.return_value.squeeze.return_value.cpu.return_value = "final_mei"
+        initial_guess.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
         return initial_guess
 
     def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
@@ -45,17 +45,13 @@ class TestMEI:
         mei()
         initial_guess.detach.assert_called_once_with()
 
-    def test_if_detached_mei_is_cloned_when_retrieved(self, mei, initial_guess):
-        mei()
-        initial_guess.detach.return_value.clone.assert_called_once_with()
-
     def test_if_cloned_mei_is_squeezed_when_retrieved(self, mei, initial_guess):
         mei()
-        initial_guess.detach.return_value.clone.return_value.squeeze.assert_called_once_with()
+        initial_guess.detach.return_value.squeeze.assert_called_once_with()
 
     def test_if_squeezed_mei_is_switched_to_cpu_when_retrieved(self, mei, initial_guess):
         mei()
-        initial_guess.detach.return_value.clone.return_value.squeeze.return_value.cpu.assert_called_once_with()
+        initial_guess.detach.return_value.squeeze.return_value.cpu.assert_called_once_with()
 
     def test_if_cloned_mei_is_returned_when_retrieved(self, mei, initial_guess):
         assert mei() == "final_mei"
