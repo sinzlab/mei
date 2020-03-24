@@ -23,13 +23,8 @@ class MEI:
         """
         self.func = func
         self.initial_guess = initial_guess
-        self._mei = self._initialize_mei()
-
-    def _initialize_mei(self) -> Tensor:
-        """Detaches and clones the initial guess and enables the gradient on the cloned tensor."""
-        mei = self.initial_guess.detach().clone()
-        mei.requires_grad_()
-        return mei
+        self._mei = self.initial_guess
+        self._mei.requires_grad_()
 
     def evaluate(self) -> Tensor:
         """Evaluates the current MEI on the callable and returns the result."""
