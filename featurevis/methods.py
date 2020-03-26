@@ -6,9 +6,9 @@ from torch.nn import Module
 
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
-from nnfabrik.builder import resolve_fn
 from . import core
 from . import optimization
+from .utility import import_object
 
 
 def import_path(path):
@@ -100,7 +100,7 @@ def ascend_gradient(
     get_dims: Callable = get_dims_for_loader_dict,
     create_initial_guess: Callable = torch.randn,
     mei_class: Type = optimization.MEI,
-    resolve_func: Callable = resolve_fn,
+    import_func: Callable = import_object,
     optimize_func: Callable = optimization.optimize,
 ) -> Tuple[Tensor, float, Dict]:
     set_seed(seed)
@@ -111,10 +111,8 @@ def ascend_gradient(
 
     mei = mei_class(model, initial_guess)
 
-    optimizer_class = resolve_func(config["optimizer"], "torch.optim")
-    optimizer = optimizer_class([initial_guess], **config["optimizer_kwargs"])
-    stopper_class = resolve_func(config["stopper"], "featurevis.stoppers")
-    stopper = stopper_class(**config["stopper_kwargs"])
+    optimizer = import_func(config["optimizer"], dict(params=[initial_guess], **config["optimizer_kwargs"]))
+    stopper = import_func(config["stopper"], config["stopper_kwargs"])
 
     final_evaluation, mei = optimize_func(mei, optimizer, stopper)
     return mei, final_evaluation, dict()

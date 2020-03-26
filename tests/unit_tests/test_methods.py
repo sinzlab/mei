@@ -177,7 +177,7 @@ class TestGradientAscent:
 class TestAscendGradient:
     @pytest.fixture
     def ascend_gradient(
-        self, dataloaders, model, config, get_dims, create_initial_guess, mei_class, resolve_func, optimize_func
+        self, dataloaders, model, config, get_dims, create_initial_guess, mei_class, import_func, optimize_func
     ):
         return partial(
             methods.ascend_gradient,
@@ -188,7 +188,7 @@ class TestAscendGradient:
             get_dims=get_dims,
             create_initial_guess=create_initial_guess,
             mei_class=mei_class,
-            resolve_func=resolve_func,
+            import_func=import_func,
             optimize_func=optimize_func,
         )
 
@@ -223,16 +223,8 @@ class TestAscendGradient:
         return MagicMock(name="mei_class", return_value="mei")
 
     @pytest.fixture
-    def resolve_func(self, optimizer_class, stopper_class):
-        return MagicMock(name="resolve_func", side_effect=[optimizer_class, stopper_class])
-
-    @pytest.fixture
-    def optimizer_class(self):
-        return MagicMock(name="optimizer_class", return_value="optimizer")
-
-    @pytest.fixture
-    def stopper_class(self):
-        return MagicMock(name="stopper_class", return_value="stopper")
+    def import_func(self):
+        return MagicMock(name="import_func", side_effect=["optimizer", "stopper"])
 
     @pytest.fixture
     def optimize_func(self):
@@ -263,17 +255,14 @@ class TestAscendGradient:
         ascend_gradient()
         mei_class.assert_called_once_with(model, "initial_guess")
 
-    def test_if_resolve_func_is_correctly_called(self, ascend_gradient, resolve_func):
+    def test_if_import_func_is_correctly_called(self, ascend_gradient, import_func):
         ascend_gradient()
-        resolve_func.assert_has_calls([call("optimizer", "torch.optim"), call("stopper", "featurevis.stoppers")])
-
-    def test_if_optimizer_is_correctly_initialized(self, ascend_gradient, optimizer_class):
-        ascend_gradient()
-        optimizer_class.assert_called_once_with(["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)
-
-    def test_if_stopper_is_correctly_initialized(self, ascend_gradient, stopper_class):
-        ascend_gradient()
-        stopper_class.assert_called_once_with(stopper_kwarg1=0, stopper_kwarg2=1)
+        import_func.assert_has_calls(
+            [
+                call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
+                call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+            ]
+        )
 
     def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
         ascend_gradient()
