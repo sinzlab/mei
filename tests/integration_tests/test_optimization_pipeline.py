@@ -9,12 +9,23 @@ from featurevis.stoppers import NumIterations
 
 
 @pytest.fixture
-def optimize(model, true_mei):
-    initial_mei = torch.zeros(2, 2)
-    mei = optimization.MEI(model, initial_mei)
-    optimizer = SGD([initial_mei], lr=0.1)
-    stopper = NumIterations(100)
+def optimize(mei, optimizer, stopper):
     return partial(optimization.optimize, mei, optimizer, stopper)
+
+
+@pytest.fixture
+def mei(model, initial_mei):
+    return optimization.MEI(model, initial_mei)
+
+
+@pytest.fixture
+def optimizer(initial_mei):
+    return SGD([initial_mei], lr=0.1)
+
+
+@pytest.fixture
+def stopper():
+    return NumIterations(100)
 
 
 @pytest.fixture
@@ -23,6 +34,11 @@ def model(true_mei):
         return -(true_mei - current_mei).pow(2).sum()
 
     return _model
+
+
+@pytest.fixture
+def initial_mei():
+    return torch.zeros(2, 2)
 
 
 @pytest.fixture
@@ -38,3 +54,26 @@ def test_if_optimization_process_converges_to_true_mei(optimize, true_mei):
 def test_if_final_evaluation_matches_expected_value(optimize):
     final_evaluation, _ = optimize()
     assert final_evaluation == pytest.approx(0.0)
+
+
+@pytest.fixture
+def optimize_with_transform(mei_with_transform, optimizer, stopper):
+    return partial(optimization.optimize, mei_with_transform, optimizer, stopper)
+
+
+@pytest.fixture
+def mei_with_transform(model, initial_mei, transform):
+    return optimization.MEI(model, initial_mei, transform=transform)
+
+
+@pytest.fixture
+def transform():
+    def _transform(mei, **_kwargs):
+        return mei
+
+    return _transform
+
+
+def test_if_optimization_process_converges_to_transformed_mei(optimize_with_transform, transform, true_mei):
+    _, optimized_mei = optimize_with_transform()
+    assert torch.allclose(optimized_mei, transform(true_mei))
