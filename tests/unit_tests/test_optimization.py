@@ -9,7 +9,7 @@ from featurevis import optimization
 class TestMEI:
     @pytest.fixture
     def mei(self, func, initial_guess):
-        return optimization.MEI(func, initial_guess)
+        return partial(optimization.MEI, func, initial_guess)
 
     @pytest.fixture
     def func(self):
@@ -25,39 +25,58 @@ class TestMEI:
         initial_guess.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
         return initial_guess
 
+    @pytest.fixture
+    def transform(self, transformed_mei):
+        return MagicMock(name="transform", return_value=transformed_mei)
+
+    @pytest.fixture
+    def transformed_mei(self):
+        return MagicMock(name="transformed_mei")
+
     def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
-        assert mei.func is func
+        assert mei().func is func
 
     def test_if_initial_guess_gets_stored_as_instance_attribute(self, mei, initial_guess):
-        assert mei.initial_guess is initial_guess
+        assert mei().initial_guess is initial_guess
 
-    def test_if_cloned_initial_guess_gets_grad_enabled(self, mei, initial_guess):
+    def test_if_transform_gets_stored_as_instance_attribute_if_provided(self, mei, transform):
+        assert mei(transform=transform).transform is transform
+
+    def test_if_transform_is_identity_function_if_not_provided(self, mei):
+        assert mei().transform("mei") == "mei"
+
+    def test_if_initial_guess_gets_grad_enabled(self, mei, initial_guess):
+        mei()
         initial_guess.requires_grad_.assert_called_once_with()
 
-    def test_if_func_is_correctly_called(self, mei, func, initial_guess):
-        mei.evaluate()
-        func.assert_called_once_with(initial_guess)
+    def test_if_transform_is_correctly_called(self, mei, transform, initial_guess):
+        mei(transform=transform).evaluate()
+        transform.assert_called_once_with(initial_guess)
+
+    def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
+        mei(transform=transform).evaluate()
+        func.assert_called_once_with(transformed_mei)
 
     def test_if_evaluate_returns_the_correct_value(self, mei):
-        assert mei.evaluate() == "evaluation"
+        assert mei().evaluate() == "evaluation"
 
     def test_if_mei_is_detached_when_retrieved(self, mei, initial_guess):
-        mei()
+        mei()()
         initial_guess.detach.assert_called_once_with()
 
     def test_if_cloned_mei_is_squeezed_when_retrieved(self, mei, initial_guess):
-        mei()
+        mei()()
         initial_guess.detach.return_value.squeeze.assert_called_once_with()
 
     def test_if_squeezed_mei_is_switched_to_cpu_when_retrieved(self, mei, initial_guess):
-        mei()
+        mei()()
         initial_guess.detach.return_value.squeeze.return_value.cpu.assert_called_once_with()
 
     def test_if_cloned_mei_is_returned_when_retrieved(self, mei, initial_guess):
-        assert mei() == "final_mei"
+        assert mei()() == "final_mei"
 
     def test_repr(self, mei):
-        assert mei.__repr__() == "MEI(func, initial_guess)"
+        assert mei().__repr__() == "MEI(func, initial_guess)"
 
 
 class TestOptimize:

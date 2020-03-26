@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 class MEI:
     """Wrapper around the function and the MEI tensor."""
 
-    def __init__(self, func: Callable[[Tensor], Tensor], initial_guess: Tensor):
+    def __init__(
+        self, func: Callable[[Tensor], Tensor], initial_guess: Tensor, transform: Callable[[Tensor], Tensor] = None
+    ):
         """Initializes MEI.
 
         Args:
@@ -23,12 +25,24 @@ class MEI:
         """
         self.func = func
         self.initial_guess = initial_guess
+        self.transform = self._initialize_transform(transform)
         self._mei = self.initial_guess
         self._mei.requires_grad_()
 
+    @staticmethod
+    def _initialize_transform(transform):
+        def identity(mei):
+            return mei
+
+        if not transform:
+            return identity
+        else:
+            return transform
+
     def evaluate(self) -> Tensor:
         """Evaluates the current MEI on the callable and returns the result."""
-        return self.func(self._mei)
+        transformed_mei = self.transform(self._mei)
+        return self.func(transformed_mei)
 
     def __call__(self) -> Tensor:
         """Detaches the current MEI and returns it."""
