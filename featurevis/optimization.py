@@ -31,7 +31,7 @@ class MEI:
 
     @staticmethod
     def _initialize_transform(transform):
-        def identity(mei):
+        def identity(mei, **_kwargs):
             return mei
 
         if not transform:
@@ -39,9 +39,9 @@ class MEI:
         else:
             return transform
 
-    def evaluate(self) -> Tensor:
+    def evaluate(self, i_iteration: int) -> Tensor:
         """Evaluates the current MEI on the callable and returns the result."""
-        transformed_mei = self.transform(self._mei)
+        transformed_mei = self.transform(self._mei, i_iteration=i_iteration)
         return self.func(transformed_mei)
 
     def __call__(self) -> Tensor:
@@ -64,10 +64,12 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationStopper) -> 
         A float representing the final evaluation and a tensor of floats having the same shape as "initial_guess"
         representing the input that maximizes the function.
     """
-    evaluation = mei.evaluate()
+    i_iteration = 0
+    evaluation = mei.evaluate(i_iteration)
     while not optimized(mei, evaluation):
         optimizer.zero_grad()
-        evaluation = mei.evaluate()
+        evaluation = mei.evaluate(i_iteration)
         (-evaluation).backward()
         optimizer.step()
+        i_iteration += 1
     return evaluation.item(), mei()

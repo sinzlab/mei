@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 from functools import partial
 
 import pytest
@@ -50,15 +50,15 @@ class TestMEI:
         initial_guess.requires_grad_.assert_called_once_with()
 
     def test_if_transform_is_correctly_called(self, mei, transform, initial_guess):
-        mei(transform=transform).evaluate()
-        transform.assert_called_once_with(initial_guess)
+        mei(transform=transform).evaluate(0)
+        transform.assert_called_once_with(initial_guess, i_iteration=0)
 
     def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
-        mei(transform=transform).evaluate()
+        mei(transform=transform).evaluate(0)
         func.assert_called_once_with(transformed_mei)
 
     def test_if_evaluate_returns_the_correct_value(self, mei):
-        assert mei().evaluate() == "evaluation"
+        assert mei().evaluate(0) == "evaluation"
 
     def test_if_mei_is_detached_when_retrieved(self, mei, initial_guess):
         mei()()
@@ -125,9 +125,11 @@ class TestOptimize:
         optimize(optimized())
         optimizer.zero_grad.assert_called_with()
 
-    def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized):
-        optimize(optimized())
-        mei.evaluate.assert_called_with()
+    def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized, num_iterations):
+        optimize(optimized(num_iterations))
+        calls = [call(0)] + [call(i) for i in range(num_iterations)]
+        mei.evaluate.assert_has_calls(calls)
+        assert mei.evaluate.call_count == len(calls)
 
     def test_if_evaluation_is_negated(self, optimize, optimized, evaluation):
         optimize(optimized())
@@ -151,10 +153,6 @@ class TestOptimize:
     ):
         optimize(optimized(num_iterations))
         assert optimizer.zero_grad.call_count == num_iterations
-
-    def test_if_mei_is_evaluated_correct_number_of_times(self, optimize, mei, optimized, num_iterations):
-        optimize(optimized(num_iterations))
-        assert mei.evaluate.call_count == num_iterations + 1
 
     def test_if_optimizer_takes_correct_number_of_steps(self, optimize, optimizer, optimized, num_iterations):
         optimize(optimized(num_iterations))
