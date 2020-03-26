@@ -22,6 +22,8 @@ class MEI:
                 must return a tensor containing a single float.
             initial_guess: A tensor containing floats representing the initial guess to start the optimization process
                 from.
+            transform: A callable that will receive the current MEI and the index of the current iteration as inputs and
+                that must return a transformed version of the current MEI.
         """
         self.func = func
         self.initial_guess = initial_guess
