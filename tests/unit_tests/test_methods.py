@@ -265,11 +265,11 @@ class TestAscendGradient:
 
     def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class):
         ascend_gradient()
-        mei_class.assert_called_once_with(model, "initial_guess", transform="transform")
+        mei_class.assert_called_once_with(model, "initial_guess", "optimizer", transform="transform")
 
     def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
         ascend_gradient()
-        optimize_func.assert_called_once_with("mei", "optimizer", "stopper")
+        optimize_func.assert_called_once_with("mei", "stopper")
 
     def test_if_result_is_returned(self, ascend_gradient):
         assert ascend_gradient() == ("final_evaluation", "mei", dict())

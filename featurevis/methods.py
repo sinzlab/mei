@@ -113,7 +113,7 @@ def ascend_gradient(
     stopper = import_func(config["stopper"], config["stopper_kwargs"])
     transform = import_func(config["transform"], config["transform_kwargs"])
 
-    mei = mei_class(model, initial_guess, transform=transform)
+    mei = mei_class(model, initial_guess, optimizer, transform=transform)
 
-    final_evaluation, mei = optimize_func(mei, optimizer, stopper)
+    final_evaluation, mei = optimize_func(mei, stopper)
     return mei, final_evaluation, dict()
