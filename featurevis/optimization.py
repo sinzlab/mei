@@ -46,7 +46,7 @@ class MEI:
         transformed_mei = self.transform(self._mei, i_iteration=i_iteration)
         return self.func(transformed_mei)
 
-    def __call__(self) -> Tensor:
+    def get_mei(self) -> Tensor:
         """Detaches the current MEI and returns it."""
         return self._mei.detach().squeeze().cpu()
 
@@ -74,4 +74,4 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationStopper) -> 
         (-evaluation).backward()
         optimizer.step()
         i_iteration += 1
-    return evaluation.item(), mei()
+    return evaluation.item(), mei.get_mei()
