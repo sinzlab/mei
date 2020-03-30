@@ -208,6 +208,8 @@ class TestAscendGradient:
             optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
             stopper="stopper",
             stopper_kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1),
+            transform="transform",
+            transform_kwargs=dict(transform_kwarg1=0, transform_kwarg2=1),
         )
 
     @pytest.fixture
@@ -224,7 +226,7 @@ class TestAscendGradient:
 
     @pytest.fixture
     def import_func(self):
-        return MagicMock(name="import_func", side_effect=["optimizer", "stopper"])
+        return MagicMock(name="import_func", side_effect=["optimizer", "stopper", "transform"])
 
     @pytest.fixture
     def optimize_func(self):
@@ -251,18 +253,19 @@ class TestAscendGradient:
         ascend_gradient()
         create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
 
-    def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class):
-        ascend_gradient()
-        mei_class.assert_called_once_with(model, "initial_guess")
-
     def test_if_import_func_is_correctly_called(self, ascend_gradient, import_func):
         ascend_gradient()
         import_func.assert_has_calls(
             [
                 call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
                 call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+                call("transform", dict(transform_kwarg1=0, transform_kwarg2=1)),
             ]
         )
+
+    def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class):
+        ascend_gradient()
+        mei_class.assert_called_once_with(model, "initial_guess", transform="transform")
 
     def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
         ascend_gradient()

@@ -109,10 +109,11 @@ def ascend_gradient(
     shape = get_input_dimensions(dataloaders, get_dims)
     initial_guess = create_initial_guess(1, *shape[1:], device=config["device"])
 
-    mei = mei_class(model, initial_guess)
-
     optimizer = import_func(config["optimizer"], dict(params=[initial_guess], **config["optimizer_kwargs"]))
     stopper = import_func(config["stopper"], config["stopper_kwargs"])
+    transform = import_func(config["transform"], config["transform_kwargs"])
+
+    mei = mei_class(model, initial_guess, transform=transform)
 
     final_evaluation, mei = optimize_func(mei, optimizer, stopper)
     return mei, final_evaluation, dict()
