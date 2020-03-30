@@ -13,7 +13,11 @@ class MEI:
     """Wrapper around the function and the MEI tensor."""
 
     def __init__(
-        self, func: Callable[[Tensor], Tensor], initial_guess: Tensor, transform: Callable[[Tensor], Tensor] = None
+        self,
+        func: Callable[[Tensor], Tensor],
+        initial_guess: Tensor,
+        optimizer: Optimizer,
+        transform: Callable[[Tensor], Tensor] = None,
     ):
         """Initializes MEI.
 
@@ -22,11 +26,13 @@ class MEI:
                 must return a tensor containing a single float.
             initial_guess: A tensor containing floats representing the initial guess to start the optimization process
                 from.
+            optimizer: A PyTorch-style optimizer class.
             transform: A callable that will receive the current MEI and the index of the current iteration as inputs and
                 that must return a transformed version of the current MEI.
         """
         self.func = func
         self.initial_guess = initial_guess
+        self.optimizer = optimizer
         self.transform = self._initialize_transform(transform)
         self._mei = self.initial_guess
         self._mei.requires_grad_()
@@ -41,10 +47,14 @@ class MEI:
         else:
             return transform
 
-    def evaluate(self, i_iteration: int) -> Tensor:
-        """Evaluates the current MEI on the callable and returns the result."""
+    def step(self, i_iteration: int) -> Tensor:
+        """Performs an optimization step."""
+        self.optimizer.zero_grad()
         transformed_mei = self.transform(self._mei, i_iteration=i_iteration)
-        return self.func(transformed_mei)
+        evaluation = self.func(transformed_mei)
+        (-evaluation).backward()
+        self.optimizer.step()
+        return evaluation
 
     def get_mei(self) -> Tensor:
         """Detaches the current MEI and returns it."""
@@ -54,12 +64,11 @@ class MEI:
         return f"{self.__class__.__qualname__}({self.func}, {self.initial_guess})"
 
 
-def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
+def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:
         mei: An instance of the to be optimized MEI.
-        optimizer: A PyTorch-style optimizer class.
         optimized: A subclass of "OptimizationStopper" used to stop the optimization process.
 
     Returns:
@@ -67,11 +76,8 @@ def optimize(mei: MEI, optimizer: Optimizer, optimized: OptimizationStopper) -> 
         representing the input that maximizes the function.
     """
     i_iteration = 0
-    evaluation = mei.evaluate(i_iteration)
+    evaluation = mei.step(i_iteration)
     while not optimized(mei, evaluation):
-        optimizer.zero_grad()
-        evaluation = mei.evaluate(i_iteration)
-        (-evaluation).backward()
-        optimizer.step()
+        evaluation = mei.step(i_iteration)
         i_iteration += 1
     return evaluation.item(), mei.get_mei()

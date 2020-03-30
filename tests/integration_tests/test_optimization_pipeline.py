@@ -9,13 +9,13 @@ from featurevis.stoppers import NumIterations
 
 
 @pytest.fixture
-def optimize(mei, optimizer, stopper):
-    return partial(optimization.optimize, mei, optimizer, stopper)
+def optimize(mei, stopper):
+    return partial(optimization.optimize, mei, stopper)
 
 
 @pytest.fixture
-def mei(model, initial_mei):
-    return optimization.MEI(model, initial_mei)
+def mei(model, initial_mei, optimizer):
+    return optimization.MEI(model, initial_mei, optimizer)
 
 
 @pytest.fixture
@@ -57,13 +57,13 @@ def test_if_final_evaluation_matches_expected_value(optimize):
 
 
 @pytest.fixture
-def optimize_with_transform(mei_with_transform, optimizer, stopper):
-    return partial(optimization.optimize, mei_with_transform, optimizer, stopper)
+def optimize_with_transform(mei_with_transform, stopper):
+    return partial(optimization.optimize, mei_with_transform, stopper)
 
 
 @pytest.fixture
-def mei_with_transform(model, initial_mei, transform):
-    return optimization.MEI(model, initial_mei, transform=transform)
+def mei_with_transform(model, initial_mei, optimizer, transform):
+    return optimization.MEI(model, initial_mei, optimizer, transform=transform)
 
 
 @pytest.fixture

@@ -8,15 +8,25 @@ from featurevis import optimization
 
 class TestMEI:
     @pytest.fixture
-    def mei(self, func, initial_guess):
-        return partial(optimization.MEI, func, initial_guess)
+    def mei(self, func, initial_guess, optimizer):
+        return partial(optimization.MEI, func, initial_guess, optimizer)
 
     @pytest.fixture
-    def func(self):
-        func = MagicMock(return_value="evaluation")
+    def func(self, evaluation):
+        func = MagicMock(return_value=evaluation)
         representation = MagicMock(return_value="func")
         func.__repr__ = representation
         return func
+
+    @pytest.fixture
+    def evaluation(self, negated_evaluation):
+        evaluation = MagicMock(name="evaluation")
+        evaluation.__neg__.return_value = negated_evaluation
+        return evaluation
+
+    @pytest.fixture
+    def negated_evaluation(self):
+        return MagicMock(name="negated_evaluation")
 
     @pytest.fixture
     def initial_guess(self):
@@ -24,6 +34,10 @@ class TestMEI:
         initial_guess.__repr__ = MagicMock(return_value="initial_guess")
         initial_guess.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
         return initial_guess
+
+    @pytest.fixture
+    def optimizer(self):
+        return MagicMock(name="optimizer")
 
     @pytest.fixture
     def transform(self, transformed_mei):
@@ -39,6 +53,9 @@ class TestMEI:
     def test_if_initial_guess_gets_stored_as_instance_attribute(self, mei, initial_guess):
         assert mei().initial_guess is initial_guess
 
+    def test_if_optimizer_gets_stored_as_instance_attribute(self, mei, optimizer):
+        assert mei().optimizer is optimizer
+
     def test_if_transform_gets_stored_as_instance_attribute_if_provided(self, mei, transform):
         assert mei(transform=transform).transform is transform
 
@@ -49,16 +66,32 @@ class TestMEI:
         mei()
         initial_guess.requires_grad_.assert_called_once_with()
 
+    def test_if_optimizer_gradient_is_zeroed(self, mei, optimizer):
+        mei().step(0)
+        optimizer.zero_grad.assert_called_with()
+
     def test_if_transform_is_correctly_called(self, mei, transform, initial_guess):
-        mei(transform=transform).evaluate(0)
+        mei(transform=transform).step(0)
         transform.assert_called_once_with(initial_guess, i_iteration=0)
 
     def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
-        mei(transform=transform).evaluate(0)
+        mei(transform=transform).step(0)
         func.assert_called_once_with(transformed_mei)
 
-    def test_if_evaluate_returns_the_correct_value(self, mei):
-        assert mei().evaluate(0) == "evaluation"
+    def test_if_evaluation_is_negated(self, mei, evaluation):
+        mei().step(0)
+        evaluation.__neg__.assert_called_once_with()
+
+    def test_if_backward_is_called_on_negated_evaluation(self, mei, negated_evaluation):
+        mei().step(0)
+        negated_evaluation.backward.assert_called_once_with()
+
+    def test_if_optimizer_takes_a_step(self, mei, optimizer):
+        mei().step(0)
+        optimizer.step.assert_called_once_with()
+
+    def test_if_evaluate_returns_the_correct_value(self, mei, evaluation):
+        assert mei().step(0) == evaluation
 
     def test_if_mei_is_detached_when_retrieved(self, mei, initial_guess):
         mei().get_mei()
@@ -81,19 +114,15 @@ class TestMEI:
 
 class TestOptimize:
     @pytest.fixture
-    def optimize(self, mei, optimizer):
-        return partial(optimization.optimize, mei, optimizer)
+    def optimize(self, mei):
+        return partial(optimization.optimize, mei)
 
     @pytest.fixture
     def mei(self, evaluation):
         mei = MagicMock(return_value="mei")
-        mei.evaluate.return_value = evaluation
+        mei.step.return_value = evaluation
         mei.get_mei.return_value = "mei"
         return mei
-
-    @pytest.fixture
-    def optimizer(self):
-        return MagicMock()
 
     @pytest.fixture
     def optimized(self):
@@ -122,42 +151,16 @@ class TestOptimize:
         optimize(optimized)
         optimized.assert_called_with(mei, evaluation)
 
-    def test_if_optimizer_gradient_gets_zeroed_correctly(self, optimize, optimizer, optimized):
-        optimize(optimized())
-        optimizer.zero_grad.assert_called_with()
-
     def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized, num_iterations):
         optimize(optimized(num_iterations))
         calls = [call(0)] + [call(i) for i in range(num_iterations)]
-        mei.evaluate.assert_has_calls(calls)
-        assert mei.evaluate.call_count == len(calls)
-
-    def test_if_evaluation_is_negated(self, optimize, optimized, evaluation):
-        optimize(optimized())
-        evaluation.__neg__.assert_called()
-
-    def test_if_backward_is_called_correctly_on_negated_evaluation(self, optimize, optimized, negated_evaluation):
-        optimize(optimized())
-        negated_evaluation.backward.assert_called_with()
-
-    def test_if_optimizer_takes_step_correctly(self, optimize, optimizer, optimized):
-        optimize(optimized())
-        optimizer.step.assert_called_with()
+        mei.step.assert_has_calls(calls)
+        assert mei.step.call_count == len(calls)
 
     def test_if_optimized_is_called_correct_number_of_times(self, optimize, optimized, num_iterations):
         optimized = optimized(num_iterations)
         optimize(optimized)
         assert optimized.call_count == num_iterations + 1
-
-    def test_if_optimizer_gradient_is_zeroed_correct_number_of_times(
-        self, optimize, optimizer, optimized, num_iterations
-    ):
-        optimize(optimized(num_iterations))
-        assert optimizer.zero_grad.call_count == num_iterations
-
-    def test_if_optimizer_takes_correct_number_of_steps(self, optimize, optimizer, optimized, num_iterations):
-        optimize(optimized(num_iterations))
-        assert optimizer.step.call_count == num_iterations
 
     def test_if_mei_is_correctly_called(self, mei, optimize, optimized):
         optimize(optimized())
