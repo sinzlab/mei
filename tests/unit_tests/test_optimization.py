@@ -118,19 +118,19 @@ class TestMEI:
 
     class TestGetMEI:
         def test_if_mei_is_detached_when_retrieved(self, mei, initial):
-            mei().get_mei()
+            _ = mei().mei
             initial.detach.assert_called_once_with()
 
         def test_if_cloned_mei_is_squeezed_when_retrieved(self, mei, initial):
-            mei().get_mei()
+            _ = mei().mei
             initial.detach.return_value.squeeze.assert_called_once_with()
 
         def test_if_squeezed_mei_is_switched_to_cpu_when_retrieved(self, mei, initial):
-            mei().get_mei()
+            _ = mei().mei
             initial.detach.return_value.squeeze.return_value.cpu.assert_called_once_with()
 
         def test_if_cloned_mei_is_returned_when_retrieved(self, mei):
-            assert mei().get_mei() == "final_mei"
+            assert mei().mei == "final_mei"
 
     def test_repr(self, mei):
         assert mei().__repr__() == "MEI(func, initial)"
@@ -145,7 +145,7 @@ class TestOptimize:
     def mei(self, evaluation):
         mei = MagicMock(return_value="mei")
         mei.step.return_value = evaluation
-        mei.get_mei.return_value = "mei"
+        mei.mei = "mei"
         return mei
 
     @pytest.fixture
@@ -189,10 +189,6 @@ class TestOptimize:
         optimized = optimized(num_iterations)
         optimize(optimized)
         assert optimized.call_count == num_iterations + 1
-
-    def test_if_mei_is_correctly_called(self, mei, optimize, optimized):
-        optimize(optimized())
-        mei.get_mei.assert_called_once_with()
 
     def test_if_result_is_correctly_returned(self, optimize, optimized):
         result = optimize(optimized())

@@ -61,7 +61,8 @@ class MEI:
         self.i_iteration += 1
         return evaluation
 
-    def get_mei(self) -> Tensor:
+    @property
+    def mei(self) -> Tensor:
         """Detaches the current MEI and returns it."""
         return self._mei.detach().squeeze().cpu()
 
@@ -83,4 +84,4 @@ def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
     evaluation = mei.evaluate()
     while not optimized(mei, evaluation):
         evaluation = mei.step()
-    return evaluation.item(), mei.get_mei()
+    return evaluation.item(), mei.mei
