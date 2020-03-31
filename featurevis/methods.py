@@ -103,6 +103,30 @@ def ascend_gradient(
     import_func: Callable = import_object,
     optimize_func: Callable = optimization.optimize,
 ) -> Tuple[Tensor, float, Dict]:
+    """Generates a MEI using gradient ascent.
+
+    Args:
+        dataloaders: NNFabrik-style dataloader dictionary.
+        model: Callable object that will receive a tensor and must return a tensor containing a single float.
+        config: A dictionary containing the following keys: "optimizer", "optimizer_kwargs", "stopper",
+            "stopper_kwargs", "transform", "transform_kwargs", "device". The values corresponding to the "optimizer",
+            "stopper" and "transform" keys must be absolute paths pointing to the optimizer, stopper and transform
+            callables, respectively. The values corresponding to the "optimizer_kwargs", "stopper_kwargs" and
+            "transform_kwargs" keys must be dictionaries containing keyword arguments with which the respective
+            callables will be called. The value corresponding to the "device" key must be either "cuda" or "cpu".
+            No transform will be used if the value belonging to the "transform" key is "None". The value belonging to
+            the "transform_kwargs" key should also be "None" if that is the case.
+        seed: Integer used to make the MEI generation process reproducible.
+        set_seed: For testing purposes.
+        get_dims: For testing purposes.
+        create_initial_guess: For testing purposes.
+        mei_class: For testing purposes.
+        import_func: For testing purposes.
+        optimize_func: For testing purposes.
+
+    Returns:
+        The MEI, the final evaluation as a single float and an empty dictionary.
+    """
     set_seed(seed)
     model.eval()
     model.to(config["device"])
