@@ -179,18 +179,21 @@ class TestAscendGradient:
     def ascend_gradient(
         self, dataloaders, model, config, get_dims, create_initial_guess, mei_class, import_func, optimize_func
     ):
-        return partial(
-            methods.ascend_gradient,
-            dataloaders,
-            model,
-            config,
-            42,
-            get_dims=get_dims,
-            create_initial_guess=create_initial_guess,
-            mei_class=mei_class,
-            import_func=import_func,
-            optimize_func=optimize_func,
-        )
+        def _ascend_gradient(use_transform=False):
+            return partial(
+                methods.ascend_gradient,
+                dataloaders,
+                model,
+                config(use_transform=use_transform),
+                42,
+                get_dims=get_dims,
+                create_initial_guess=create_initial_guess,
+                mei_class=mei_class,
+                import_func=import_func,
+                optimize_func=optimize_func,
+            )
+
+        return _ascend_gradient
 
     @pytest.fixture
     def dataloaders(self):
@@ -202,15 +205,21 @@ class TestAscendGradient:
 
     @pytest.fixture
     def config(self):
-        return dict(
-            device="cpu",
-            optimizer="optimizer",
-            optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
-            stopper="stopper",
-            stopper_kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1),
-            transform="transform",
-            transform_kwargs=dict(transform_kwarg1=0, transform_kwarg2=1),
-        )
+        def _config(use_transform=False):
+            config = dict(
+                device="cpu",
+                optimizer="optimizer",
+                optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
+                stopper="stopper",
+                stopper_kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1),
+            )
+            if use_transform:
+                config = dict(
+                    config, transform="transform", transform_kwargs=dict(transform_kwarg1=0, transform_kwarg2=1)
+                )
+            return config
+
+        return _config
 
     @pytest.fixture
     def get_dims(self):
@@ -234,27 +243,27 @@ class TestAscendGradient:
 
     def test_if_seed_is_set(self, ascend_gradient):
         set_seed = MagicMock(name="set_seed")
-        ascend_gradient(set_seed=set_seed)
+        ascend_gradient(use_transform=True)(set_seed=set_seed)
         set_seed.assert_called_once_with(42)
 
     def test_model_is_switched_to_eval_mode(self, ascend_gradient, model):
-        ascend_gradient()
+        ascend_gradient(use_transform=True)()
         model.eval.assert_called_once_with()
 
     def test_if_model_is_switched_to_device(self, ascend_gradient, model):
-        ascend_gradient()
+        ascend_gradient(use_transform=True)()
         model.to.assert_called_once_with("cpu")
 
     def test_if_get_dims_is_correctly_called(self, ascend_gradient, get_dims):
-        ascend_gradient()
+        ascend_gradient(use_transform=True)()
         get_dims.assert_called_once_with("train_dataloaders")
 
     def test_if_create_initial_guess_is_correctly_called(self, ascend_gradient, create_initial_guess):
-        ascend_gradient()
+        ascend_gradient(use_transform=True)()
         create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
 
     def test_if_import_func_is_correctly_called(self, ascend_gradient, import_func):
-        ascend_gradient()
+        ascend_gradient(use_transform=True)()
         import_func.assert_has_calls(
             [
                 call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
@@ -264,12 +273,12 @@ class TestAscendGradient:
         )
 
     def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class):
-        ascend_gradient()
+        ascend_gradient(use_transform=True)()
         mei_class.assert_called_once_with(model, "initial_guess", "optimizer", transform="transform")
 
     def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
-        ascend_gradient()
+        ascend_gradient(use_transform=True)()
         optimize_func.assert_called_once_with("mei", "stopper")
 
     def test_if_result_is_returned(self, ascend_gradient):
-        assert ascend_gradient() == ("final_evaluation", "mei", dict())
+        assert ascend_gradient(use_transform=True)() == ("final_evaluation", "mei", dict())
