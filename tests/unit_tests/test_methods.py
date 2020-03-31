@@ -241,6 +241,29 @@ class TestAscendGradient:
     def optimize_func(self):
         return MagicMock(name="optimize_func", return_value=("mei", "final_evaluation"))
 
+    @pytest.fixture
+    def import_func_calls(self):
+        def _import_func_calls(use_transform=False):
+            import_func_calls = [
+                call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
+                call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+            ]
+            if use_transform:
+                import_func_calls.append(call("transform", dict(transform_kwarg1=0, transform_kwarg2=1)))
+            return import_func_calls
+
+        return _import_func_calls
+
+    @pytest.fixture
+    def mei_class_call(self, model):
+        def _mei_class_call(use_transform=False):
+            if use_transform:
+                return call(model, "initial_guess", "optimizer", transform="transform")
+            else:
+                return call(model, "initial_guess", "optimizer")
+
+        return _mei_class_call
+
     def test_if_seed_is_set(self, ascend_gradient):
         set_seed = MagicMock(name="set_seed")
         ascend_gradient(use_transform=True)(set_seed=set_seed)
@@ -262,19 +285,16 @@ class TestAscendGradient:
         ascend_gradient(use_transform=True)()
         create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
 
-    def test_if_import_func_is_correctly_called(self, ascend_gradient, import_func):
-        ascend_gradient(use_transform=True)()
-        import_func.assert_has_calls(
-            [
-                call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
-                call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
-                call("transform", dict(transform_kwarg1=0, transform_kwarg2=1)),
-            ]
-        )
+    @pytest.mark.parametrize("use_transform", [True, False])
+    def test_if_import_func_is_correctly_called(self, ascend_gradient, import_func, import_func_calls, use_transform):
+        ascend_gradient(use_transform=use_transform)()
+        calls = import_func_calls(use_transform=use_transform)
+        import_func.assert_has_calls(calls)
 
-    def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class):
-        ascend_gradient(use_transform=True)()
-        mei_class.assert_called_once_with(model, "initial_guess", "optimizer", transform="transform")
+    @pytest.mark.parametrize("use_transform", [True, False])
+    def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class, mei_class_call, use_transform):
+        ascend_gradient(use_transform=use_transform)()
+        assert mei_class.mock_calls == [mei_class_call(use_transform=use_transform)]
 
     def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
         ascend_gradient(use_transform=True)()
