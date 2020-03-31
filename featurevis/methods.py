@@ -112,7 +112,7 @@ def ascend_gradient(
     optimizer = import_func(config["optimizer"], dict(params=[initial_guess], **config["optimizer_kwargs"]))
     stopper = import_func(config["stopper"], config["stopper_kwargs"])
 
-    optional = {n: import_func(config[n], config[n + "_kwargs"]) for n in ("transform",) if n in config}
+    optional = {n: import_func(config[n], config[n + "_kwargs"]) for n in ("transform",) if config[n]}
 
     mei = mei_class(model, initial_guess, optimizer, **optional)
 

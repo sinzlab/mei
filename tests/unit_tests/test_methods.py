@@ -217,6 +217,8 @@ class TestAscendGradient:
                 config = dict(
                     config, transform="transform", transform_kwargs=dict(transform_kwarg1=0, transform_kwarg2=1)
                 )
+            else:
+                config = dict(config, transform=None, transform_kwargs=None)
             return config
 
         return _config
