@@ -77,3 +77,31 @@ def transform():
 def test_if_optimization_process_converges_to_transformed_mei(optimize_with_transform, transform, true_mei):
     _, optimized_mei = optimize_with_transform()
     assert torch.allclose(optimized_mei, transform(true_mei, 0))
+
+
+@pytest.fixture
+def optimize_with_regularization(mei_with_regularization, stopper):
+    return partial(optimization.optimize, mei_with_regularization, stopper)
+
+
+@pytest.fixture
+def mei_with_regularization(model, initial_mei, optimizer, regularization):
+    return optimization.MEI(model, initial_mei, optimizer, regularization=regularization)
+
+
+@pytest.fixture
+def regularization():
+    def _regularization(mei, _i_iteration):
+        return torch.sum(torch.abs(mei))
+
+    return _regularization
+
+
+def test_if_optimization_process_converges_when_regularization_is_used(optimize_with_regularization, true_mei):
+    _, optimized_mei = optimize_with_regularization()
+    assert torch.allclose(optimized_mei, true_mei / 2)
+
+
+def test_if_final_evaluation_matches_expected_value_when_regularization_is_used(optimize_with_regularization):
+    final_evaluation, _ = optimize_with_regularization()
+    assert final_evaluation == pytest.approx(-1.0)
