@@ -14,6 +14,11 @@ def default_transform(mei, _i_iteration):
     return mei
 
 
+def default_regularization(_mei, _i_iteration):
+    """Default regularization used when no regularization is provided to MEI."""
+    return 0
+
+
 class MEI:
     """Wrapper around the function and the MEI tensor."""
 
@@ -23,6 +28,7 @@ class MEI:
         initial: Tensor,
         optimizer: Optimizer,
         transform: Callable[[Tensor, int], Tensor] = default_transform,
+        regularization: Callable[[Tensor, int], Tensor] = default_regularization,
     ):
         """Initializes MEI.
 
@@ -34,25 +40,37 @@ class MEI:
             optimizer: A PyTorch-style optimizer class.
             transform: A callable that will receive the current MEI and the index of the current iteration as inputs and
                 that must return a transformed version of the current MEI. Optional.
+            regularization: A callable that should have the current mei and the index of the current iteration as
+                parameters and that should return a regularization term.
         """
         self.func = func
         self.initial = initial
         self.optimizer = optimizer
         self.transform = transform
+        self.regularization = regularization
         self.i_iteration = 0
         self._mei = self.initial
         self._mei.requires_grad_()
+        self.__transformed_mei = None
+
+    @property
+    def _transformed_mei(self):
+        if self.__transformed_mei is None:
+            self.__transformed_mei = self.transform(self._mei, self.i_iteration)
+        return self.__transformed_mei
 
     def evaluate(self) -> Tensor:
         """Evaluates the function on the current MEI."""
-        return self.func(self.transform(self._mei, self.i_iteration))
+        return self.func(self._transformed_mei)
 
     def step(self) -> Tensor:
         """Performs an optimization step."""
         self.optimizer.zero_grad()
         evaluation = self.evaluate()
-        (-evaluation).backward()
+        reg_term = self.regularization(self._transformed_mei, self.i_iteration)
+        (-evaluation + reg_term).backward()
         self.optimizer.step()
+        self.__transformed_mei = None
         self.i_iteration += 1
         return evaluation
 

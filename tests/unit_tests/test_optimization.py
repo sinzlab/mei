@@ -10,10 +10,14 @@ def test_default_transform():
     assert optimization.default_transform("mei", 0) == "mei"
 
 
+def test_default_regularization():
+    assert optimization.default_regularization("mei", 0) == 0
+
+
 class TestMEI:
     @pytest.fixture
-    def mei(self, func, initial, optimizer):
-        return partial(optimization.MEI, func, initial, optimizer)
+    def mei(self, func, initial, optimizer, transform, regularization):
+        return partial(optimization.MEI, func, initial, optimizer, transform=transform, regularization=regularization)
 
     @pytest.fixture
     def func(self, evaluation):
@@ -29,8 +33,14 @@ class TestMEI:
         return evaluation
 
     @pytest.fixture
-    def negated_evaluation(self):
-        return MagicMock(name="negated_evaluation")
+    def negated_evaluation(self, negated_evaluation_plus_reg_term):
+        negated_evaluation = MagicMock(name="negated_evaluation")
+        negated_evaluation.__add__.return_value = negated_evaluation_plus_reg_term
+        return negated_evaluation
+
+    @pytest.fixture
+    def negated_evaluation_plus_reg_term(self):
+        return MagicMock(name="negated_evaluation + reg_term")
 
     @pytest.fixture
     def initial(self):
@@ -51,6 +61,10 @@ class TestMEI:
     def transformed_mei(self):
         return MagicMock(name="transformed_mei")
 
+    @pytest.fixture
+    def regularization(self):
+        return MagicMock(name="regularization", return_value="reg_term")
+
     class TestInit:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
             assert mei().func is func
@@ -62,10 +76,16 @@ class TestMEI:
             assert mei().optimizer is optimizer
 
         def test_if_transform_gets_stored_as_instance_attribute_if_provided(self, mei, transform):
-            assert mei(transform=transform).transform is transform
+            assert mei().transform is transform
 
-        def test_if_transform_is_default_transform_if_not_provided(self, mei):
-            assert mei().transform is optimization.default_transform
+        def test_if_transform_is_default_transform_if_not_provided(self, func, initial, optimizer):
+            assert optimization.MEI(func, initial, optimizer).transform is optimization.default_transform
+
+        def test_if_regularization_gets_stored_as_instance_attribute_if_provided(self, mei, regularization):
+            assert mei().regularization is regularization
+
+        def test_if_regularization_is_default_regularization_if_not_provided(self, func, initial, optimizer):
+            assert optimization.MEI(func, initial, optimizer).regularization is optimization.default_regularization
 
         def test_if_initial_guess_gets_grad_enabled(self, mei, initial):
             mei()
@@ -74,15 +94,15 @@ class TestMEI:
     class TestEvaluate:
         @pytest.mark.parametrize("n_steps", [0, 1, 10])
         def test_if_transform_is_correctly_called(self, mei, transform, initial, n_steps):
-            mei = mei(transform=transform)
+            mei = mei()
             for _ in range(n_steps):
                 mei.step()
             mei.evaluate()
             calls = [call(initial, i) for i in range(n_steps)] + [call(initial, n_steps)]
             transform.assert_has_calls(calls)
 
-        def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
-            mei(transform=transform).evaluate()
+        def test_if_func_is_correctly_called(self, mei, func, transformed_mei):
+            mei().evaluate()
             func.assert_called_once_with(transformed_mei)
 
         def test_if_evaluate_returns_correct_value(self, mei, evaluation):
@@ -95,23 +115,35 @@ class TestMEI:
 
         @pytest.mark.parametrize("n_steps", [1, 10])
         def test_if_transform_is_correctly_called(self, mei, transform, initial, n_steps):
-            mei = mei(transform=transform)
+            mei = mei()
             for _ in range(n_steps):
                 mei.step()
             calls = [call(initial, i) for i in range(n_steps)]
             transform.assert_has_calls(calls)
 
-        def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
-            mei(transform=transform).step()
+        def test_if_func_is_correctly_called(self, mei, func, transformed_mei):
+            mei().step()
             func.assert_called_once_with(transformed_mei)
+
+        @pytest.mark.parametrize("n_steps", [1, 10])
+        def test_if_regularization_is_correctly_called(self, mei, regularization, transformed_mei, n_steps):
+            mei = mei()
+            for _ in range(n_steps):
+                mei.step()
+            calls = [call(transformed_mei, i) for i in range(n_steps)]
+            assert regularization.mock_calls == calls
 
         def test_if_evaluation_is_negated(self, mei, evaluation):
             mei().step()
             evaluation.__neg__.assert_called_once_with()
 
-        def test_if_backward_is_called_on_negated_evaluation(self, mei, negated_evaluation):
+        def test_if_regularization_term_is_added_to_negated_evaluation(self, mei, negated_evaluation):
             mei().step()
-            negated_evaluation.backward.assert_called_once_with()
+            negated_evaluation.__add__.assert_called_once_with("reg_term")
+
+        def test_if_backward_is_called_on_negated_evaluation_plus_reg_term(self, mei, negated_evaluation_plus_reg_term):
+            mei().step()
+            negated_evaluation_plus_reg_term.backward.assert_called_once_with()
 
         def test_if_optimizer_takes_a_step(self, mei, optimizer):
             mei().step()
