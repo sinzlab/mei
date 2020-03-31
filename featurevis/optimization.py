@@ -15,7 +15,7 @@ class MEI:
     def __init__(
         self,
         func: Callable[[Tensor], Tensor],
-        initial_guess: Tensor,
+        initial: Tensor,
         optimizer: Optimizer,
         transform: Callable[[Tensor], Tensor] = None,
     ):
@@ -24,18 +24,18 @@ class MEI:
         Args:
             func: A callable that will receive the to be optimized MEI tensor of floats as its only argument and that
                 must return a tensor containing a single float.
-            initial_guess: A tensor containing floats representing the initial guess to start the optimization process
+            initial: A tensor containing floats representing the initial guess to start the optimization process
                 from.
             optimizer: A PyTorch-style optimizer class.
             transform: A callable that will receive the current MEI and the index of the current iteration as inputs and
                 that must return a transformed version of the current MEI.
         """
         self.func = func
-        self.initial_guess = initial_guess
+        self.initial = initial
         self.optimizer = optimizer
         self.transform = self._initialize_transform(transform)
         self.i_iteration = 0
-        self._mei = self.initial_guess
+        self._mei = self.initial
         self._mei.requires_grad_()
 
     @staticmethod
@@ -66,7 +66,7 @@ class MEI:
         return self._mei.detach().squeeze().cpu()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__qualname__}({self.func}, {self.initial_guess})"
+        return f"{self.__class__.__qualname__}({self.func}, {self.initial})"
 
 
 def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:

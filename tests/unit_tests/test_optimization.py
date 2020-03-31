@@ -8,8 +8,8 @@ from featurevis import optimization
 
 class TestMEI:
     @pytest.fixture
-    def mei(self, func, initial_guess, optimizer):
-        return partial(optimization.MEI, func, initial_guess, optimizer)
+    def mei(self, func, initial, optimizer):
+        return partial(optimization.MEI, func, initial, optimizer)
 
     @pytest.fixture
     def func(self, evaluation):
@@ -29,11 +29,11 @@ class TestMEI:
         return MagicMock(name="negated_evaluation")
 
     @pytest.fixture
-    def initial_guess(self):
-        initial_guess = MagicMock()
-        initial_guess.__repr__ = MagicMock(return_value="initial_guess")
-        initial_guess.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
-        return initial_guess
+    def initial(self):
+        initial = MagicMock()
+        initial.__repr__ = MagicMock(return_value="initial")
+        initial.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
+        return initial
 
     @pytest.fixture
     def optimizer(self):
@@ -51,8 +51,8 @@ class TestMEI:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
             assert mei().func is func
 
-        def test_if_initial_guess_gets_stored_as_instance_attribute(self, mei, initial_guess):
-            assert mei().initial_guess is initial_guess
+        def test_if_initial_guess_gets_stored_as_instance_attribute(self, mei, initial):
+            assert mei().initial is initial
 
         def test_if_optimizer_gets_stored_as_instance_attribute(self, mei, optimizer):
             assert mei().optimizer is optimizer
@@ -63,20 +63,18 @@ class TestMEI:
         def test_if_transform_is_identity_function_if_not_provided(self, mei):
             assert mei().transform("mei") == "mei"
 
-        def test_if_initial_guess_gets_grad_enabled(self, mei, initial_guess):
+        def test_if_initial_guess_gets_grad_enabled(self, mei, initial):
             mei()
-            initial_guess.requires_grad_.assert_called_once_with()
+            initial.requires_grad_.assert_called_once_with()
 
     class TestEvaluate:
         @pytest.mark.parametrize("n_steps", [0, 1, 10])
-        def test_if_transform_is_correctly_called(self, mei, transform, initial_guess, n_steps):
+        def test_if_transform_is_correctly_called(self, mei, transform, initial, n_steps):
             mei = mei(transform=transform)
             for _ in range(n_steps):
                 mei.step()
             mei.evaluate()
-            calls = [call(initial_guess, i_iteration=i) for i in range(n_steps)] + [
-                call(initial_guess, i_iteration=n_steps)
-            ]
+            calls = [call(initial, i_iteration=i) for i in range(n_steps)] + [call(initial, i_iteration=n_steps)]
             transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
@@ -92,11 +90,11 @@ class TestMEI:
             optimizer.zero_grad.assert_called_with()
 
         @pytest.mark.parametrize("n_steps", [1, 10])
-        def test_if_transform_is_correctly_called(self, mei, transform, initial_guess, n_steps):
+        def test_if_transform_is_correctly_called(self, mei, transform, initial, n_steps):
             mei = mei(transform=transform)
             for _ in range(n_steps):
                 mei.step()
-            calls = [call(initial_guess, i_iteration=i) for i in range(n_steps)]
+            calls = [call(initial, i_iteration=i) for i in range(n_steps)]
             transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
@@ -119,23 +117,23 @@ class TestMEI:
             assert mei().step() == evaluation
 
     class TestGetMEI:
-        def test_if_mei_is_detached_when_retrieved(self, mei, initial_guess):
+        def test_if_mei_is_detached_when_retrieved(self, mei, initial):
             mei().get_mei()
-            initial_guess.detach.assert_called_once_with()
+            initial.detach.assert_called_once_with()
 
-        def test_if_cloned_mei_is_squeezed_when_retrieved(self, mei, initial_guess):
+        def test_if_cloned_mei_is_squeezed_when_retrieved(self, mei, initial):
             mei().get_mei()
-            initial_guess.detach.return_value.squeeze.assert_called_once_with()
+            initial.detach.return_value.squeeze.assert_called_once_with()
 
-        def test_if_squeezed_mei_is_switched_to_cpu_when_retrieved(self, mei, initial_guess):
+        def test_if_squeezed_mei_is_switched_to_cpu_when_retrieved(self, mei, initial):
             mei().get_mei()
-            initial_guess.detach.return_value.squeeze.return_value.cpu.assert_called_once_with()
+            initial.detach.return_value.squeeze.return_value.cpu.assert_called_once_with()
 
-        def test_if_cloned_mei_is_returned_when_retrieved(self, mei, initial_guess):
+        def test_if_cloned_mei_is_returned_when_retrieved(self, mei):
             assert mei().get_mei() == "final_mei"
 
     def test_repr(self, mei):
-        assert mei().__repr__() == "MEI(func, initial_guess)"
+        assert mei().__repr__() == "MEI(func, initial)"
 
 
 class TestOptimize:
