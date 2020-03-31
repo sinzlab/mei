@@ -179,12 +179,12 @@ class TestAscendGradient:
     def ascend_gradient(
         self, dataloaders, model, config, get_dims, create_initial_guess, mei_class, import_func, optimize_func
     ):
-        def _ascend_gradient(use_transform=False):
+        def _ascend_gradient(use_transform=False, use_regularization=False):
             return partial(
                 methods.ascend_gradient,
                 dataloaders,
                 model,
-                config(use_transform=use_transform),
+                config(use_transform=use_transform, use_regularization=use_regularization),
                 42,
                 get_dims=get_dims,
                 create_initial_guess=create_initial_guess,
@@ -205,7 +205,7 @@ class TestAscendGradient:
 
     @pytest.fixture
     def config(self):
-        def _config(use_transform=False):
+        def _config(use_transform=False, use_regularization=False):
             config = dict(
                 device="cpu",
                 optimizer="optimizer",
@@ -219,6 +219,14 @@ class TestAscendGradient:
                 )
             else:
                 config = dict(config, transform=None, transform_kwargs=None)
+            if use_regularization:
+                config = dict(
+                    config,
+                    regularization="regularization",
+                    regularization_kwargs=dict(regularization_kwarg1=0, regularization_kwarg2=1),
+                )
+            else:
+                config = dict(config, regularization=None, regularization_kwargs=None)
             return config
 
         return _config
@@ -237,7 +245,10 @@ class TestAscendGradient:
 
     @pytest.fixture
     def import_func(self):
-        return MagicMock(name="import_func", side_effect=["optimizer", "stopper", "transform"])
+        def _import_func(name, _kwargs):
+            return name
+
+        return MagicMock(name="import_func", side_effect=_import_func)
 
     @pytest.fixture
     def optimize_func(self):
@@ -245,24 +256,29 @@ class TestAscendGradient:
 
     @pytest.fixture
     def import_func_calls(self):
-        def _import_func_calls(use_transform=False):
+        def _import_func_calls(use_transform=False, use_regularization=False):
             import_func_calls = [
                 call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
                 call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
             ]
             if use_transform:
                 import_func_calls.append(call("transform", dict(transform_kwarg1=0, transform_kwarg2=1)))
+            if use_regularization:
+                import_func_calls.append(call("regularization", dict(regularization_kwarg1=0, regularization_kwarg2=1)))
             return import_func_calls
 
         return _import_func_calls
 
     @pytest.fixture
     def mei_class_call(self, model):
-        def _mei_class_call(use_transform=False):
+        def _mei_class_call(use_transform=False, use_regularization=False):
+            args = (model, "initial_guess", "optimizer")
+            kwargs = {}
             if use_transform:
-                return call(model, "initial_guess", "optimizer", transform="transform")
-            else:
-                return call(model, "initial_guess", "optimizer")
+                kwargs["transform"] = "transform"
+            if use_regularization:
+                kwargs["regularization"] = "regularization"
+            return call(*args, **kwargs)
 
         return _mei_class_call
 
@@ -288,15 +304,23 @@ class TestAscendGradient:
         create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
 
     @pytest.mark.parametrize("use_transform", [True, False])
-    def test_if_import_func_is_correctly_called(self, ascend_gradient, import_func, import_func_calls, use_transform):
-        ascend_gradient(use_transform=use_transform)()
-        calls = import_func_calls(use_transform=use_transform)
-        import_func.assert_has_calls(calls)
+    @pytest.mark.parametrize("use_regularization", [True, False])
+    def test_if_import_func_is_correctly_called(
+        self, ascend_gradient, import_func, import_func_calls, use_transform, use_regularization
+    ):
+        ascend_gradient(use_transform=use_transform, use_regularization=use_regularization)()
+        calls = import_func_calls(use_transform=use_transform, use_regularization=use_regularization)
+        assert import_func.mock_calls == calls
 
     @pytest.mark.parametrize("use_transform", [True, False])
-    def test_if_mei_is_correctly_initialized(self, ascend_gradient, model, mei_class, mei_class_call, use_transform):
-        ascend_gradient(use_transform=use_transform)()
-        assert mei_class.mock_calls == [mei_class_call(use_transform=use_transform)]
+    @pytest.mark.parametrize("use_regularization", [True, False])
+    def test_if_mei_is_correctly_initialized(
+        self, ascend_gradient, model, mei_class, mei_class_call, use_transform, use_regularization
+    ):
+        ascend_gradient(use_transform=use_transform, use_regularization=use_regularization)()
+        assert mei_class.mock_calls == [
+            mei_class_call(use_transform=use_transform, use_regularization=use_regularization)
+        ]
 
     def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
         ascend_gradient(use_transform=True)()

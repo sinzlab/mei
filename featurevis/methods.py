@@ -109,13 +109,15 @@ def ascend_gradient(
         dataloaders: NNFabrik-style dataloader dictionary.
         model: Callable object that will receive a tensor and must return a tensor containing a single float.
         config: A dictionary containing the following keys: "optimizer", "optimizer_kwargs", "stopper",
-            "stopper_kwargs", "transform", "transform_kwargs", "device". The values corresponding to the "optimizer",
-            "stopper" and "transform" keys must be absolute paths pointing to the optimizer, stopper and transform
-            callables, respectively. The values corresponding to the "optimizer_kwargs", "stopper_kwargs" and
-            "transform_kwargs" keys must be dictionaries containing keyword arguments with which the respective
-            callables will be called. The value corresponding to the "device" key must be either "cuda" or "cpu".
+            "stopper_kwargs", "transform", "transform_kwargs", "regularization", "regularization_kwargs", "device". The
+            values corresponding to the "optimizer", "stopper", "transform" and "regularization" keys must be absolute
+            paths pointing to the optimizer, stopper, transform and regularization callables, respectively. The values
+            corresponding to the "optimizer_kwargs", "stopper_kwargs", "transform_kwargs" and "regularization_kwargs"
+            keys must be dictionaries containing keyword arguments with which the respective callables will be called.
+            The value corresponding to the "device" key must be either "cuda" or "cpu".
             No transform will be used if the value belonging to the "transform" key is "None". The value belonging to
-            the "transform_kwargs" key should also be "None" if that is the case.
+            the "transform_kwargs" key should also be "None" if that is the case. The same can be applied to the
+            "regularization" key.
         seed: Integer used to make the MEI generation process reproducible.
         set_seed: For testing purposes.
         get_dims: For testing purposes.
@@ -136,7 +138,7 @@ def ascend_gradient(
     optimizer = import_func(config["optimizer"], dict(params=[initial_guess], **config["optimizer_kwargs"]))
     stopper = import_func(config["stopper"], config["stopper_kwargs"])
 
-    optional = {n: import_func(config[n], config[n + "_kwargs"]) for n in ("transform",) if config[n]}
+    optional = {n: import_func(config[n], config[n + "_kwargs"]) for n in ("transform", "regularization") if config[n]}
 
     mei = mei_class(model, initial_guess, optimizer, **optional)
 
