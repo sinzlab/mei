@@ -161,14 +161,18 @@ class TestOptimize:
     def num_iterations(self, request):
         return request.param
 
+    def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized):
+        optimize(optimized())
+        mei.evaluate.assert_called_once_with(0)
+
     def test_if_optimized_is_called_correctly(self, optimize, mei, optimized, evaluation):
         optimized = optimized()
         optimize(optimized)
         optimized.assert_called_with(mei, evaluation)
 
-    def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized, num_iterations):
+    def test_if_mei_takes_steps_correctly(self, optimize, mei, optimized, num_iterations):
         optimize(optimized(num_iterations))
-        calls = [call(0)] + [call(i) for i in range(num_iterations)]
+        calls = [call(i) for i in range(num_iterations)]
         mei.step.assert_has_calls(calls)
         assert mei.step.call_count == len(calls)
 

@@ -79,7 +79,7 @@ def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
         representing the input that maximizes the function.
     """
     i_iteration = 0
-    evaluation = mei.step(i_iteration)
+    evaluation = mei.evaluate(i_iteration)
     while not optimized(mei, evaluation):
         evaluation = mei.step(i_iteration)
         i_iteration += 1
