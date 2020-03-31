@@ -67,6 +67,18 @@ class TestMEI:
             mei()
             initial_guess.requires_grad_.assert_called_once_with()
 
+    class TestEvaluate:
+        def test_if_transform_is_correctly_called(self, mei, transform, initial_guess):
+            mei(transform=transform).evaluate(0)
+            transform.assert_called_once_with(initial_guess, i_iteration=0)
+
+        def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
+            mei(transform=transform).evaluate(0)
+            func.assert_called_once_with(transformed_mei)
+
+        def test_if_evaluate_returns_correct_value(self, mei, evaluation):
+            assert mei().evaluate(0) == evaluation
+
     class TestStep:
         def test_if_optimizer_gradient_is_zeroed(self, mei, optimizer):
             mei().step(0)

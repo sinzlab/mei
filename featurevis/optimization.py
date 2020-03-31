@@ -47,6 +47,10 @@ class MEI:
         else:
             return transform
 
+    def evaluate(self, i_iteration: int) -> Tensor:
+        """Evaluates the function on the current MEI."""
+        return self.func(self.transform(self._mei, i_iteration=i_iteration))
+
     def step(self, i_iteration: int) -> Tensor:
         """Performs an optimization step."""
         self.optimizer.zero_grad()
