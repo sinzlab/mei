@@ -6,6 +6,10 @@ import pytest
 from featurevis import optimization
 
 
+def test_default_transform():
+    assert optimization.default_transform("mei", 0) == "mei"
+
+
 class TestMEI:
     @pytest.fixture
     def mei(self, func, initial, optimizer):
@@ -61,7 +65,7 @@ class TestMEI:
             assert mei(transform=transform).transform is transform
 
         def test_if_transform_is_identity_function_if_not_provided(self, mei):
-            assert mei().transform("mei") == "mei"
+            assert mei().transform("mei", 0) == "mei"
 
         def test_if_initial_guess_gets_grad_enabled(self, mei, initial):
             mei()
@@ -74,7 +78,7 @@ class TestMEI:
             for _ in range(n_steps):
                 mei.step()
             mei.evaluate()
-            calls = [call(initial, i_iteration=i) for i in range(n_steps)] + [call(initial, i_iteration=n_steps)]
+            calls = [call(initial, i) for i in range(n_steps)] + [call(initial, n_steps)]
             transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
@@ -94,7 +98,7 @@ class TestMEI:
             mei = mei(transform=transform)
             for _ in range(n_steps):
                 mei.step()
-            calls = [call(initial, i_iteration=i) for i in range(n_steps)]
+            calls = [call(initial, i) for i in range(n_steps)]
             transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):

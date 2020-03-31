@@ -9,6 +9,11 @@ if TYPE_CHECKING:
     from .stoppers import OptimizationStopper
 
 
+def default_transform(mei, _i_iteration):
+    """Default transform used when no transform is provided to MEI."""
+    return mei
+
+
 class MEI:
     """Wrapper around the function and the MEI tensor."""
 
@@ -17,7 +22,7 @@ class MEI:
         func: Callable[[Tensor], Tensor],
         initial: Tensor,
         optimizer: Optimizer,
-        transform: Callable[[Tensor], Tensor] = None,
+        transform: Callable[[Tensor, int], Tensor] = default_transform,
     ):
         """Initializes MEI.
 
@@ -28,29 +33,19 @@ class MEI:
                 from.
             optimizer: A PyTorch-style optimizer class.
             transform: A callable that will receive the current MEI and the index of the current iteration as inputs and
-                that must return a transformed version of the current MEI.
+                that must return a transformed version of the current MEI. Optional.
         """
         self.func = func
         self.initial = initial
         self.optimizer = optimizer
-        self.transform = self._initialize_transform(transform)
+        self.transform = transform
         self.i_iteration = 0
         self._mei = self.initial
         self._mei.requires_grad_()
 
-    @staticmethod
-    def _initialize_transform(transform):
-        def identity(mei, **_kwargs):
-            return mei
-
-        if not transform:
-            return identity
-        else:
-            return transform
-
     def evaluate(self) -> Tensor:
         """Evaluates the function on the current MEI."""
-        return self.func(self.transform(self._mei, i_iteration=self.i_iteration))
+        return self.func(self.transform(self._mei, self.i_iteration))
 
     def step(self) -> Tensor:
         """Performs an optimization step."""
