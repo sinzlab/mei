@@ -68,44 +68,55 @@ class TestMEI:
             initial_guess.requires_grad_.assert_called_once_with()
 
     class TestEvaluate:
-        def test_if_transform_is_correctly_called(self, mei, transform, initial_guess):
-            mei(transform=transform).evaluate(0)
-            transform.assert_called_once_with(initial_guess, i_iteration=0)
+        @pytest.mark.parametrize("n_steps", [0, 1, 10])
+        def test_if_transform_is_correctly_called(self, mei, transform, initial_guess, n_steps):
+            mei = mei(transform=transform)
+            for _ in range(n_steps):
+                mei.step()
+            mei.evaluate()
+            calls = [call(initial_guess, i_iteration=i) for i in range(n_steps)] + [
+                call(initial_guess, i_iteration=n_steps)
+            ]
+            transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
-            mei(transform=transform).evaluate(0)
+            mei(transform=transform).evaluate()
             func.assert_called_once_with(transformed_mei)
 
         def test_if_evaluate_returns_correct_value(self, mei, evaluation):
-            assert mei().evaluate(0) == evaluation
+            assert mei().evaluate() == evaluation
 
     class TestStep:
         def test_if_optimizer_gradient_is_zeroed(self, mei, optimizer):
-            mei().step(0)
+            mei().step()
             optimizer.zero_grad.assert_called_with()
 
-        def test_if_transform_is_correctly_called(self, mei, transform, initial_guess):
-            mei(transform=transform).step(0)
-            transform.assert_called_once_with(initial_guess, i_iteration=0)
+        @pytest.mark.parametrize("n_steps", [1, 10])
+        def test_if_transform_is_correctly_called(self, mei, transform, initial_guess, n_steps):
+            mei = mei(transform=transform)
+            for _ in range(n_steps):
+                mei.step()
+            calls = [call(initial_guess, i_iteration=i) for i in range(n_steps)]
+            transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transform, transformed_mei):
-            mei(transform=transform).step(0)
+            mei(transform=transform).step()
             func.assert_called_once_with(transformed_mei)
 
         def test_if_evaluation_is_negated(self, mei, evaluation):
-            mei().step(0)
+            mei().step()
             evaluation.__neg__.assert_called_once_with()
 
         def test_if_backward_is_called_on_negated_evaluation(self, mei, negated_evaluation):
-            mei().step(0)
+            mei().step()
             negated_evaluation.backward.assert_called_once_with()
 
         def test_if_optimizer_takes_a_step(self, mei, optimizer):
-            mei().step(0)
+            mei().step()
             optimizer.step.assert_called_once_with()
 
         def test_if_step_returns_the_correct_value(self, mei, evaluation):
-            assert mei().step(0) == evaluation
+            assert mei().step() == evaluation
 
     class TestGetMEI:
         def test_if_mei_is_detached_when_retrieved(self, mei, initial_guess):
@@ -163,7 +174,7 @@ class TestOptimize:
 
     def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized):
         optimize(optimized())
-        mei.evaluate.assert_called_once_with(0)
+        mei.evaluate.assert_called_once_with()
 
     def test_if_optimized_is_called_correctly(self, optimize, mei, optimized, evaluation):
         optimized = optimized()
@@ -172,7 +183,7 @@ class TestOptimize:
 
     def test_if_mei_takes_steps_correctly(self, optimize, mei, optimized, num_iterations):
         optimize(optimized(num_iterations))
-        calls = [call(i) for i in range(num_iterations)]
+        calls = [call() for _ in range(num_iterations)]
         mei.step.assert_has_calls(calls)
         assert mei.step.call_count == len(calls)
 

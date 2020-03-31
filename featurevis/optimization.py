@@ -34,6 +34,7 @@ class MEI:
         self.initial_guess = initial_guess
         self.optimizer = optimizer
         self.transform = self._initialize_transform(transform)
+        self.i_iteration = 0
         self._mei = self.initial_guess
         self._mei.requires_grad_()
 
@@ -47,16 +48,17 @@ class MEI:
         else:
             return transform
 
-    def evaluate(self, i_iteration: int) -> Tensor:
+    def evaluate(self) -> Tensor:
         """Evaluates the function on the current MEI."""
-        return self.func(self.transform(self._mei, i_iteration=i_iteration))
+        return self.func(self.transform(self._mei, i_iteration=self.i_iteration))
 
-    def step(self, i_iteration: int) -> Tensor:
+    def step(self) -> Tensor:
         """Performs an optimization step."""
         self.optimizer.zero_grad()
-        evaluation = self.evaluate(i_iteration)
+        evaluation = self.evaluate()
         (-evaluation).backward()
         self.optimizer.step()
+        self.i_iteration += 1
         return evaluation
 
     def get_mei(self) -> Tensor:
@@ -78,9 +80,7 @@ def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
         A float representing the final evaluation and a tensor of floats having the same shape as "initial_guess"
         representing the input that maximizes the function.
     """
-    i_iteration = 0
-    evaluation = mei.evaluate(i_iteration)
+    evaluation = mei.evaluate()
     while not optimized(mei, evaluation):
-        evaluation = mei.step(i_iteration)
-        i_iteration += 1
+        evaluation = mei.step()
     return evaluation.item(), mei.get_mei()
