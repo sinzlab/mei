@@ -68,12 +68,12 @@ def mei_with_transform(model, initial_mei, optimizer, transform):
 
 @pytest.fixture
 def transform():
-    def _transform(mei, **_kwargs):
-        return mei
+    def _transform(mei, _i_iteration):
+        return -mei
 
     return _transform
 
 
 def test_if_optimization_process_converges_to_transformed_mei(optimize_with_transform, transform, true_mei):
     _, optimized_mei = optimize_with_transform()
-    assert torch.allclose(optimized_mei, transform(true_mei))
+    assert torch.allclose(optimized_mei, transform(true_mei, 0))
