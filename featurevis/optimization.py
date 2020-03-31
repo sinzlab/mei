@@ -54,8 +54,7 @@ class MEI:
     def step(self, i_iteration: int) -> Tensor:
         """Performs an optimization step."""
         self.optimizer.zero_grad()
-        transformed_mei = self.transform(self._mei, i_iteration=i_iteration)
-        evaluation = self.func(transformed_mei)
+        evaluation = self.evaluate(i_iteration)
         (-evaluation).backward()
         self.optimizer.step()
         return evaluation
