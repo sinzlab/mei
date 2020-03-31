@@ -64,8 +64,8 @@ class TestMEI:
         def test_if_transform_gets_stored_as_instance_attribute_if_provided(self, mei, transform):
             assert mei(transform=transform).transform is transform
 
-        def test_if_transform_is_identity_function_if_not_provided(self, mei):
-            assert mei().transform("mei", 0) == "mei"
+        def test_if_transform_is_default_transform_if_not_provided(self, mei):
+            assert mei().transform is optimization.default_transform
 
         def test_if_initial_guess_gets_grad_enabled(self, mei, initial):
             mei()
