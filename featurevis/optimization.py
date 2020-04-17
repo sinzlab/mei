@@ -34,6 +34,7 @@ class MEI:
         optimizer: Optimizer,
         transform: Callable[[Tensor, int], Tensor] = default_transform,
         regularization: Callable[[Tensor, int], Tensor] = default_regularization,
+        precondition: Callable[[Tensor, int], Tensor] = default_preconditioning,
     ):
         """Initializes MEI.
 
@@ -47,12 +48,15 @@ class MEI:
                 that must return a transformed version of the current MEI. Optional.
             regularization: A callable that should have the current mei and the index of the current iteration as
                 parameters and that should return a regularization term.
+            precondition: A callable that should have the gradient of the MEI and the index of the current iteration as
+                parameters and that should return a preconditioned gradient.
         """
         self.func = func
         self.initial = initial
         self.optimizer = optimizer
         self.transform = transform
         self.regularization = regularization
+        self.precondition = precondition
         self.i_iteration = 0
         self._mei = self.initial
         self._mei.requires_grad_()
@@ -74,6 +78,7 @@ class MEI:
         evaluation = self.evaluate()
         reg_term = self.regularization(self._transformed_mei, self.i_iteration)
         (-evaluation + reg_term).backward()
+        self._mei.grad = self.precondition(self._mei.grad, self.i_iteration)
         self.optimizer.step()
         self.__transformed_mei = None
         self.i_iteration += 1

@@ -20,8 +20,16 @@ def test_default_preconditioning():
 
 class TestMEI:
     @pytest.fixture
-    def mei(self, func, initial, optimizer, transform, regularization):
-        return partial(optimization.MEI, func, initial, optimizer, transform=transform, regularization=regularization)
+    def mei(self, func, initial, optimizer, transform, regularization, precondition):
+        return partial(
+            optimization.MEI,
+            func,
+            initial,
+            optimizer,
+            transform=transform,
+            regularization=regularization,
+            precondition=precondition,
+        )
 
     @pytest.fixture
     def func(self, evaluation):
@@ -50,6 +58,7 @@ class TestMEI:
     def initial(self):
         initial = MagicMock()
         initial.__repr__ = MagicMock(return_value="initial")
+        initial.grad = "gradient"
         initial.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
         return initial
 
@@ -68,6 +77,10 @@ class TestMEI:
     @pytest.fixture
     def regularization(self):
         return MagicMock(name="regularization", return_value="reg_term")
+
+    @pytest.fixture
+    def precondition(self):
+        return MagicMock(name="precondition", return_value="preconditioned_gradient")
 
     class TestInit:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
@@ -90,6 +103,12 @@ class TestMEI:
 
         def test_if_regularization_is_default_regularization_if_not_provided(self, func, initial, optimizer):
             assert optimization.MEI(func, initial, optimizer).regularization is optimization.default_regularization
+
+        def test_if_precondition_gets_stored_as_instance_attribute_if_provided(self, mei, precondition):
+            assert mei().precondition is precondition
+
+        def test_if_precondition_is_default_precondition_if_not_provided(self, func, initial, optimizer):
+            assert optimization.MEI(func, initial, optimizer).precondition is optimization.default_preconditioning
 
         def test_if_initial_guess_gets_grad_enabled(self, mei, initial):
             mei()
@@ -148,6 +167,18 @@ class TestMEI:
         def test_if_backward_is_called_on_negated_evaluation_plus_reg_term(self, mei, negated_evaluation_plus_reg_term):
             mei().step()
             negated_evaluation_plus_reg_term.backward.assert_called_once_with()
+
+        @pytest.mark.parametrize("n_steps", [1, 10])
+        def test_if_precondition_is_called_correctly(self, mei, precondition, n_steps):
+            mei = mei()
+            for _ in range(n_steps):
+                mei.step()
+            calls = [call("gradient", 0)] + [call("preconditioned_gradient", i) for i in range(1, n_steps)]
+            assert precondition.mock_calls == calls
+
+        def test_if_preconditioned_gradient_is_reassigned_mei(self, mei, initial):
+            mei().step()
+            assert initial.grad == "preconditioned_gradient"
 
         def test_if_optimizer_takes_a_step(self, mei, optimizer):
             mei().step()
