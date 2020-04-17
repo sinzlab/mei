@@ -19,6 +19,11 @@ def default_regularization(_mei, _i_iteration):
     return 0
 
 
+def default_preconditioning(gradient, _i_iteration):
+    """Default preconditioning used when no preconditioning is provided to MEI."""
+    return gradient
+
+
 class MEI:
     """Wrapper around the function and the MEI tensor."""
 
