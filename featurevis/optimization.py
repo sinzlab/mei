@@ -19,7 +19,7 @@ def default_regularization(_mei, _i_iteration):
     return 0
 
 
-def default_preconditioning(gradient, _i_iteration):
+def default_precondition(gradient, _i_iteration):
     """Default preconditioning used when no preconditioning is provided to MEI."""
     return gradient
 
@@ -34,7 +34,7 @@ class MEI:
         optimizer: Optimizer,
         transform: Callable[[Tensor, int], Tensor] = default_transform,
         regularization: Callable[[Tensor, int], Tensor] = default_regularization,
-        precondition: Callable[[Tensor, int], Tensor] = default_preconditioning,
+        precondition: Callable[[Tensor, int], Tensor] = default_precondition,
     ):
         """Initializes MEI.
 

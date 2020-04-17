@@ -14,8 +14,8 @@ def test_default_regularization():
     assert optimization.default_regularization("mei", 0) == 0
 
 
-def test_default_preconditioning():
-    assert optimization.default_preconditioning("gradient", 0) == "gradient"
+def test_default_precondition():
+    assert optimization.default_precondition("gradient", 0) == "gradient"
 
 
 class TestMEI:
@@ -108,7 +108,7 @@ class TestMEI:
             assert mei().precondition is precondition
 
         def test_if_precondition_is_default_precondition_if_not_provided(self, func, initial, optimizer):
-            assert optimization.MEI(func, initial, optimizer).precondition is optimization.default_preconditioning
+            assert optimization.MEI(func, initial, optimizer).precondition is optimization.default_precondition
 
         def test_if_initial_guess_gets_grad_enabled(self, mei, initial):
             mei()
