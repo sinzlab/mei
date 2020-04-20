@@ -24,7 +24,7 @@ def default_precondition(gradient, _i_iteration):
     return gradient
 
 
-def default_postprocess(mei, _i_iteration):
+def default_postprocessing(mei, _i_iteration):
     """Default postprocessing function used when not postprocessing function is provided to MEI."""
     return mei
 
@@ -40,7 +40,7 @@ class MEI:
         transform: Callable[[Tensor, int], Tensor] = default_transform,
         regularization: Callable[[Tensor, int], Tensor] = default_regularization,
         precondition: Callable[[Tensor, int], Tensor] = default_precondition,
-        postprocess: Callable[[Tensor, int], Tensor] = default_postprocess,
+        postprocessing: Callable[[Tensor, int], Tensor] = default_postprocessing,
     ):
         """Initializes MEI.
 
@@ -56,8 +56,8 @@ class MEI:
                 parameters and that should return a regularization term.
             precondition: A callable that should have the gradient of the MEI and the index of the current iteration as
                 parameters and that should return a preconditioned gradient.
-            postprocess: A callable that should have the current MEI and the index of the current iteration as
-                parameters and that should return a post-processed MEI. The operation performed by this operation on the
+            postprocessing: A callable that should have the current MEI and the index of the current iteration as
+                parameters and that should return a post-processed MEI. The operation performed by this callable on the
                 MEI has no influence on its gradient.
         """
         self.func = func
@@ -66,7 +66,7 @@ class MEI:
         self.transform = transform
         self.regularization = regularization
         self.precondition = precondition
-        self.postprocess = postprocess
+        self.postprocessing = postprocessing
         self.i_iteration = 0
         self._mei = self.initial
         self._mei.requires_grad_()
@@ -90,7 +90,7 @@ class MEI:
         (-evaluation + reg_term).backward()
         self._mei.grad = self.precondition(self._mei.grad, self.i_iteration)
         self.optimizer.step()
-        self._mei.data = self.postprocess(self._mei.data, self.i_iteration)
+        self._mei.data = self.postprocessing(self._mei.data, self.i_iteration)
         self.__transformed_mei = None
         self.i_iteration += 1
         return evaluation

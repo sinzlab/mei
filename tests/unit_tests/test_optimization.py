@@ -18,13 +18,13 @@ def test_default_precondition():
     assert optimization.default_precondition("gradient", 0) == "gradient"
 
 
-def test_default_postprocess():
-    assert optimization.default_postprocess("mei", 0) == "mei"
+def test_default_postprocessing():
+    assert optimization.default_postprocessing("mei", 0) == "mei"
 
 
 class TestMEI:
     @pytest.fixture
-    def mei(self, func, initial, optimizer, transform, regularization, precondition, postprocess):
+    def mei(self, func, initial, optimizer, transform, regularization, precondition, postprocessing):
         return partial(
             optimization.MEI,
             func,
@@ -33,7 +33,7 @@ class TestMEI:
             transform=transform,
             regularization=regularization,
             precondition=precondition,
-            postprocess=postprocess,
+            postprocessing=postprocessing,
         )
 
     @pytest.fixture
@@ -89,8 +89,8 @@ class TestMEI:
         return MagicMock(name="precondition", return_value="preconditioned_gradient")
 
     @pytest.fixture
-    def postprocess(self):
-        return MagicMock(name="postprocess", return_value="post_processed_mei_data")
+    def postprocessing(self):
+        return MagicMock(name="postprocessing", return_value="post_processed_mei_data")
 
     class TestInit:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
@@ -195,12 +195,12 @@ class TestMEI:
             optimizer.step.assert_called_once_with()
 
         @pytest.mark.parametrize("n_steps", [1, 10])
-        def test_if_postprocess_is_called_correctly(self, mei, postprocess, n_steps):
+        def test_if_postprocessing_is_called_correctly(self, mei, postprocessing, n_steps):
             mei = mei()
             for _ in range(n_steps):
                 mei.step()
             calls = [call("mei_data", 0)] + [call("post_processed_mei_data", i) for i in range(1, n_steps)]
-            assert postprocess.mock_calls == calls
+            assert postprocessing.mock_calls == calls
 
         def test_if_step_returns_the_correct_value(self, mei, evaluation):
             assert mei().step() == evaluation
