@@ -110,15 +110,17 @@ def ascend_gradient(
         model: Callable object that will receive a tensor and must return a tensor containing a single float.
         config: A dictionary containing the following keys: "optimizer", "optimizer_kwargs", "stopper",
             "stopper_kwargs", "transform", "transform_kwargs", "regularization", "regularization_kwargs",
-            "precondition", "precondition_kwargs", "device". The corresponding to the "optimizer", "stopper",
-            "transform" ,"regularization" and "precondition" keys must be absolute paths pointing to the optimizer,
-            stopper, transform ,regularization and precondition callables, respectively. The values corresponding to the
-            "optimizer_kwargs", "stopper_kwargs", "transform_kwargs" ,"regularization_kwargs" and "precondition_kwargs"
-            keys must be dictionaries containing keyword arguments with which the respective callables will be called.
+            "precondition", "precondition_kwargs", "postprocessing", "postprocessing_kwargs", "device". The values
+            corresponding to the "optimizer", "stopper", "transform" ,"regularization", "precondition" and
+            "postprocessing" keys must be absolute paths pointing to the optimizer, stopper, transform ,regularization,
+            precondition and postprocessing callables, respectively. The values corresponding to the "optimizer_kwargs",
+            "stopper_kwargs", "transform_kwargs" ,"regularization_kwargs", "precondition_kwargs" and
+            "postprocessing_kwargs" keys must be dictionaries containing keyword arguments with which the respective
+            callables will be called.
             The value corresponding to the "device" key must be either "cuda" or "cpu".
             No transform will be used if the value belonging to the "transform" key is "None". The value belonging to
             the "transform_kwargs" key should also be "None" if that is the case. The same logic can be applied to the
-            "regularization" and "precondition" keys.
+            "regularization", "precondition" and "postprocessing" keys.
         seed: Integer used to make the MEI generation process reproducible.
         set_seed: For testing purposes.
         get_dims: For testing purposes.
