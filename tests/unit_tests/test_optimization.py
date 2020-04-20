@@ -18,6 +18,10 @@ def test_default_precondition():
     assert optimization.default_precondition("gradient", 0) == "gradient"
 
 
+def test_default_postprocess():
+    assert optimization.default_postprocess("mei", 0) == "mei"
+
+
 class TestMEI:
     @pytest.fixture
     def mei(self, func, initial, optimizer, transform, regularization, precondition):

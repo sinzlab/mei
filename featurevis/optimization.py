@@ -24,6 +24,11 @@ def default_precondition(gradient, _i_iteration):
     return gradient
 
 
+def default_postprocess(mei, _i_iteration):
+    """Default postprocessing function used when not postprocessing function is provided to MEI."""
+    return mei
+
+
 class MEI:
     """Wrapper around the function and the MEI tensor."""
 
