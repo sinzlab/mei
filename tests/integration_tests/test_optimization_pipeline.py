@@ -135,3 +135,26 @@ def test_if_optimization_process_converges_when_precondition_is_used(optimize_wi
 def test_if_final_evaluation_matches_expected_value_when_precondition_is_used(optimize_with_precondition):
     final_evaluation, _ = optimize_with_precondition()
     assert final_evaluation == pytest.approx(-1.0)
+
+
+@pytest.fixture
+def optimize_with_postprocessing(mei_with_postprocessing, stopper):
+    return partial(optimization.optimize, mei_with_postprocessing, stopper)
+
+
+@pytest.fixture
+def mei_with_postprocessing(model, initial_mei, optimizer, postprocessing):
+    return optimization.MEI(model, initial_mei, optimizer, postprocessing=postprocessing)
+
+
+@pytest.fixture
+def postprocessing():
+    def _postprocessing(mei_data, _i_iteration):
+        return mei_data / mei_data.abs().sum()
+
+    return _postprocessing
+
+
+def test_if_optimization_process_converges_when_postprocessing_is_used(optimize_with_postprocessing, true_mei):
+    _, optimized_mei = optimize_with_postprocessing()
+    assert torch.allclose(optimized_mei, true_mei / 4)
