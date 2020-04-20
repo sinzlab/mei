@@ -1,10 +1,10 @@
-from typing import Dict, Any
+from typing import Mapping, Any
 
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 
 
 def import_object(
-    path: str, object_kwargs: Dict[str, Any] = None, split_func=split_module_name, import_func=dynamic_import,
+    path: str, object_kwargs: Mapping[str, Any] = None, split_func=split_module_name, import_func=dynamic_import,
 ) -> Any:
     """Imports an object given a path, calls it with the given keyword arguments and returns the object returned by the
     imported object.
