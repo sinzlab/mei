@@ -101,7 +101,11 @@ class MEI:
         return self._mei.detach().squeeze().cpu()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__qualname__}({self.func}, {self.initial})"
+        return (
+            f"{self.__class__.__qualname__}({self.func}, {self.initial}, {self.optimizer}, "
+            f"transform={self.transform}, regularization={self.regularization}, precondition={self.precondition}, "
+            f"postprocessing={self.postprocessing})"
+        )
 
 
 def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:

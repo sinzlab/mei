@@ -70,11 +70,15 @@ class TestMEI:
 
     @pytest.fixture
     def optimizer(self):
-        return MagicMock(name="optimizer")
+        optimizer = MagicMock(name="optimizer")
+        optimizer.__repr__ = MagicMock(return_value="optimizer")
+        return optimizer
 
     @pytest.fixture
     def transform(self, transformed_mei):
-        return MagicMock(name="transform", return_value=transformed_mei)
+        transform = MagicMock(name="transform", return_value=transformed_mei)
+        transform.__repr__ = MagicMock(return_value="transform")
+        return transform
 
     @pytest.fixture
     def transformed_mei(self):
@@ -82,15 +86,21 @@ class TestMEI:
 
     @pytest.fixture
     def regularization(self):
-        return MagicMock(name="regularization", return_value="reg_term")
+        regularization = MagicMock(name="regularization", return_value="reg_term")
+        regularization.__repr__ = MagicMock(return_value="regularization")
+        return regularization
 
     @pytest.fixture
     def precondition(self):
-        return MagicMock(name="precondition", return_value="preconditioned_gradient")
+        precondition = MagicMock(name="precondition", return_value="preconditioned_gradient")
+        precondition.__repr__ = MagicMock(return_value="precondition")
+        return precondition
 
     @pytest.fixture
     def postprocessing(self):
-        return MagicMock(name="postprocessing", return_value="post_processed_mei_data")
+        postprocessing = MagicMock(name="postprocessing", return_value="post_processed_mei_data")
+        postprocessing.__repr__ = MagicMock(return_value="postprocessing")
+        return postprocessing
 
     class TestInit:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
@@ -222,7 +232,12 @@ class TestMEI:
             assert mei().mei == "final_mei"
 
     def test_repr(self, mei):
-        assert mei().__repr__() == "MEI(func, initial)"
+        assert mei().__repr__() == (
+            (
+                "MEI(func, initial, optimizer, transform=transform, regularization=regularization, "
+                "precondition=precondition, postprocessing=postprocessing)"
+            )
+        )
 
 
 class TestOptimize:
