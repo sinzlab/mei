@@ -57,7 +57,8 @@ class MEI:
             precondition: A callable that should have the gradient of the MEI and the index of the current iteration as
                 parameters and that should return a preconditioned gradient.
             postprocess: A callable that should have the current MEI and the index of the current iteration as
-                parameters and that should return a post-processed MEI.
+                parameters and that should return a post-processed MEI. The operation performed by this operation on the
+                MEI has no influence on its gradient.
         """
         self.func = func
         self.initial = initial
@@ -89,6 +90,7 @@ class MEI:
         (-evaluation + reg_term).backward()
         self._mei.grad = self.precondition(self._mei.grad, self.i_iteration)
         self.optimizer.step()
+        self._mei.data = self.postprocess(self._mei.data, self.i_iteration)
         self.__transformed_mei = None
         self.i_iteration += 1
         return evaluation

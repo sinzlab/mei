@@ -64,6 +64,7 @@ class TestMEI:
         initial = MagicMock()
         initial.__repr__ = MagicMock(return_value="initial")
         initial.grad = "gradient"
+        initial.data = "mei_data"
         initial.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
         return initial
 
@@ -89,11 +90,7 @@ class TestMEI:
 
     @pytest.fixture
     def postprocess(self):
-        return MagicMock(name="postprocess", return_value="post_processed_mei")
-
-    @pytest.fixture
-    def post_processed_mei(self):
-        return MagicMock(name="post_processed_mei")
+        return MagicMock(name="postprocess", return_value="post_processed_mei_data")
 
     class TestInit:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
@@ -196,6 +193,14 @@ class TestMEI:
         def test_if_optimizer_takes_a_step(self, mei, optimizer):
             mei().step()
             optimizer.step.assert_called_once_with()
+
+        @pytest.mark.parametrize("n_steps", [1, 10])
+        def test_if_postprocess_is_called_correctly(self, mei, postprocess, n_steps):
+            mei = mei()
+            for _ in range(n_steps):
+                mei.step()
+            calls = [call("mei_data", 0)] + [call("post_processed_mei_data", i) for i in range(1, n_steps)]
+            assert postprocess.mock_calls == calls
 
         def test_if_step_returns_the_correct_value(self, mei, evaluation):
             assert mei().step() == evaluation
