@@ -105,3 +105,33 @@ def test_if_optimization_process_converges_when_regularization_is_used(optimize_
 def test_if_final_evaluation_matches_expected_value_when_regularization_is_used(optimize_with_regularization):
     final_evaluation, _ = optimize_with_regularization()
     assert final_evaluation == pytest.approx(-1.0)
+
+
+@pytest.fixture
+def optimize_with_precondition(mei_with_precondition, stopper):
+    return partial(optimization.optimize, mei_with_precondition, stopper)
+
+
+@pytest.fixture
+def mei_with_precondition(model, initial_mei, optimizer, precondition):
+    return optimization.MEI(model, initial_mei, optimizer, precondition=precondition)
+
+
+@pytest.fixture
+def precondition():
+    def _precondition(gradient, _i_iteration):
+        gradient[0, 0] = 0.0
+        return gradient
+
+    return _precondition
+
+
+def test_if_optimization_process_converges_when_precondition_is_used(optimize_with_precondition, true_mei):
+    _, optimized_mei = optimize_with_precondition()
+    true_mei[0, 0] = 0.0
+    assert torch.allclose(optimized_mei, true_mei)
+
+
+def test_if_final_evaluation_matches_expected_value_when_precondition_is_used(optimize_with_precondition):
+    final_evaluation, _ = optimize_with_precondition()
+    assert final_evaluation == pytest.approx(-1.0)
