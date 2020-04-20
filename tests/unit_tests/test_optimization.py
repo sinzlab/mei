@@ -24,7 +24,7 @@ def test_default_postprocess():
 
 class TestMEI:
     @pytest.fixture
-    def mei(self, func, initial, optimizer, transform, regularization, precondition):
+    def mei(self, func, initial, optimizer, transform, regularization, precondition, postprocess):
         return partial(
             optimization.MEI,
             func,
@@ -33,6 +33,7 @@ class TestMEI:
             transform=transform,
             regularization=regularization,
             precondition=precondition,
+            postprocess=postprocess,
         )
 
     @pytest.fixture
@@ -85,6 +86,14 @@ class TestMEI:
     @pytest.fixture
     def precondition(self):
         return MagicMock(name="precondition", return_value="preconditioned_gradient")
+
+    @pytest.fixture
+    def postprocess(self):
+        return MagicMock(name="postprocess", return_value="post_processed_mei")
+
+    @pytest.fixture
+    def post_processed_mei(self):
+        return MagicMock(name="post_processed_mei")
 
     class TestInit:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
