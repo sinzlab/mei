@@ -179,7 +179,9 @@ class TestAscendGradient:
     def ascend_gradient(
         self, dataloaders, model, config, get_dims, create_initial_guess, mei_class, import_func, optimize_func
     ):
-        def _ascend_gradient(use_transform=False, use_regularization=False, use_precondition=False):
+        def _ascend_gradient(
+            use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
+        ):
             return partial(
                 methods.ascend_gradient,
                 dataloaders,
@@ -188,6 +190,7 @@ class TestAscendGradient:
                     use_transform=use_transform,
                     use_regularization=use_regularization,
                     use_precondition=use_precondition,
+                    use_postprocessing=use_postprocessing,
                 ),
                 42,
                 get_dims=get_dims,
@@ -209,7 +212,7 @@ class TestAscendGradient:
 
     @pytest.fixture
     def config(self):
-        def _config(use_transform=False, use_regularization=False, use_precondition=False):
+        def _config(use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False):
             config = dict(
                 device="cpu",
                 optimizer="optimizer",
@@ -239,6 +242,14 @@ class TestAscendGradient:
                 )
             else:
                 config = dict(config, precondition=None, precondition_kwargs=None)
+            if use_postprocessing:
+                config = dict(
+                    config,
+                    postprocessing="postprocessing",
+                    postprocessing_kwargs=dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1),
+                )
+            else:
+                config = dict(config, postprocessing=None, postprocessing_kwargs=None)
             return config
 
         return _config
@@ -268,7 +279,9 @@ class TestAscendGradient:
 
     @pytest.fixture
     def import_func_calls(self):
-        def _import_func_calls(use_transform=False, use_regularization=False, use_precondition=False):
+        def _import_func_calls(
+            use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
+        ):
             import_func_calls = [
                 call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
                 call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
@@ -279,13 +292,17 @@ class TestAscendGradient:
                 import_func_calls.append(call("regularization", dict(regularization_kwarg1=0, regularization_kwarg2=1)))
             if use_precondition:
                 import_func_calls.append(call("precondition", dict(precondition_kwarg1=0, precondition_kwarg2=1)))
+            if use_postprocessing:
+                import_func_calls.append(call("postprocessing", dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1)))
             return import_func_calls
 
         return _import_func_calls
 
     @pytest.fixture
     def mei_class_call(self, model):
-        def _mei_class_call(use_transform=False, use_regularization=False, use_precondition=False):
+        def _mei_class_call(
+            use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
+        ):
             args = (model, "initial_guess", "optimizer")
             kwargs = {}
             if use_transform:
@@ -294,6 +311,8 @@ class TestAscendGradient:
                 kwargs["regularization"] = "regularization"
             if use_precondition:
                 kwargs["precondition"] = "precondition"
+            if use_postprocessing:
+                kwargs["postprocessing"] = "postprocessing"
             return call(*args, **kwargs)
 
         return _mei_class_call
@@ -322,29 +341,58 @@ class TestAscendGradient:
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
     @pytest.mark.parametrize("use_precondition", [True, False])
+    @pytest.mark.parametrize("use_postprocessing", [True, False])
     def test_if_import_func_is_correctly_called(
-        self, ascend_gradient, import_func, import_func_calls, use_transform, use_regularization, use_precondition
+        self,
+        ascend_gradient,
+        import_func,
+        import_func_calls,
+        use_transform,
+        use_regularization,
+        use_precondition,
+        use_postprocessing,
     ):
         ascend_gradient(
-            use_transform=use_transform, use_regularization=use_regularization, use_precondition=use_precondition
+            use_transform=use_transform,
+            use_regularization=use_regularization,
+            use_precondition=use_precondition,
+            use_postprocessing=use_postprocessing,
         )()
         calls = import_func_calls(
-            use_transform=use_transform, use_regularization=use_regularization, use_precondition=use_precondition
+            use_transform=use_transform,
+            use_regularization=use_regularization,
+            use_precondition=use_precondition,
+            use_postprocessing=use_postprocessing,
         )
         assert import_func.mock_calls == calls
 
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
     @pytest.mark.parametrize("use_precondition", [True, False])
+    @pytest.mark.parametrize("use_postprocessing", [True, False])
     def test_if_mei_is_correctly_initialized(
-        self, ascend_gradient, model, mei_class, mei_class_call, use_transform, use_regularization, use_precondition
+        self,
+        ascend_gradient,
+        model,
+        mei_class,
+        mei_class_call,
+        use_transform,
+        use_regularization,
+        use_precondition,
+        use_postprocessing,
     ):
         ascend_gradient(
-            use_transform=use_transform, use_regularization=use_regularization, use_precondition=use_precondition
+            use_transform=use_transform,
+            use_regularization=use_regularization,
+            use_precondition=use_precondition,
+            use_postprocessing=use_postprocessing,
         )()
         assert mei_class.mock_calls == [
             mei_class_call(
-                use_transform=use_transform, use_regularization=use_regularization, use_precondition=use_precondition
+                use_transform=use_transform,
+                use_regularization=use_regularization,
+                use_precondition=use_precondition,
+                use_postprocessing=use_postprocessing,
             )
         ]
 
