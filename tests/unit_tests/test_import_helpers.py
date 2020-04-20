@@ -3,13 +3,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from featurevis import utility
+from featurevis import import_helpers
 
 
 class TestImportObject:
     @pytest.fixture
     def import_object(self, split_func, import_func):
-        return partial(utility.import_object, split_func=split_func, import_func=import_func)
+        return partial(import_helpers.import_object, split_func=split_func, import_func=import_func)
 
     @pytest.fixture
     def split_func(self):

@@ -8,7 +8,7 @@ from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from . import core
 from . import optimization
-from .utility import import_object
+from .import_helpers import import_object
 
 
 def import_path(path):
