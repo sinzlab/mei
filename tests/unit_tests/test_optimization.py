@@ -188,6 +188,11 @@ class TestMEI:
             mei().step()
             negated_evaluation_plus_reg_term.backward.assert_called_once_with()
 
+        def test_if_runtime_error_is_raised_if_gradient_does_not_reach_mei(self, mei, initial):
+            initial.grad = None
+            with pytest.raises(RuntimeError):
+                mei().step()
+
         @pytest.mark.parametrize("n_steps", [1, 10])
         def test_if_precondition_is_called_correctly(self, mei, precondition, n_steps):
             mei = mei()

@@ -88,6 +88,8 @@ class MEI:
         evaluation = self.evaluate()
         reg_term = self.regularization(self._transformed_mei, self.i_iteration)
         (-evaluation + reg_term).backward()
+        if self._mei.grad is None:
+            raise RuntimeError("Gradient did not reach MEI")
         self._mei.grad = self.precondition(self._mei.grad, self.i_iteration)
         self.optimizer.step()
         self._mei.data = self.postprocessing(self._mei.data, self.i_iteration)
