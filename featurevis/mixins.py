@@ -1,14 +1,20 @@
 from __future__ import annotations
 import os
 import tempfile
-from typing import Callable, Dict
+from typing import Callable, Iterable, Mapping, Optional, Tuple, Dict, Any
 from string import ascii_letters
 from random import choice
 
 import torch
+from torch.nn import Module
+from torch.utils.data import DataLoader
 from nnfabrik.utility.dj_helpers import make_hash
 
 from . import integration
+
+
+Key = Dict[str, Any]
+Dataloaders = Dict[str, DataLoader]
 
 
 class TrainedEnsembleModelTemplateMixin:
@@ -27,15 +33,15 @@ class TrainedEnsembleModelTemplateMixin:
         -> master.trained_model_table
         """
 
-        insert: Callable[[Dict], None]
+        insert: Callable[[Iterable], None]
 
     dataset_table = None
     trained_model_table = None
     ensemble_model_class = integration.EnsembleModel
 
-    insert1: Callable[[Dict], None]
+    insert1: Callable[[Mapping], None]
 
-    def create_ensemble(self, key, comment=""):
+    def create_ensemble(self, key: Key, comment: str = "") -> None:
         if len(self.dataset_table() & key) != 1:
             raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
         dataset_key = (self.dataset_table().proj() & key).fetch1()
@@ -44,10 +50,10 @@ class TrainedEnsembleModelTemplateMixin:
         self.insert1(dict(primary_key, ensemble_comment=comment))
         self.Member().insert([{**primary_key, **m} for m in models])
 
-    def load_model(self, key=None):
+    def load_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, integration.EnsembleModel]:
         return self._load_ensemble_model(key=key)
 
-    def _load_ensemble_model(self, key=None):
+    def _load_ensemble_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, integration.EnsembleModel]:
         model_keys = (self.trained_model_table() & key).fetch(as_dict=True)
         dataloaders, models = tuple(
             list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
@@ -70,19 +76,20 @@ class CSRFV1SelectorTemplateMixin:
     dataset_fn = "csrf_v1"
     constrained_output_model = integration.ConstrainedOutputModel
 
-    insert: Callable[[Dict], None]
-    __and__: Callable[[Dict], CSRFV1SelectorTemplateMixin]
+    insert: Callable[[Iterable], None]
+    __and__: Callable[[Mapping], CSRFV1SelectorTemplateMixin]
+    fetch1: Callable
 
     @property
     def _key_source(self):
         return self.dataset_table() & dict(dataset_fn=self.dataset_fn)
 
-    def make(self, key, get_mappings=integration.get_mappings):
+    def make(self, key: Key, get_mappings: Callable = integration.get_mappings) -> None:
         dataset_config = (self.dataset_table() & key).fetch1("dataset_config")
         mappings = get_mappings(dataset_config, key)
         self.insert(mappings)
 
-    def get_output_selected_model(self, model, key):
+    def get_output_selected_model(self, model: Module, key: Key) -> constrained_output_model:
         neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
         return self.constrained_output_model(model, neuron_pos, forward_kwargs=dict(data_key=session_id))
 
@@ -97,19 +104,20 @@ class MEIMethodMixin:
     method_ts       = CURRENT_TIMESTAMP : timestamp     # UTZ timestamp at time of insertion
     """
 
-    insert1: Callable[[Dict], None]
-    __and__: Callable[[Dict], MEIMethodMixin]
+    insert1: Callable[[Mapping], None]
+    __and__: Callable[[Mapping], MEIMethodMixin]
+    fetch1: Callable
 
     seed_table = None
     import_func = staticmethod(integration.import_module)
 
-    def add_method(self, method_fn, method_config):
+    def add_method(self, method_fn: str, method_config: Mapping) -> None:
         self.insert1(dict(method_fn=method_fn, method_hash=make_hash(method_config), method_config=method_config))
 
-    def generate_mei(self, dataloader, model, key, seed):
+    def generate_mei(self, dataloaders: Dataloaders, model: Module, key: Key, seed: int) -> Dict[str, Any]:
         method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
         method_fn = self.import_func(method_fn)
-        mei, score, output = method_fn(dataloader, model, method_config, seed)
+        mei, score, output = method_fn(dataloaders, model, method_config, seed)
         return dict(key, mei=mei, score=score, output=output)
 
 
@@ -141,27 +149,27 @@ class MEITemplateMixin:
     save = staticmethod(torch.save)
     get_temp_dir = tempfile.TemporaryDirectory
 
-    insert1: Callable[[Dict], None]
+    insert1: Callable[[Mapping], None]
 
-    def __init__(self, *args, cache_size_limit=10, **kwargs):
+    def __init__(self, *args, cache_size_limit: int = 10, **kwargs):
         super().__init__(*args, **kwargs)
         self.model_loader = self.model_loader_class(self.trained_model_table, cache_size_limit=cache_size_limit)
 
-    def make(self, key):
+    def make(self, key: Key) -> None:
         dataloaders, model = self.model_loader.load(key=key)
         seed = (self.seed_table() & key).fetch1("mei_seed")
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
         self._insert_mei(mei_entity)
 
-    def _insert_mei(self, mei_entity):
+    def _insert_mei(self, mei_entity: Dict[str, Any]) -> None:
         """Saves the MEI to a temporary directory and inserts the prepared entity into the table."""
         with self.get_temp_dir() as temp_dir:
             for name in ("mei", "output"):
                 self._save_to_disk(mei_entity, temp_dir, name)
             self.insert1(mei_entity)
 
-    def _save_to_disk(self, mei_entity, temp_dir, name):
+    def _save_to_disk(self, mei_entity: Dict[str, Any], temp_dir: str, name: str) -> None:
         data = mei_entity.pop(name)
         filename = name + "_" + self._create_random_filename() + ".pth.tar"
         filepath = os.path.join(temp_dir, filename)
@@ -169,5 +177,5 @@ class MEITemplateMixin:
         mei_entity[name] = filepath
 
     @staticmethod
-    def _create_random_filename(length=32):
+    def _create_random_filename(length: Optional[int] = 32) -> str:
         return "".join(choice(ascii_letters) for _ in range(length))
