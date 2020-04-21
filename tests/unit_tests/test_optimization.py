@@ -6,20 +6,23 @@ import pytest
 from featurevis import optimization
 
 
-def test_default_transform():
-    assert optimization.default_transform("mei", 0) == "mei"
+class TestDefaults:
+    @pytest.fixture
+    def mei(self):
+        return MagicMock(name="mei")
 
+    def test_default_transform(self, mei):
+        assert optimization.default_transform(mei, 0) == mei
 
-def test_default_regularization():
-    assert optimization.default_regularization("mei", 0) == 0
+    def test_default_regularization(self, mei):
+        assert optimization.default_regularization(mei, 0) == 0
 
+    def test_default_precondition(self):
+        gradient = MagicMock(name="gradient")
+        assert optimization.default_precondition(gradient, 0) == gradient
 
-def test_default_precondition():
-    assert optimization.default_precondition("gradient", 0) == "gradient"
-
-
-def test_default_postprocessing():
-    assert optimization.default_postprocessing("mei", 0) == "mei"
+    def test_default_postprocessing(self, mei):
+        assert optimization.default_postprocessing(mei, 0) == mei
 
 
 class TestMEI:

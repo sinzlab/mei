@@ -9,22 +9,22 @@ if TYPE_CHECKING:
     from .stoppers import OptimizationStopper
 
 
-def default_transform(mei, _i_iteration):
+def default_transform(mei: Tensor, _i_iteration: int) -> Tensor:
     """Default transform used when no transform is provided to MEI."""
     return mei
 
 
-def default_regularization(_mei, _i_iteration):
+def default_regularization(_mei: Tensor, _i_iteration: int) -> 0:
     """Default regularization used when no regularization is provided to MEI."""
     return 0
 
 
-def default_precondition(gradient, _i_iteration):
+def default_precondition(gradient: Tensor, _i_iteration: int) -> Tensor:
     """Default preconditioning used when no preconditioning is provided to MEI."""
     return gradient
 
 
-def default_postprocessing(mei, _i_iteration):
+def default_postprocessing(mei: Tensor, _i_iteration: int) -> Tensor:
     """Default postprocessing function used when not postprocessing function is provided to MEI."""
     return mei
 
@@ -73,7 +73,7 @@ class MEI:
         self.__transformed_mei = None
 
     @property
-    def _transformed_mei(self):
+    def _transformed_mei(self) -> Tensor:
         if self.__transformed_mei is None:
             self.__transformed_mei = self.transform(self._mei, self.i_iteration)
         return self.__transformed_mei
