@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, call
 from contextlib import contextmanager
+from functools import partial
 
 import pytest
 
@@ -201,12 +202,8 @@ class TestCSRFV1SelectorTemplateMixin:
 
 class TestMEIMethodMixin:
     @pytest.fixture
-    def dataloaders(self):
-        return MagicMock(name="dataloaders")
-
-    @pytest.fixture
-    def seed(self):
-        return 42
+    def generate_mei(self, mei_method, dataloaders, model, seed):
+        return partial(mei_method().generate_mei, dataloaders, model, dict(key="key"), seed)
 
     @pytest.fixture
     def mei_method(self, insert1, magic_and, import_func):
@@ -215,6 +212,14 @@ class TestMEIMethodMixin:
         mei_method.__and__ = magic_and
         mei_method.import_func = import_func
         return mei_method
+
+    @pytest.fixture
+    def dataloaders(self):
+        return MagicMock(name="dataloaders")
+
+    @pytest.fixture
+    def seed(self):
+        return 42
 
     @pytest.fixture
     def insert1(self):
@@ -241,21 +246,21 @@ class TestMEIMethodMixin:
             dict(method_fn="method_fn", method_hash="d41d8cd98f00b204e9800998ecf8427e", method_config=method_config)
         )
 
-    def test_that_method_is_correctly_fetched(self, model, dataloaders, seed, mei_method, magic_and):
-        mei_method().generate_mei(dataloaders, model, dict(key="key"), seed)
+    def test_that_method_is_correctly_fetched(self, generate_mei, magic_and):
+        generate_mei()
         magic_and.assert_called_once_with(dict(key="key"))
         magic_and.return_value.fetch1.assert_called_once_with("method_fn", "method_config")
 
-    def test_if_method_function_is_correctly_imported(self, model, dataloaders, seed, mei_method, import_func):
-        mei_method().generate_mei(dataloaders, model, dict(key="key"), seed)
+    def test_if_method_function_is_correctly_imported(self, generate_mei, import_func):
+        generate_mei()
         import_func.assert_called_once_with("method_fn")
 
-    def test_if_method_function_is_correctly_called(self, model, dataloaders, seed, mei_method, method_fn):
-        mei_method().generate_mei(dataloaders, model, dict(key="key"), seed)
+    def test_if_method_function_is_correctly_called(self, generate_mei, model, dataloaders, seed, method_fn):
+        generate_mei()
         method_fn.assert_called_once_with(dataloaders, model, "method_config", seed)
 
-    def test_if_returned_mei_entity_is_correct(self, model, dataloaders, seed, mei_method):
-        mei_entity = mei_method().generate_mei(dataloaders, model, dict(key="key"), seed)
+    def test_if_returned_mei_entity_is_correct(self, generate_mei):
+        mei_entity = generate_mei()
         assert mei_entity == dict(key="key", mei="mei", score="score", output="output")
 
 
