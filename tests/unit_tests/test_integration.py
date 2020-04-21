@@ -44,13 +44,6 @@ def fake_trained_model_table():
     return _fake_trained_model_table
 
 
-def test_get_output_selected_model():
-    model = integration.get_output_selected_model(0, 10, FakeModel(1))
-    output = model(torch.tensor([[1, 2, 3]], dtype=torch.float))
-    expected_output = torch.tensor([[11]], dtype=torch.float)
-    assert output == expected_output
-
-
 def get_fake_load_function(data):
     def fake_load_function(path):
         return data[path]
@@ -74,15 +67,6 @@ def test_get_mappings():
 
 def fake_get_dims(dataloaders):
     return dataloaders
-
-
-def test_get_input_shape():
-    dataloaders = dict(
-        train=dict(session_id0=dict(inputs=0), session_id1=dict(inputs=1)),
-        validation=dict(session_id0=dict(inputs=2), session_id1=dict(inputs=3)),
-    )
-    shape = integration.get_input_shape(dataloaders, get_dims_func=fake_get_dims)
-    assert shape == 0
 
 
 class TestModelLoader:
