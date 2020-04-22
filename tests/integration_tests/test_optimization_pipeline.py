@@ -6,6 +6,7 @@ from torch.optim import SGD
 
 from featurevis import optimization
 from featurevis.stoppers import NumIterations
+from featurevis.domain import Input
 
 
 @pytest.fixture
@@ -20,7 +21,7 @@ def mei(model, initial_mei, optimizer):
 
 @pytest.fixture
 def optimizer(initial_mei):
-    return SGD([initial_mei], lr=0.1)
+    return SGD([initial_mei.tensor], lr=0.1)
 
 
 @pytest.fixture
@@ -38,7 +39,7 @@ def model(true_mei):
 
 @pytest.fixture
 def initial_mei():
-    return torch.zeros(2, 2)
+    return Input(torch.zeros(2, 2))
 
 
 @pytest.fixture

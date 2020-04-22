@@ -4,6 +4,7 @@ from functools import partial
 import pytest
 
 from featurevis import methods
+from featurevis.domain import Input
 
 
 class TestAscend:
@@ -177,7 +178,16 @@ class TestGradientAscent:
 class TestAscendGradient:
     @pytest.fixture
     def ascend_gradient(
-        self, dataloaders, model, config, get_dims, create_initial_guess, mei_class, import_func, optimize_func
+        self,
+        dataloaders,
+        model,
+        config,
+        get_dims,
+        create_initial_guess,
+        input_cls,
+        mei_class,
+        import_func,
+        optimize_func,
     ):
         def _ascend_gradient(
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
@@ -195,6 +205,7 @@ class TestAscendGradient:
                 42,
                 get_dims=get_dims,
                 create_initial_guess=create_initial_guess,
+                input_cls=input_cls,
                 mei_class=mei_class,
                 import_func=import_func,
                 optimize_func=optimize_func,
@@ -263,6 +274,10 @@ class TestAscendGradient:
         return MagicMock(name="create_initial_guess", return_value="initial_guess")
 
     @pytest.fixture
+    def input_cls(self):
+        return MagicMock(name="input_cls", return_value="input_instance", spec=Input)
+
+    @pytest.fixture
     def mei_class(self):
         return MagicMock(name="mei_class", return_value="mei")
 
@@ -303,7 +318,7 @@ class TestAscendGradient:
         def _mei_class_call(
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
         ):
-            args = (model, "initial_guess", "optimizer")
+            args = (model, "input_instance", "optimizer")
             kwargs = {}
             if use_transform:
                 kwargs["transform"] = "transform"
@@ -337,6 +352,10 @@ class TestAscendGradient:
     def test_if_create_initial_guess_is_correctly_called(self, ascend_gradient, create_initial_guess):
         ascend_gradient(use_transform=True)()
         create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
+
+    def test_if_input_class_is_correctly_called(self, ascend_gradient, input_cls):
+        ascend_gradient()()
+        input_cls.assert_called_once_with("initial_guess")
 
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
