@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Tuple
+from dataclasses import dataclass
 
 # Prevents circular import error
 if TYPE_CHECKING:
@@ -7,6 +8,12 @@ if TYPE_CHECKING:
     from torch.optim.optimizer import Optimizer
 
     from .stoppers import OptimizationStopper
+
+
+@dataclass
+class Gradient:
+    regular: Tensor
+    preconditioned: Tensor
 
 
 def default_transform(mei: Tensor, _i_iteration: int) -> Tensor:

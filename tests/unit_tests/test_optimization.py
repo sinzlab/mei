@@ -1,9 +1,35 @@
 from unittest.mock import MagicMock, call
 from functools import partial
+import dataclasses
 
 import pytest
 
 from featurevis import optimization
+
+
+class TestGradient:
+    @pytest.fixture
+    def regular(self):
+        return MagicMock(name="regular")
+
+    @pytest.fixture
+    def preconditioned(self):
+        return MagicMock(name="preconditioned")
+
+    @pytest.fixture
+    def fields(self, regular, preconditioned):
+        gradient = optimization.Gradient(regular, preconditioned)
+        fields = dataclasses.fields(gradient)
+        return fields
+
+    def test_if_dataclass(self):
+        assert dataclasses.dataclass(optimization.Gradient)
+
+    def test_field_names(self, fields):
+        assert all(n == f.name for n, f in zip(("regular", "preconditioned"), fields))
+
+    def test_field_types(self, fields):
+        assert all(f.type == "Tensor" for f in fields)
 
 
 class TestDefaults:
