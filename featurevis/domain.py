@@ -26,7 +26,7 @@ class Input:
         self.tensor.data = value
 
     def extract(self) -> Tensor:
-        return self.tensor.detach().clone().cpu()
+        return self.tensor.detach().clone().cpu().squeeze()
 
     def clone(self) -> Input:
         return Input(self.tensor.clone())

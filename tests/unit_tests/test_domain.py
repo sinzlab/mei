@@ -16,7 +16,7 @@ class TestInput:
         tensor = MagicMock(name="tensor", spec=Tensor)
         tensor.grad = "gradient"
         tensor.data = "data"
-        tensor.detach.return_value.clone.return_value.cpu.return_value = "extracted_tensor"
+        tensor.detach.return_value.clone.return_value.cpu.return_value.squeeze.return_value = "extracted_tensor"
         tensor.__repr__ = MagicMock(name="repr", return_value="repr")
         return tensor
 
@@ -51,6 +51,10 @@ class TestInput:
     def test_if_tensor_is_moved_to_cpu_when_extracted(self, input_, tensor):
         input_.extract()
         tensor.detach.return_value.clone.return_value.cpu.assert_called_once_with()
+
+    def test_if_tensor_is_squeezed_when_extracted(self, input_, tensor):
+        input_.extract()
+        tensor.detach.return_value.clone.return_value.cpu.return_value.squeeze.assert_called_once_with()
 
     def test_if_extract_returns_correct_value(self, input_, tensor):
         assert input_.extract() == "extracted_tensor"
