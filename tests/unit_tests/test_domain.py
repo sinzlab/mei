@@ -55,5 +55,13 @@ class TestInput:
     def test_if_extract_returns_correct_value(self, input_, tensor):
         assert input_.extract() == "extracted_tensor"
 
+    def test_if_tensor_is_cloned_when_cloned(self, input_, tensor):
+        input_.clone()
+        tensor.clone.assert_called_once_with()
+
+    def test_if_clone_returns_a_new_input_instance(self, input_):
+        cloned = input_.clone()
+        assert isinstance(cloned, domain.Input) and cloned is not input_
+
     def test_repr(self, input_, tensor):
         assert repr(input_) == f"Input({repr(tensor)})"

@@ -1,5 +1,6 @@
 """This module contains domain models."""
 
+from __future__ import annotations
 from torch import Tensor
 
 
@@ -27,5 +28,8 @@ class Input:
     def extract(self) -> Tensor:
         return self.tensor.detach().clone().cpu()
 
-    def __repr__(self):
+    def clone(self) -> Input:
+        return Input(self.tensor.clone())
+
+    def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}({repr(self.tensor)})"
