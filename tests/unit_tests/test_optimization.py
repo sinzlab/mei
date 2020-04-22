@@ -63,19 +63,23 @@ class TestMEI:
         return MagicMock(name="negated_evaluation + reg_term")
 
     @pytest.fixture
-    def initial(self, current_input):
-        initial = MagicMock()
-        initial.clone.return_value = current_input
-        initial.__repr__ = MagicMock(return_value="initial")
+    def current_input(self, initial):
         return initial
 
     @pytest.fixture
-    def current_input(self):
-        current_input = MagicMock(name="input")
-        current_input.gradient = "gradient"
-        current_input.data = "mei_data"
-        current_input.extract.return_value = "current_input"
-        return current_input
+    def initial(self, cloned_initial):
+        initial = MagicMock()
+        initial.clone.return_value = cloned_initial
+        initial.gradient = "gradient"
+        initial.data = "mei_data"
+        initial.extract.return_value = "current_input"
+        return initial
+
+    @pytest.fixture
+    def cloned_initial(self):
+        cloned_initial = MagicMock(name="cloned_initial")
+        cloned_initial.__repr__ = MagicMock(return_value="initial")
+        return cloned_initial
 
     @pytest.fixture
     def optimizer(self):
@@ -115,8 +119,8 @@ class TestMEI:
         def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
             assert mei().func is func
 
-        def test_if_initial_guess_gets_stored_as_instance_attribute(self, mei, initial):
-            assert mei().initial is initial
+        def test_if_clone_of_initial_guess_gets_stored_as_instance_attribute(self, mei, cloned_initial):
+            assert mei().initial is cloned_initial
 
         def test_if_optimizer_gets_stored_as_instance_attribute(self, mei, optimizer):
             assert mei().optimizer is optimizer
@@ -233,7 +237,7 @@ class TestMEI:
         assert mei().current_input == "current_input"
 
     def test_repr(self, mei):
-        assert mei().__repr__() == (
+        assert repr(mei()) == (
             (
                 "MEI(func, initial, optimizer, transform=transform, regularization=regularization, "
                 "precondition=precondition, postprocessing=postprocessing)"

@@ -61,14 +61,14 @@ class MEI:
                 MEI has no influence on its gradient.
         """
         self.func = func
-        self.initial = initial
+        self.initial = initial.clone()
         self.optimizer = optimizer
         self.transform = transform
         self.regularization = regularization
         self.precondition = precondition
         self.postprocessing = postprocessing
         self.i_iteration = 0
-        self._current_input = self.initial.clone()
+        self._current_input = initial
         self.__transformed_input = None
 
     @property
