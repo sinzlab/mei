@@ -63,13 +63,19 @@ class TestMEI:
         return MagicMock(name="negated_evaluation + reg_term")
 
     @pytest.fixture
-    def initial(self):
+    def initial(self, current_input):
         initial = MagicMock()
+        initial.clone.return_value = current_input
         initial.__repr__ = MagicMock(return_value="initial")
-        initial.grad = "gradient"
-        initial.data = "mei_data"
-        initial.detach.return_value.squeeze.return_value.cpu.return_value = "final_mei"
         return initial
+
+    @pytest.fixture
+    def current_input(self):
+        current_input = MagicMock(name="input")
+        current_input.gradient = "gradient"
+        current_input.data = "mei_data"
+        current_input.extract.return_value = "current_input"
+        return current_input
 
     @pytest.fixture
     def optimizer(self):
@@ -133,18 +139,14 @@ class TestMEI:
         def test_if_precondition_is_default_precondition_if_not_provided(self, func, initial, optimizer):
             assert optimization.MEI(func, initial, optimizer).precondition is optimization.default_precondition
 
-        def test_if_initial_guess_gets_grad_enabled(self, mei, initial):
-            mei()
-            initial.requires_grad_.assert_called_once_with()
-
     class TestEvaluate:
         @pytest.mark.parametrize("n_steps", [0, 1, 10])
-        def test_if_transform_is_correctly_called(self, mei, transform, initial, n_steps):
+        def test_if_transform_is_correctly_called(self, mei, transform, current_input, n_steps):
             mei = mei()
             for _ in range(n_steps):
                 mei.step()
             mei.evaluate()
-            calls = [call(initial, i) for i in range(n_steps)] + [call(initial, n_steps)]
+            calls = [call(current_input.tensor, i) for i in range(n_steps)] + [call(current_input.tensor, n_steps)]
             transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transformed_mei):
@@ -160,11 +162,11 @@ class TestMEI:
             optimizer.zero_grad.assert_called_with()
 
         @pytest.mark.parametrize("n_steps", [1, 10])
-        def test_if_transform_is_correctly_called(self, mei, transform, initial, n_steps):
+        def test_if_transform_is_correctly_called(self, mei, transform, current_input, n_steps):
             mei = mei()
             for _ in range(n_steps):
                 mei.step()
-            calls = [call(initial, i) for i in range(n_steps)]
+            calls = [call(current_input.tensor, i) for i in range(n_steps)]
             transform.assert_has_calls(calls)
 
         def test_if_func_is_correctly_called(self, mei, func, transformed_mei):
@@ -191,8 +193,8 @@ class TestMEI:
             mei().step()
             negated_evaluation_plus_reg_term.backward.assert_called_once_with()
 
-        def test_if_runtime_error_is_raised_if_gradient_does_not_reach_mei(self, mei, initial):
-            initial.grad = None
+        def test_if_runtime_error_is_raised_if_gradient_does_not_reach_mei(self, mei, current_input):
+            current_input.gradient = None
             with pytest.raises(RuntimeError):
                 mei().step()
 
@@ -204,9 +206,9 @@ class TestMEI:
             calls = [call("gradient", 0)] + [call("preconditioned_gradient", i) for i in range(1, n_steps)]
             assert precondition.mock_calls == calls
 
-        def test_if_preconditioned_gradient_is_reassigned_mei(self, mei, initial):
+        def test_if_preconditioned_gradient_is_reassigned_to_current_input(self, mei, current_input):
             mei().step()
-            assert initial.grad == "preconditioned_gradient"
+            assert current_input.gradient == "preconditioned_gradient"
 
         def test_if_optimizer_takes_a_step(self, mei, optimizer):
             mei().step()
@@ -223,21 +225,12 @@ class TestMEI:
         def test_if_step_returns_the_correct_value(self, mei, evaluation):
             assert mei().step() == evaluation
 
-    class TestGetMEI:
-        def test_if_mei_is_detached_when_retrieved(self, mei, initial):
-            _ = mei().mei
-            initial.detach.assert_called_once_with()
+    def test_if_extract_is_correctly_called_when_accessing_current_input(self, mei, current_input):
+        _ = mei().current_input
+        current_input.extract.assert_called_once_with()
 
-        def test_if_cloned_mei_is_squeezed_when_retrieved(self, mei, initial):
-            _ = mei().mei
-            initial.detach.return_value.squeeze.assert_called_once_with()
-
-        def test_if_squeezed_mei_is_switched_to_cpu_when_retrieved(self, mei, initial):
-            _ = mei().mei
-            initial.detach.return_value.squeeze.return_value.cpu.assert_called_once_with()
-
-        def test_if_cloned_mei_is_returned_when_retrieved(self, mei):
-            assert mei().mei == "final_mei"
+    def test_return_value_of_current_input_property(self, mei):
+        assert mei().current_input == "current_input"
 
     def test_repr(self, mei):
         assert mei().__repr__() == (
@@ -257,7 +250,7 @@ class TestOptimize:
     def mei(self, evaluation):
         mei = MagicMock(return_value="mei")
         mei.step.return_value = evaluation
-        mei.mei = "mei"
+        mei.current_input = "current_input"
         return mei
 
     @pytest.fixture
@@ -304,4 +297,4 @@ class TestOptimize:
 
     def test_if_result_is_correctly_returned(self, optimize, optimized):
         result = optimize(optimized())
-        assert result == ("evaluation", "mei")
+        assert result == ("evaluation", "current_input")
