@@ -63,8 +63,8 @@ class State:
         self.input = input_
         self.transformed_input = transformed_input
         self.post_processed_input = post_processed_input
-        self.gradient = grad
-        self.preconditioned_gradient = preconditioned_grad
+        self.grad = grad
+        self.preconditioned_grad = preconditioned_grad
         self.stopper_output = stopper_output
 
     def __repr__(self) -> str:
@@ -77,8 +77,8 @@ class State:
                 self.input,
                 self.transformed_input,
                 self.post_processed_input,
-                self.gradient,
-                self.preconditioned_gradient,
+                self.grad,
+                self.preconditioned_grad,
                 self.stopper_output,
             )
         )

@@ -106,8 +106,8 @@ class TestState:
             and state.input is state_data["input_"]
             and state.transformed_input is state_data["transformed_input"]
             and state.post_processed_input is state_data["post_processed_input"]
-            and state.gradient is state_data["grad"]
-            and state.preconditioned_gradient is state_data["preconditioned_grad"]
+            and state.grad is state_data["grad"]
+            and state.preconditioned_grad is state_data["preconditioned_grad"]
             and state.stopper_output is state_data["stopper_output"]
         )
 
