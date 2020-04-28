@@ -1,4 +1,6 @@
-from typing import Callable, Mapping
+from typing import Callable
+
+from .domain import State
 
 
 class Tracker:
@@ -16,7 +18,7 @@ class Tracker:
         self.objectives = objectives
         self.log = {n: list() for n in objectives}
 
-    def track(self, current_state: Mapping) -> None:
+    def track(self, current_state: State) -> None:
         """Passes the current state of the MEI optimization process to each objective and logs the result."""
         for name, objective in self.objectives.items():
             self.log[name].append(objective(current_state))

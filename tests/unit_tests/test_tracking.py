@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, call
 import pytest
 
 from featurevis import tracking
+from featurevis.domain import State
 
 
 class TestTracker:
@@ -19,7 +20,7 @@ class TestTracker:
 
     @pytest.fixture(params=[0, 1, 10])
     def states(self, request):
-        return tuple(MagicMock(name="current_state", i_iter=i) for i in range(request.param))
+        return tuple(MagicMock(name="current_state", i_iter=i, spec=State) for i in range(request.param))
 
     def test_init(self, tracker, objectives):
         assert tracker.objectives == objectives
