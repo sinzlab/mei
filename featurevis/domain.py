@@ -70,23 +70,7 @@ class State:
         self.stopper_output = stopper_output
 
     def __repr__(self) -> str:
-        representation = self.__class__.__qualname__ + "("
-        representation += ", ".join(
-            repr(x)
-            for x in (
-                self.i_iter,
-                self.evaluation,
-                self.reg_term,
-                self.input,
-                self.transformed_input,
-                self.post_processed_input,
-                self.grad,
-                self.preconditioned_grad,
-                self.stopper_output,
-            )
-        )
-        representation += ")"
-        return representation
+        return f"{self.__class__.__qualname__}({', '.join(repr(v) for v in self.to_dict().values())})"
 
     def to_dict(self) -> Dict[str, Any]:
         """Returns a dictionary representation of the State."""
