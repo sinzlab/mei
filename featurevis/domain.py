@@ -101,3 +101,7 @@ class State:
         if not isinstance(other, self.__class__):
             raise NotImplementedError
         return self.to_dict() == other.to_dict()
+
+    @classmethod
+    def from_dict(cls, state):
+        return cls(**state)

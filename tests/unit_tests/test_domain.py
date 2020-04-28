@@ -132,3 +132,6 @@ class TestState:
         state = domain.State(**state_data)
         state.i_iter = 11
         assert not state == domain.State(**state_data)
+
+    def test_from_dict(self, state_data):
+        assert domain.State.from_dict(state_data) == domain.State(**state_data)
