@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from typing import Tuple, Optional, Any
 
 from torch import Tensor
 
@@ -12,7 +13,7 @@ class OptimizationStopper(ABC):
     """Implements the interface used to stop the MEI optimization process once it has reached an acceptable result."""
 
     @abstractmethod
-    def __call__(self, mei: MEI, evaluation: Tensor) -> bool:
+    def __call__(self, mei: MEI, evaluation: Tensor) -> Tuple[bool, Optional[Any]]:
         """Should return "True" if the MEI optimization process has reached an acceptable result."""
 
 
@@ -28,13 +29,13 @@ class NumIterations(OptimizationStopper):
         self.num_iterations = num_iterations
         self._current_iteration = 0
 
-    def __call__(self, mei: MEI, evaluation: float) -> bool:
+    def __call__(self, mei: MEI, evaluation: float) -> Tuple[bool, Optional[Any]]:
         """Stops the optimization process after a set number of steps by returning True."""
         if self._current_iteration == self.num_iterations:
-            return True
+            return True, None
         else:
             self._current_iteration += 1
-            return False
+            return False, None
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self.num_iterations})"

@@ -3,8 +3,10 @@ from functools import partial
 import dataclasses
 
 import pytest
+from torch import Tensor
 
 from featurevis import optimization
+from featurevis import stoppers
 
 
 class TestGradient:
@@ -278,53 +280,53 @@ class TestOptimize:
 
     @pytest.fixture
     def mei(self, evaluation):
-        mei = MagicMock(return_value="mei")
+        mei = MagicMock(name="mei", return_value="mei", spec=optimization.MEI)
+        mei.evaluate.return_value = evaluation
         mei.step.return_value = evaluation
         mei.current_input = "current_input"
         return mei
 
     @pytest.fixture
-    def optimized(self):
-        def _optimized(num_iterations=1):
-            return MagicMock(side_effect=[False for _ in range(num_iterations)] + [True])
+    def stopper(self):
+        def _stopper(num_iterations=1):
+            return MagicMock(
+                name="stopper",
+                side_effect=[(False, None) for _ in range(num_iterations)] + [(True, None)],
+                spec=stoppers.OptimizationStopper,
+            )
 
-        return _optimized
+        return _stopper
 
     @pytest.fixture
     def evaluation(self, negated_evaluation):
-        evaluation = MagicMock(name="evaluation")
+        evaluation = MagicMock(name="evaluation", spec=Tensor)
         evaluation.__neg__.return_value = negated_evaluation
         evaluation.item.return_value = "evaluation"
         return evaluation
 
     @pytest.fixture
     def negated_evaluation(self):
-        return MagicMock(name="negated_evaluation")
+        return MagicMock(name="negated_evaluation", spec=Tensor)
 
     @pytest.fixture(params=[0, 1, 100])
     def num_iterations(self, request):
         return request.param
 
-    def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized):
-        optimize(optimized())
+    def test_if_mei_is_evaluated_correctly(self, optimize, mei, stopper):
+        optimize(stopper())
         mei.evaluate.assert_called_once_with()
 
-    def test_if_optimized_is_called_correctly(self, optimize, mei, optimized, evaluation):
-        optimized = optimized()
-        optimize(optimized)
-        optimized.assert_called_with(mei, evaluation)
+    def test_if_optimized_is_called_correctly(self, optimize, mei, stopper, evaluation, num_iterations):
+        stopper = stopper(num_iterations)
+        optimize(stopper)
+        calls = [call(mei, evaluation) for _ in range(num_iterations + 1)]
+        assert stopper.mock_calls == calls
 
-    def test_if_mei_takes_steps_correctly(self, optimize, mei, optimized, num_iterations):
-        optimize(optimized(num_iterations))
+    def test_if_mei_takes_steps_correctly(self, optimize, mei, stopper, num_iterations):
+        optimize(stopper(num_iterations))
         calls = [call() for _ in range(num_iterations)]
-        mei.step.assert_has_calls(calls)
-        assert mei.step.call_count == len(calls)
+        assert mei.step.mock_calls == calls
 
-    def test_if_optimized_is_called_correct_number_of_times(self, optimize, optimized, num_iterations):
-        optimized = optimized(num_iterations)
-        optimize(optimized)
-        assert optimized.call_count == num_iterations + 1
-
-    def test_if_result_is_correctly_returned(self, optimize, optimized):
-        result = optimize(optimized())
+    def test_if_result_is_correctly_returned(self, optimize, stopper):
+        result = optimize(stopper())
         assert result == ("evaluation", "current_input")
