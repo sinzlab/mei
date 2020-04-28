@@ -6,7 +6,9 @@ import pytest
 from torch import Tensor
 
 from featurevis import optimization
-from featurevis import stoppers
+from featurevis.stoppers import OptimizationStopper
+from featurevis.domain import State
+from featurevis.tracking import Tracker
 
 
 class TestGradient:
@@ -275,14 +277,14 @@ class TestMEI:
 
 class TestOptimize:
     @pytest.fixture
-    def optimize(self, mei):
-        return partial(optimization.optimize, mei)
+    def optimize(self, mei, tracker, state_cls):
+        return partial(optimization.optimize, mei, tracker=tracker, state_cls=state_cls)
 
     @pytest.fixture
     def mei(self, evaluation):
         mei = MagicMock(name="mei", return_value="mei", spec=optimization.MEI)
         mei.evaluate.return_value = evaluation
-        mei.step.return_value = evaluation
+        mei.step.return_value = (evaluation, dict(state=0))
         mei.current_input = "current_input"
         return mei
 
@@ -291,11 +293,21 @@ class TestOptimize:
         def _stopper(num_iterations=1):
             return MagicMock(
                 name="stopper",
-                side_effect=[(False, None) for _ in range(num_iterations)] + [(True, None)],
-                spec=stoppers.OptimizationStopper,
+                side_effect=[(False, "stopper_output") for _ in range(num_iterations)] + [(True, "stopper_output")],
+                spec=OptimizationStopper,
             )
 
         return _stopper
+
+    @pytest.fixture
+    def state_cls(self):
+        state_cls = MagicMock(name="state_cls", spec=State)
+        state_cls.from_dict.return_value = "state_instance"
+        return state_cls
+
+    @pytest.fixture
+    def tracker(self):
+        return MagicMock(name="tracker", spec=Tracker)
 
     @pytest.fixture
     def evaluation(self, negated_evaluation):
@@ -326,6 +338,16 @@ class TestOptimize:
         optimize(stopper(num_iterations))
         calls = [call() for _ in range(num_iterations)]
         assert mei.step.mock_calls == calls
+
+    def test_if_state_class_is_correctly_initialized(self, optimize, stopper, state_cls, num_iterations):
+        optimize(stopper(num_iterations))
+        calls = [call(dict(state=0, stopper_output="stopper_output")) for _ in range(num_iterations)]
+        assert state_cls.from_dict.mock_calls == calls
+
+    def test_if_tracker_is_called_correctly(self, optimize, stopper, tracker, num_iterations):
+        optimize(stopper(num_iterations))
+        calls = [call("state_instance") for _ in range(num_iterations)]
+        assert tracker.track.mock_calls == calls
 
     def test_if_result_is_correctly_returned(self, optimize, stopper):
         result = optimize(stopper())

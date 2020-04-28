@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Tuple
 from dataclasses import dataclass
 
+from .domain import State
+
 # Prevents circular import error
 if TYPE_CHECKING:
     from torch import Tensor
@@ -9,6 +11,7 @@ if TYPE_CHECKING:
 
     from .stoppers import OptimizationStopper
     from .domain import Input
+    from .tracking import Tracker
 
 
 @dataclass
@@ -116,12 +119,15 @@ class MEI:
         )
 
 
-def optimize(mei: MEI, stopper: OptimizationStopper) -> Tuple[float, Tensor]:
+def optimize(mei: MEI, stopper: OptimizationStopper, tracker: Tracker, state_cls=State) -> Tuple[float, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:
         mei: An instance of the to be optimized MEI.
         stopper: A subclass of "OptimizationStopper" used to stop the optimization process.
+        tracker: A tracker object used to track pre-defined objectives during the optimization process. The current
+            state of the optimization process is passed to the "track" method of the object in each iteration.
+        state_cls: For testing purposes.
 
     Returns:
         A float representing the final evaluation and a tensor of floats having the same shape as "initial_guess"
@@ -132,5 +138,7 @@ def optimize(mei: MEI, stopper: OptimizationStopper) -> Tuple[float, Tensor]:
         stop, output = stopper(mei, evaluation)
         if stop:
             break
-        evaluation = mei.step()
+        evaluation, state = mei.step()
+        state["stopper_output"] = output
+        tracker.track(state_cls.from_dict(state))
     return evaluation.item(), mei.current_input
