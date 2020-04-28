@@ -69,3 +69,35 @@ class TestInput:
 
     def test_repr(self, input_, tensor):
         assert repr(input_) == f"Input({repr(tensor)})"
+
+
+class TestState:
+    def test_init(self):
+        i_iter = 10
+        evaluation = 3.4
+        input_ = MagicMock(name="input", spec=Tensor)
+        transformed_input = MagicMock(name="transformed_input", spec=Tensor)
+        post_processed_input = MagicMock(name="post_processed_input", spec=Tensor)
+        grad = MagicMock(name="gradient", spec=Tensor)
+        preconditioned_grad = MagicMock(name="preconditioned_grad", spec=Tensor)
+        stopper_output = MagicMock(name="stopper_output", spec=Tensor)
+        state = domain.State(
+            i_iter,
+            evaluation,
+            input_,
+            transformed_input,
+            post_processed_input,
+            grad,
+            preconditioned_grad,
+            stopper_output,
+        )
+        assert (
+            state.i_iter is i_iter
+            and state.evaluation is evaluation
+            and state.input is input_
+            and state.transformed_input is transformed_input
+            and state.post_processed_input is post_processed_input
+            and state.gradient is grad
+            and state.preconditioned_gradient is preconditioned_grad
+            and state.stopper_output is stopper_output
+        )

@@ -42,3 +42,25 @@ class Input:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}({repr(self.tensor)})"
+
+
+class State:
+    def __init__(
+        self,
+        i_iter,
+        evaluation,
+        input_,
+        transformed_input,
+        post_processed_input,
+        grad,
+        preconditioned_grad,
+        stopper_output,
+    ):
+        self.i_iter = i_iter
+        self.evaluation = evaluation
+        self.input = input_
+        self.transformed_input = transformed_input
+        self.post_processed_input = post_processed_input
+        self.gradient = grad
+        self.preconditioned_gradient = preconditioned_grad
+        self.stopper_output = stopper_output
