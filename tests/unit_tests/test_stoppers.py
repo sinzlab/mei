@@ -22,8 +22,8 @@ class TestNumIterations:
         mei = MagicMock(name="mei")
         evaluation = 0.5
         for _ in range(num_iterations):
-            assert stopper(mei, evaluation) is False
-        assert stopper(mei, evaluation) is True
+            assert stopper(mei, evaluation) == (False, None)
+        assert stopper(mei, evaluation) == (True, None)
 
     def test_repr(self, stopper):
         assert stopper(5).__repr__() == f"NumIterations(5)"
