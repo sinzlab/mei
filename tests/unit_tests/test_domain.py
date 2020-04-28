@@ -117,3 +117,6 @@ class TestState:
             repr(state) == "State(10, 3.4, input, transformed_input, "
             "post_processed_input, grad, preconditioned_grad, stopper_output)"
         )
+
+    def test_to_dict(self, state_data):
+        assert domain.State(**state_data).to_dict() == state_data

@@ -84,3 +84,15 @@ class State:
         )
         representation += ")"
         return representation
+
+    def to_dict(self):
+        return dict(
+            i_iter=self.i_iter,
+            evaluation=self.evaluation,
+            input_=self.input,
+            transformed_input=self.transformed_input,
+            post_processed_input=self.post_processed_input,
+            grad=self.grad,
+            preconditioned_grad=self.preconditioned_grad,
+            stopper_output=self.stopper_output,
+        )
