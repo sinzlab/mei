@@ -1,7 +1,7 @@
 """This module contains domain models."""
 
 from __future__ import annotations
-from typing import Any
+from typing import Any, Dict
 
 from torch import Tensor
 
@@ -85,7 +85,8 @@ class State:
         representation += ")"
         return representation
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
+        """Returns a dictionary representation of the State."""
         return dict(
             i_iter=self.i_iter,
             evaluation=self.evaluation,
@@ -97,11 +98,12 @@ class State:
             stopper_output=self.stopper_output,
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: State) -> bool:
         if not isinstance(other, self.__class__):
             raise NotImplementedError
         return self.to_dict() == other.to_dict()
 
     @classmethod
-    def from_dict(cls, state):
+    def from_dict(cls, state: Dict[str, Any]):
+        """Creates a new State object from a dictionary."""
         return cls(**state)
