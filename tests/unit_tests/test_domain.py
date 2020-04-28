@@ -72,32 +72,29 @@ class TestInput:
 
 
 class TestState:
-    def test_init(self):
-        i_iter = 10
-        evaluation = 3.4
-        input_ = MagicMock(name="input", spec=Tensor)
-        transformed_input = MagicMock(name="transformed_input", spec=Tensor)
-        post_processed_input = MagicMock(name="post_processed_input", spec=Tensor)
-        grad = MagicMock(name="gradient", spec=Tensor)
-        preconditioned_grad = MagicMock(name="preconditioned_grad", spec=Tensor)
-        stopper_output = MagicMock(name="stopper_output", spec=Tensor)
-        state = domain.State(
-            i_iter,
-            evaluation,
-            input_,
-            transformed_input,
-            post_processed_input,
-            grad,
-            preconditioned_grad,
-            stopper_output,
+    @pytest.fixture
+    def state_data(self):
+        state_data = dict(
+            i_iter=10,
+            evaluation=3.4,
+            input_=MagicMock(name="input", spec=Tensor),
+            transformed_input=MagicMock(name="transformed_input", spec=Tensor),
+            post_processed_input=MagicMock(name="post_processed_input", spec=Tensor),
+            grad=MagicMock(name="gradient", spec=Tensor),
+            preconditioned_grad=MagicMock(name="preconditioned_grad", spec=Tensor),
+            stopper_output=MagicMock(name="stopper_output", spec=Tensor),
         )
+        return state_data
+
+    def test_init(self, state_data):
+        state = domain.State(**state_data)
         assert (
-            state.i_iter is i_iter
-            and state.evaluation is evaluation
-            and state.input is input_
-            and state.transformed_input is transformed_input
-            and state.post_processed_input is post_processed_input
-            and state.gradient is grad
-            and state.preconditioned_gradient is preconditioned_grad
-            and state.stopper_output is stopper_output
+            state.i_iter is state_data["i_iter"]
+            and state.evaluation is state_data["evaluation"]
+            and state.input is state_data["input_"]
+            and state.transformed_input is state_data["transformed_input"]
+            and state.post_processed_input is state_data["post_processed_input"]
+            and state.gradient is state_data["grad"]
+            and state.preconditioned_gradient is state_data["preconditioned_grad"]
+            and state.stopper_output is state_data["stopper_output"]
         )
