@@ -1,6 +1,8 @@
 """This module contains domain models."""
 
 from __future__ import annotations
+from typing import Any
+
 from torch import Tensor
 
 
@@ -47,14 +49,14 @@ class Input:
 class State:
     def __init__(
         self,
-        i_iter,
-        evaluation,
-        input_,
-        transformed_input,
-        post_processed_input,
-        grad,
-        preconditioned_grad,
-        stopper_output,
+        i_iter: int,
+        evaluation: float,
+        input_: Tensor,
+        transformed_input: Tensor,
+        post_processed_input: Tensor,
+        grad: Tensor,
+        preconditioned_grad: Tensor,
+        stopper_output: Any,
     ):
         self.i_iter = i_iter
         self.evaluation = evaluation
