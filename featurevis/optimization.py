@@ -109,18 +109,21 @@ class MEI:
         )
 
 
-def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
+def optimize(mei: MEI, stopper: OptimizationStopper) -> Tuple[float, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:
         mei: An instance of the to be optimized MEI.
-        optimized: A subclass of "OptimizationStopper" used to stop the optimization process.
+        stopper: A subclass of "OptimizationStopper" used to stop the optimization process.
 
     Returns:
         A float representing the final evaluation and a tensor of floats having the same shape as "initial_guess"
         representing the input that maximizes the function.
     """
     evaluation = mei.evaluate()
-    while not optimized(mei, evaluation):
+    while True:
+        stop, output = stopper(mei, evaluation)
+        if stop:
+            break
         evaluation = mei.step()
     return evaluation.item(), mei.current_input

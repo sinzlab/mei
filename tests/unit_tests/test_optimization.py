@@ -261,15 +261,15 @@ class TestOptimize:
         return mei
 
     @pytest.fixture
-    def optimized(self):
-        def _optimized(num_iterations=1):
+    def stopper(self):
+        def _stopper(num_iterations=1):
             return MagicMock(
-                name="optimized",
-                side_effect=[False for _ in range(num_iterations)] + [True],
+                name="stopper",
+                side_effect=[(False, None) for _ in range(num_iterations)] + [(True, None)],
                 spec=stoppers.OptimizationStopper,
             )
 
-        return _optimized
+        return _stopper
 
     @pytest.fixture
     def evaluation(self, negated_evaluation):
@@ -286,21 +286,21 @@ class TestOptimize:
     def num_iterations(self, request):
         return request.param
 
-    def test_if_mei_is_evaluated_correctly(self, optimize, mei, optimized):
-        optimize(optimized())
+    def test_if_mei_is_evaluated_correctly(self, optimize, mei, stopper):
+        optimize(stopper())
         mei.evaluate.assert_called_once_with()
 
-    def test_if_optimized_is_called_correctly(self, optimize, mei, optimized, evaluation, num_iterations):
-        optimized = optimized(num_iterations)
-        optimize(optimized)
+    def test_if_optimized_is_called_correctly(self, optimize, mei, stopper, evaluation, num_iterations):
+        stopper = stopper(num_iterations)
+        optimize(stopper)
         calls = [call(mei, evaluation) for _ in range(num_iterations + 1)]
-        assert optimized.mock_calls == calls
+        assert stopper.mock_calls == calls
 
-    def test_if_mei_takes_steps_correctly(self, optimize, mei, optimized, num_iterations):
-        optimize(optimized(num_iterations))
+    def test_if_mei_takes_steps_correctly(self, optimize, mei, stopper, num_iterations):
+        optimize(stopper(num_iterations))
         calls = [call() for _ in range(num_iterations)]
         assert mei.step.mock_calls == calls
 
-    def test_if_result_is_correctly_returned(self, optimize, optimized):
-        result = optimize(optimized())
+    def test_if_result_is_correctly_returned(self, optimize, stopper):
+        result = optimize(stopper())
         assert result == ("evaluation", "current_input")
