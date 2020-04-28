@@ -74,15 +74,27 @@ class TestInput:
 class TestState:
     @pytest.fixture
     def state_data(self):
+        input_ = MagicMock(name="input", spec=Tensor)
+        input_.__repr__ = MagicMock(return_value="input")
+        transformed_input = MagicMock(name="transformed_input", spec=Tensor)
+        transformed_input.__repr__ = MagicMock(return_value="transformed_input")
+        post_processed_input = MagicMock(name="post_processed_input", spec=Tensor)
+        post_processed_input.__repr__ = MagicMock(return_value="post_processed_input")
+        grad = MagicMock(name="grad", spec=Tensor)
+        grad.__repr__ = MagicMock(return_value="grad")
+        preconditioned_grad = MagicMock(name="preconditioned_grad", spec=Tensor)
+        preconditioned_grad.__repr__ = MagicMock(return_value="preconditioned_grad")
+        stopper_output = MagicMock(name="stopper_output", spec=Tensor)
+        stopper_output.__repr__ = MagicMock(return_value="stopper_output")
         state_data = dict(
             i_iter=10,
             evaluation=3.4,
-            input_=MagicMock(name="input", spec=Tensor),
-            transformed_input=MagicMock(name="transformed_input", spec=Tensor),
-            post_processed_input=MagicMock(name="post_processed_input", spec=Tensor),
-            grad=MagicMock(name="gradient", spec=Tensor),
-            preconditioned_grad=MagicMock(name="preconditioned_grad", spec=Tensor),
-            stopper_output=MagicMock(name="stopper_output", spec=Tensor),
+            input_=input_,
+            transformed_input=transformed_input,
+            post_processed_input=post_processed_input,
+            grad=grad,
+            preconditioned_grad=preconditioned_grad,
+            stopper_output=stopper_output,
         )
         return state_data
 
@@ -97,4 +109,11 @@ class TestState:
             and state.gradient is state_data["grad"]
             and state.preconditioned_gradient is state_data["preconditioned_grad"]
             and state.stopper_output is state_data["stopper_output"]
+        )
+
+    def test_repr(self, state_data):
+        state = domain.State(**state_data)
+        assert (
+            repr(state) == "State(10, 3.4, input, transformed_input, "
+            "post_processed_input, grad, preconditioned_grad, stopper_output)"
         )

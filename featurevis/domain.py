@@ -66,3 +66,21 @@ class State:
         self.gradient = grad
         self.preconditioned_gradient = preconditioned_grad
         self.stopper_output = stopper_output
+
+    def __repr__(self) -> str:
+        representation = self.__class__.__qualname__ + "("
+        representation += ", ".join(
+            repr(x)
+            for x in (
+                self.i_iter,
+                self.evaluation,
+                self.input,
+                self.transformed_input,
+                self.post_processed_input,
+                self.gradient,
+                self.preconditioned_gradient,
+                self.stopper_output,
+            )
+        )
+        representation += ")"
+        return representation
