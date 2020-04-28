@@ -89,6 +89,7 @@ class TestState:
         state_data = dict(
             i_iter=10,
             evaluation=3.4,
+            reg_term=5.1,
             input_=input_,
             transformed_input=transformed_input,
             post_processed_input=post_processed_input,
@@ -103,6 +104,7 @@ class TestState:
         assert (
             state.i_iter is state_data["i_iter"]
             and state.evaluation is state_data["evaluation"]
+            and state.reg_term is state_data["reg_term"]
             and state.input is state_data["input_"]
             and state.transformed_input is state_data["transformed_input"]
             and state.post_processed_input is state_data["post_processed_input"]
@@ -114,7 +116,7 @@ class TestState:
     def test_repr(self, state_data):
         state = domain.State(**state_data)
         assert (
-            repr(state) == "State(10, 3.4, input, transformed_input, "
+            repr(state) == "State(10, 3.4, 5.1, input, transformed_input, "
             "post_processed_input, grad, preconditioned_grad, stopper_output)"
         )
 

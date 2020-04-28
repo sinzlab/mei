@@ -51,6 +51,7 @@ class State:
         self,
         i_iter: int,
         evaluation: float,
+        reg_term: float,
         input_: Tensor,
         transformed_input: Tensor,
         post_processed_input: Tensor,
@@ -60,6 +61,7 @@ class State:
     ):
         self.i_iter = i_iter
         self.evaluation = evaluation
+        self.reg_term = reg_term
         self.input = input_
         self.transformed_input = transformed_input
         self.post_processed_input = post_processed_input
@@ -74,6 +76,7 @@ class State:
             for x in (
                 self.i_iter,
                 self.evaluation,
+                self.reg_term,
                 self.input,
                 self.transformed_input,
                 self.post_processed_input,
@@ -90,6 +93,7 @@ class State:
         return dict(
             i_iter=self.i_iter,
             evaluation=self.evaluation,
+            reg_term=self.reg_term,
             input_=self.input,
             transformed_input=self.transformed_input,
             post_processed_input=self.post_processed_input,
