@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from torch.optim.optimizer import Optimizer
 
     from .stoppers import OptimizationStopper
+    from .domain import Input
 
 
 @dataclass
@@ -42,7 +43,7 @@ class MEI:
     def __init__(
         self,
         func: Callable[[Tensor], Tensor],
-        initial: Tensor,
+        initial: Input,
         optimizer: Optimizer,
         transform: Callable[[Tensor, int], Tensor] = default_transform,
         regularization: Callable[[Tensor, int], Tensor] = default_regularization,
@@ -54,8 +55,7 @@ class MEI:
         Args:
             func: A callable that will receive the to be optimized MEI tensor of floats as its only argument and that
                 must return a tensor containing a single float.
-            initial: A tensor containing floats representing the initial guess to start the optimization process
-                from.
+            initial: An instance of "Input" initialized with the tensor from which the optimization process will start.
             optimizer: A PyTorch-style optimizer class.
             transform: A callable that will receive the current MEI and the index of the current iteration as inputs and
                 that must return a transformed version of the current MEI. Optional.
@@ -68,46 +68,45 @@ class MEI:
                 MEI has no influence on its gradient.
         """
         self.func = func
-        self.initial = initial
+        self.initial = initial.clone()
         self.optimizer = optimizer
         self.transform = transform
         self.regularization = regularization
         self.precondition = precondition
         self.postprocessing = postprocessing
         self.i_iteration = 0
-        self._mei = self.initial
-        self._mei.requires_grad_()
-        self.__transformed_mei = None
+        self._current_input = initial
+        self.__transformed_input = None
 
     @property
-    def _transformed_mei(self) -> Tensor:
-        if self.__transformed_mei is None:
-            self.__transformed_mei = self.transform(self._mei, self.i_iteration)
-        return self.__transformed_mei
+    def _transformed_input(self) -> Tensor:
+        if self.__transformed_input is None:
+            self.__transformed_input = self.transform(self._current_input.tensor, self.i_iteration)
+        return self.__transformed_input
 
     def evaluate(self) -> Tensor:
         """Evaluates the function on the current MEI."""
-        return self.func(self._transformed_mei)
+        return self.func(self._transformed_input)
 
     def step(self) -> Tensor:
         """Performs an optimization step."""
         self.optimizer.zero_grad()
         evaluation = self.evaluate()
-        reg_term = self.regularization(self._transformed_mei, self.i_iteration)
+        reg_term = self.regularization(self._transformed_input, self.i_iteration)
         (-evaluation + reg_term).backward()
-        if self._mei.grad is None:
+        if self._current_input.gradient is None:
             raise RuntimeError("Gradient did not reach MEI")
-        self._mei.grad = self.precondition(self._mei.grad, self.i_iteration)
+        self._current_input.gradient = self.precondition(self._current_input.gradient, self.i_iteration)
         self.optimizer.step()
-        self._mei.data = self.postprocessing(self._mei.data, self.i_iteration)
-        self.__transformed_mei = None
+        self._current_input.data = self.postprocessing(self._current_input.data, self.i_iteration)
+        self.__transformed_input = None
         self.i_iteration += 1
         return evaluation
 
     @property
-    def mei(self) -> Tensor:
+    def current_input(self) -> Tensor:
         """Detaches the current MEI and returns it."""
-        return self._mei.detach().squeeze().cpu()
+        return self._current_input.extract()
 
     def __repr__(self) -> str:
         return (
@@ -131,4 +130,4 @@ def optimize(mei: MEI, optimized: OptimizationStopper) -> Tuple[float, Tensor]:
     evaluation = mei.evaluate()
     while not optimized(mei, evaluation):
         evaluation = mei.step()
-    return evaluation.item(), mei.mei
+    return evaluation.item(), mei.current_input

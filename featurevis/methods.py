@@ -9,6 +9,7 @@ from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from . import core
 from . import optimization
 from .import_helpers import import_object
+from .domain import Input
 
 
 def import_path(path):
@@ -99,6 +100,7 @@ def ascend_gradient(
     set_seed: Callable = torch.manual_seed,
     get_dims: Callable = get_dims_for_loader_dict,
     create_initial_guess: Callable = torch.randn,
+    input_cls: Callable = Input,
     mei_class: Type = optimization.MEI,
     import_func: Callable = import_object,
     optimize_func: Callable = optimization.optimize,
@@ -125,6 +127,7 @@ def ascend_gradient(
         set_seed: For testing purposes.
         get_dims: For testing purposes.
         create_initial_guess: For testing purposes.
+        input_cls: For testing purposes.
         mei_class: For testing purposes.
         import_func: For testing purposes.
         optimize_func: For testing purposes.
@@ -144,7 +147,7 @@ def ascend_gradient(
     optional_names = ("transform", "regularization", "precondition", "postprocessing")
     optional = {n: import_func(config[n], config[n + "_kwargs"]) for n in optional_names if config[n]}
 
-    mei = mei_class(model, initial_guess, optimizer, **optional)
+    mei = mei_class(model, input_cls(initial_guess), optimizer, **optional)
 
     final_evaluation, mei = optimize_func(mei, stopper)
     return mei, final_evaluation, dict()
