@@ -96,3 +96,8 @@ class State:
             preconditioned_grad=self.preconditioned_grad,
             stopper_output=self.stopper_output,
         )
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            raise NotImplementedError
+        return self.to_dict() == other.to_dict()

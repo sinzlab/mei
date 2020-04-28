@@ -120,3 +120,15 @@ class TestState:
 
     def test_to_dict(self, state_data):
         assert domain.State(**state_data).to_dict() == state_data
+
+    def test_if_equality_raises_not_implemented_error_if_other_is_not_same_class(self, state_data):
+        with pytest.raises(NotImplementedError):
+            _ = domain.State(**state_data) == "not_a_state"
+
+    def test_if_equality_returns_true_if_self_and_other_contain_same_data(self, state_data):
+        assert domain.State(**state_data) == domain.State(**state_data)
+
+    def test_if_equality_returns_false_if_self_and_other_contain_different_data(self, state_data):
+        state = domain.State(**state_data)
+        state.i_iter = 11
+        assert not state == domain.State(**state_data)
