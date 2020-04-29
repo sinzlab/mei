@@ -45,7 +45,8 @@ class TestDefaults:
         assert optimization.default_transform(mei, 0) == mei
 
     def test_default_regularization(self, mei):
-        assert optimization.default_regularization(mei, 0) == 0
+        reg_term = optimization.default_regularization(mei, 0)
+        assert isinstance(reg_term, Tensor) and reg_term == 0.0
 
     def test_default_precondition(self):
         gradient = MagicMock(name="gradient")

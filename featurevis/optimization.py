@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Tuple, Dict, Union
 from dataclasses import dataclass
 
+import torch
+
 from .domain import State
 
 # Prevents circular import error
@@ -25,9 +27,9 @@ def default_transform(mei: Tensor, _i_iteration: int) -> Tensor:
     return mei
 
 
-def default_regularization(_mei: Tensor, _i_iteration: int) -> 0:
+def default_regularization(_mei: Tensor, _i_iteration: int) -> Tensor:
     """Default regularization used when no regularization is provided to MEI."""
-    return 0
+    return torch.tensor(0.0)
 
 
 def default_precondition(gradient: Tensor, _i_iteration: int) -> Tensor:
