@@ -12,13 +12,19 @@ class TestInput:
         return domain.Input(tensor)
 
     @pytest.fixture
-    def tensor(self):
+    def tensor(self, grad):
         tensor = MagicMock(name="tensor", spec=Tensor)
-        tensor.grad = "gradient"
+        tensor.grad = grad
         tensor.data = "data"
         tensor.detach.return_value.clone.return_value.cpu.return_value.squeeze.return_value = "extracted_tensor"
         tensor.__repr__ = MagicMock(name="repr", return_value="repr")
         return tensor
+
+    @pytest.fixture
+    def grad(self):
+        grad = MagicMock(name="grad", spec=Tensor)
+        grad.cpu.return_value.clone.return_value = "cloned_grad"
+        return grad
 
     def test_init(self, input_, tensor):
         assert input_.tensor is tensor
@@ -26,12 +32,23 @@ class TestInput:
     def test_if_gradient_gets_enable_on_provided_tensor(self, input_, tensor):
         tensor.requires_grad_.assert_called_once_with()
 
-    def test_gradient_property(self, input_, tensor):
-        assert input_.gradient == "gradient"
+    def test_gradient_property(self, input_, tensor, grad):
+        assert input_.gradient is grad
 
     def test_gradient_setter(self, input_, tensor):
         input_.gradient = "new_gradient"
         assert tensor.grad == "new_gradient"
+
+    def test_if_cloned_gradient_property_calls_cpu_method_correctly(self, input_, grad):
+        _ = input_.cloned_grad
+        grad.cpu.assert_called_once_with()
+
+    def test_if_cloned_gradient_property_calls_clone_method_correctly(self, input_, grad):
+        _ = input_.cloned_grad
+        grad.cpu.return_value.clone.assert_called_once_with()
+
+    def test_if_cloned_gradient_property_returns_correct_value(self, input_):
+        assert input_.cloned_grad == "cloned_grad"
 
     def test_data_property(self, input_, tensor):
         assert input_.data == "data"

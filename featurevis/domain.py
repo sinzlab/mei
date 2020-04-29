@@ -27,6 +27,11 @@ class Input:
         self.tensor.grad = value
 
     @property
+    def cloned_grad(self) -> Tensor:
+        """Returns a cloned CPU version of the gradient."""
+        return self.gradient.cpu().clone()
+
+    @property
     def data(self) -> Tensor:
         return self.tensor.data
 
