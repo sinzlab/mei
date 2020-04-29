@@ -40,6 +40,6 @@ class RegularIntervalObjective(Objective):
         return f"{self.__class__.__qualname__}({self.interval})"
 
 
-class Evaluation(Objective):
+class EvaluationObjective(RegularIntervalObjective):
     def compute(self, current_state: State) -> Any:
         return current_state.evaluation

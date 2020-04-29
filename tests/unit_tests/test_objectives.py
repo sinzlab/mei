@@ -60,12 +60,12 @@ class TestRegularIntervalObjective:
         assert repr(fake_objective(2)) == "FakeObjective(2)"
 
 
-class TestEvaluation:
-    def test_if_evaluation_objective_is_subclass_of_objective(self):
-        assert issubclass(objectives.Evaluation, objectives.Objective)
+class TestEvaluationObjective:
+    def test_if_objective_is_subclass_of_regular_interval_objective(self):
+        assert issubclass(objectives.EvaluationObjective, objectives.RegularIntervalObjective)
 
     def test_if_correct_value_is_computed(self):
-        obj = objectives.Evaluation()
+        obj = objectives.EvaluationObjective(1)
         current_state = MagicMock(name="current_state", spec=State)
         current_state.evaluation = "evaluation"
         assert obj.compute(current_state) == "evaluation"
