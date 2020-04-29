@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Tuple, Dict, Union
-from dataclasses import dataclass
 
 import torch
 
@@ -14,12 +13,6 @@ if TYPE_CHECKING:
     from .stoppers import OptimizationStopper
     from .domain import Input
     from .tracking import Tracker
-
-
-@dataclass
-class Gradient:
-    regular: Tensor
-    preconditioned: Tensor
 
 
 def default_transform(mei: Tensor, _i_iteration: int) -> Tensor:
