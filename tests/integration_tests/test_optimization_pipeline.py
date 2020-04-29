@@ -7,11 +7,12 @@ from torch.optim import SGD
 from featurevis import optimization
 from featurevis.stoppers import NumIterations
 from featurevis.domain import Input
+from featurevis.tracking import Tracker
 
 
 @pytest.fixture
 def optimize(mei, stopper):
-    return partial(optimization.optimize, mei, stopper)
+    return partial(optimization.optimize, mei, stopper, Tracker())
 
 
 @pytest.fixture
@@ -59,7 +60,7 @@ def test_if_final_evaluation_matches_expected_value(optimize):
 
 @pytest.fixture
 def optimize_with_transform(mei_with_transform, stopper):
-    return partial(optimization.optimize, mei_with_transform, stopper)
+    return partial(optimization.optimize, mei_with_transform, stopper, Tracker())
 
 
 @pytest.fixture
@@ -82,7 +83,7 @@ def test_if_optimization_process_converges_to_transformed_mei(optimize_with_tran
 
 @pytest.fixture
 def optimize_with_regularization(mei_with_regularization, stopper):
-    return partial(optimization.optimize, mei_with_regularization, stopper)
+    return partial(optimization.optimize, mei_with_regularization, stopper, Tracker())
 
 
 @pytest.fixture
@@ -110,7 +111,7 @@ def test_if_final_evaluation_matches_expected_value_when_regularization_is_used(
 
 @pytest.fixture
 def optimize_with_precondition(mei_with_precondition, stopper):
-    return partial(optimization.optimize, mei_with_precondition, stopper)
+    return partial(optimization.optimize, mei_with_precondition, stopper, Tracker())
 
 
 @pytest.fixture
@@ -140,7 +141,7 @@ def test_if_final_evaluation_matches_expected_value_when_precondition_is_used(op
 
 @pytest.fixture
 def optimize_with_postprocessing(mei_with_postprocessing, stopper):
-    return partial(optimization.optimize, mei_with_postprocessing, stopper)
+    return partial(optimization.optimize, mei_with_postprocessing, stopper, Tracker())
 
 
 @pytest.fixture
