@@ -12,10 +12,10 @@ class TestInput:
         return domain.Input(tensor)
 
     @pytest.fixture
-    def tensor(self, grad):
+    def tensor(self, grad, data):
         tensor = MagicMock(name="tensor", spec=Tensor)
         tensor.grad = grad
-        tensor.data = "data"
+        tensor.data = data
         tensor.detach.return_value.clone.return_value.cpu.return_value.squeeze.return_value = "extracted_tensor"
         tensor.__repr__ = MagicMock(name="repr", return_value="repr")
         return tensor
@@ -25,6 +25,12 @@ class TestInput:
         grad = MagicMock(name="grad", spec=Tensor)
         grad.cpu.return_value.clone.return_value = "cloned_grad"
         return grad
+
+    @pytest.fixture
+    def data(self):
+        data = MagicMock(name="data", spec=Tensor)
+        data.cpu.return_value.clone.return_value = "cloned_data"
+        return data
 
     def test_init(self, input_, tensor):
         assert input_.tensor is tensor
@@ -50,12 +56,23 @@ class TestInput:
     def test_if_cloned_gradient_property_returns_correct_value(self, input_):
         assert input_.cloned_grad == "cloned_grad"
 
-    def test_data_property(self, input_, tensor):
-        assert input_.data == "data"
+    def test_data_property(self, input_, tensor, data):
+        assert input_.data == data
 
     def test_data_setter(self, input_, tensor):
         input_.data = "new_data"
         assert tensor.data == "new_data"
+
+    def test_if_cloned_data_property_calls_cpu_method_correctly(self, input_, data):
+        _ = input_.cloned_data
+        data.cpu.assert_called_once_with()
+
+    def test_if_cloned_data_property_calls_clone_method_correctly(self, input_, data):
+        _ = input_.cloned_data
+        data.cpu.return_value.clone.assert_called_once_with()
+
+    def test_if_cloned_data_property_returns_correct_value(self, input_):
+        assert input_.cloned_data == "cloned_data"
 
     def test_if_tensor_is_detached_when_extracted(self, input_, tensor):
         input_.extract()
