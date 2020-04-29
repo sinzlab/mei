@@ -22,8 +22,8 @@ class TestGradient:
 
     @pytest.fixture
     def fields(self, regular, preconditioned):
-        gradient = optimization.Gradient(regular, preconditioned)
-        fields = dataclasses.fields(gradient)
+        grad = optimization.Gradient(regular, preconditioned)
+        fields = dataclasses.fields(grad)
         return fields
 
     def test_if_dataclass(self):
@@ -49,8 +49,8 @@ class TestDefaults:
         assert isinstance(reg_term, Tensor) and reg_term == 0.0
 
     def test_default_precondition(self):
-        gradient = MagicMock(name="gradient")
-        assert optimization.default_precondition(gradient, 0) == gradient
+        grad = MagicMock(name="grad")
+        assert optimization.default_precondition(grad, 0) == grad
 
     def test_default_postprocessing(self, mei):
         assert optimization.default_postprocessing(mei, 0) == mei
@@ -102,8 +102,8 @@ class TestMEI:
     def initial(self, cloned_initial):
         initial = MagicMock()
         initial.clone.return_value = cloned_initial
-        initial.gradient = "gradient"
-        cloned_grad_prop = PropertyMock(side_effect=lambda: "cloned_" + initial.gradient)
+        initial.grad = "grad"
+        cloned_grad_prop = PropertyMock(side_effect=lambda: "cloned_" + initial.grad)
         type(initial).cloned_grad = cloned_grad_prop
         initial.data = "mei_data"
         cloned_data_prop = PropertyMock(side_effect=lambda: "cloned_" + initial.data)
@@ -149,7 +149,7 @@ class TestMEI:
 
     @pytest.fixture
     def precondition(self):
-        precondition = MagicMock(name="precondition", return_value="preconditioned_gradient")
+        precondition = MagicMock(name="precondition", return_value="preconditioned_grad")
         precondition.__repr__ = MagicMock(return_value="precondition")
         return precondition
 
@@ -242,7 +242,7 @@ class TestMEI:
             negated_evaluation_plus_reg_term.backward.assert_called_once_with()
 
         def test_if_runtime_error_is_raised_if_gradient_does_not_reach_mei(self, mei, current_input):
-            current_input.gradient = None
+            current_input.grad = None
             with pytest.raises(RuntimeError):
                 mei().step()
 
@@ -251,12 +251,12 @@ class TestMEI:
             mei = mei()
             for _ in range(n_steps):
                 mei.step()
-            calls = [call("gradient", 0)] + [call("preconditioned_gradient", i) for i in range(1, n_steps)]
+            calls = [call("grad", 0)] + [call("preconditioned_grad", i) for i in range(1, n_steps)]
             assert precondition.mock_calls == calls
 
         def test_if_preconditioned_gradient_is_reassigned_to_current_input(self, mei, current_input):
             mei().step()
-            assert current_input.gradient == "preconditioned_gradient"
+            assert current_input.grad == "preconditioned_grad"
 
         def test_if_optimizer_takes_a_step(self, mei, optimizer):
             mei().step()
@@ -283,8 +283,8 @@ class TestMEI:
                 i_iter=0,
                 evaluation="evaluation_as_float",
                 reg_term="reg_term_as_float",
-                grad="cloned_gradient",
-                preconditioned_grad="cloned_preconditioned_gradient",
+                grad="cloned_grad",
+                preconditioned_grad="cloned_preconditioned_grad",
                 input_="cloned_mei_data",
                 transformed_input="cloned_transformed_mei_data",
                 post_processed_input="cloned_post_processed_mei_data",

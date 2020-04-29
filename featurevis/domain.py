@@ -19,17 +19,17 @@ class Input:
         self.tensor.requires_grad_()
 
     @property
-    def gradient(self) -> Tensor:
+    def grad(self) -> Tensor:
         return self.tensor.grad
 
-    @gradient.setter
-    def gradient(self, value: Tensor):
+    @grad.setter
+    def grad(self, value: Tensor):
         self.tensor.grad = value
 
     @property
     def cloned_grad(self) -> Tensor:
         """Returns a cloned CPU version of the gradient."""
-        return self.gradient.cpu().clone()
+        return self.grad.cpu().clone()
 
     @property
     def data(self) -> Tensor:

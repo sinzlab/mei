@@ -121,9 +121,9 @@ def mei_with_precondition(model, initial_mei, optimizer, precondition):
 
 @pytest.fixture
 def precondition():
-    def _precondition(gradient, _i_iteration):
-        gradient[0, 0] = 0.0
-        return gradient
+    def _precondition(grad, _i_iteration):
+        grad[0, 0] = 0.0
+        return grad
 
     return _precondition
 

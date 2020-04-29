@@ -39,11 +39,11 @@ class TestInput:
         tensor.requires_grad_.assert_called_once_with()
 
     def test_gradient_property(self, input_, tensor, grad):
-        assert input_.gradient is grad
+        assert input_.grad is grad
 
     def test_gradient_setter(self, input_, tensor):
-        input_.gradient = "new_gradient"
-        assert tensor.grad == "new_gradient"
+        input_.grad = "new_grad"
+        assert tensor.grad == "new_grad"
 
     def test_if_cloned_gradient_property_calls_cpu_method_correctly(self, input_, grad):
         _ = input_.cloned_grad

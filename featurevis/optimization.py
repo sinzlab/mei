@@ -32,9 +32,9 @@ def default_regularization(_mei: Tensor, _i_iteration: int) -> Tensor:
     return torch.tensor(0.0)
 
 
-def default_precondition(gradient: Tensor, _i_iteration: int) -> Tensor:
+def default_precondition(grad: Tensor, _i_iteration: int) -> Tensor:
     """Default preconditioning used when no preconditioning is provided to MEI."""
-    return gradient
+    return grad
 
 
 def default_postprocessing(mei: Tensor, _i_iteration: int) -> Tensor:
@@ -103,10 +103,10 @@ class MEI:
         state["reg_term"] = reg_term.item()
         state["transformed_input"] = self._transformed_input.data.cpu().clone()
         (-evaluation + reg_term).backward()
-        if self._current_input.gradient is None:
+        if self._current_input.grad is None:
             raise RuntimeError("Gradient did not reach MEI")
         state["grad"] = self._current_input.cloned_grad
-        self._current_input.gradient = self.precondition(self._current_input.gradient, self.i_iteration)
+        self._current_input.grad = self.precondition(self._current_input.grad, self.i_iteration)
         state["preconditioned_grad"] = self._current_input.cloned_grad
         self.optimizer.step()
         self._current_input.data = self.postprocessing(self._current_input.data, self.i_iteration)
