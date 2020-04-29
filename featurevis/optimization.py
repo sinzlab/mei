@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Tuple
+from typing import TYPE_CHECKING, Callable, Tuple, Dict, Union
 from dataclasses import dataclass
 
 from .domain import State
@@ -91,20 +91,27 @@ class MEI:
         """Evaluates the function on the current MEI."""
         return self.func(self._transformed_input)
 
-    def step(self) -> Tensor:
+    def step(self) -> Tuple[Tensor, Dict[str, Union[int, float, Tensor]]]:
         """Performs an optimization step."""
+        state = dict(i_iter=self.i_iteration, input_=self._current_input.cloned_data)
         self.optimizer.zero_grad()
         evaluation = self.evaluate()
+        state["evaluation"] = evaluation.item()
         reg_term = self.regularization(self._transformed_input, self.i_iteration)
+        state["reg_term"] = reg_term.item()
+        state["transformed_input"] = self._transformed_input.data.cpu().clone()
         (-evaluation + reg_term).backward()
         if self._current_input.gradient is None:
             raise RuntimeError("Gradient did not reach MEI")
+        state["grad"] = self._current_input.cloned_grad
         self._current_input.gradient = self.precondition(self._current_input.gradient, self.i_iteration)
+        state["preconditioned_grad"] = self._current_input.cloned_grad
         self.optimizer.step()
         self._current_input.data = self.postprocessing(self._current_input.data, self.i_iteration)
+        state["post_processed_input"] = self._current_input.cloned_data
         self.__transformed_input = None
         self.i_iteration += 1
-        return evaluation
+        return evaluation, state
 
     @property
     def current_input(self) -> Tensor:

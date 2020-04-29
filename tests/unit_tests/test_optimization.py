@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, PropertyMock, call
 from functools import partial
 import dataclasses
 
@@ -80,6 +80,7 @@ class TestMEI:
     def evaluation(self, negated_evaluation):
         evaluation = MagicMock(name="evaluation")
         evaluation.__neg__.return_value = negated_evaluation
+        evaluation.item.return_value = "evaluation_as_float"
         return evaluation
 
     @pytest.fixture
@@ -101,7 +102,11 @@ class TestMEI:
         initial = MagicMock()
         initial.clone.return_value = cloned_initial
         initial.gradient = "gradient"
+        cloned_grad_prop = PropertyMock(side_effect=lambda: "cloned_" + initial.gradient)
+        type(initial).cloned_grad = cloned_grad_prop
         initial.data = "mei_data"
+        cloned_data_prop = PropertyMock(side_effect=lambda: "cloned_" + initial.data)
+        type(initial).cloned_data = cloned_data_prop
         initial.extract.return_value = "current_input"
         return initial
 
@@ -125,13 +130,21 @@ class TestMEI:
 
     @pytest.fixture
     def transformed_mei(self):
-        return MagicMock(name="transformed_mei")
+        transformed_mei = MagicMock(name="transformed_mei")
+        transformed_mei.data.cpu.return_value.clone.return_value = "cloned_transformed_mei_data"
+        return transformed_mei
 
     @pytest.fixture
-    def regularization(self):
-        regularization = MagicMock(name="regularization", return_value="reg_term")
+    def regularization(self, reg_term):
+        regularization = MagicMock(name="regularization", return_value=reg_term)
         regularization.__repr__ = MagicMock(return_value="regularization")
         return regularization
+
+    @pytest.fixture
+    def reg_term(self):
+        reg_term = MagicMock(name="reg_term", spec=Tensor)
+        reg_term.item.return_value = "reg_term_as_float"
+        return reg_term
 
     @pytest.fixture
     def precondition(self):
@@ -219,9 +232,9 @@ class TestMEI:
             mei().step()
             evaluation.__neg__.assert_called_once_with()
 
-        def test_if_regularization_term_is_added_to_negated_evaluation(self, mei, negated_evaluation):
+        def test_if_regularization_term_is_added_to_negated_evaluation(self, mei, negated_evaluation, reg_term):
             mei().step()
-            negated_evaluation.__add__.assert_called_once_with("reg_term")
+            negated_evaluation.__add__.assert_called_once_with(reg_term)
 
         def test_if_backward_is_called_on_negated_evaluation_plus_reg_term(self, mei, negated_evaluation_plus_reg_term):
             mei().step()
@@ -256,8 +269,26 @@ class TestMEI:
             calls = [call("mei_data", 0)] + [call("post_processed_mei_data", i) for i in range(1, n_steps)]
             assert postprocessing.mock_calls == calls
 
+        def test_if_transformed_input_is_transferred_to_cpu_when_added_to_state(self, mei, transformed_mei):
+            mei().step()
+            transformed_mei.data.cpu.assert_called_once_with()
+
+        def test_if_transformed_input_is_cloned_when_added_to_state(self, mei, transformed_mei):
+            mei().step()
+            transformed_mei.data.cpu.return_value.clone.assert_called_once_with()
+
         def test_if_step_returns_the_correct_value(self, mei, evaluation):
-            assert mei().step() == evaluation
+            state = dict(
+                i_iter=0,
+                evaluation="evaluation_as_float",
+                reg_term="reg_term_as_float",
+                grad="cloned_gradient",
+                preconditioned_grad="cloned_preconditioned_gradient",
+                input_="cloned_mei_data",
+                transformed_input="cloned_transformed_mei_data",
+                post_processed_input="cloned_post_processed_mei_data",
+            )
+            assert mei().step() == (evaluation, state)
 
     def test_if_extract_is_correctly_called_when_accessing_current_input(self, mei, current_input):
         _ = mei().current_input
