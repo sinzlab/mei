@@ -1,12 +1,63 @@
 from abc import ABC
-from unittest.mock import MagicMock
+from typing import Any
+from unittest.mock import MagicMock, call
+from contextlib import contextmanager
+
+import pytest
 
 from featurevis import objectives
 from featurevis.domain import State
 
 
+@contextmanager
+def does_not_raise():
+    yield
+
+
 def test_if_objective_is_subclass_of_abc():
     assert issubclass(objectives.Objective, ABC)
+
+
+class TestRegularIntervalObjective:
+    @pytest.fixture
+    def fake_objective(self):
+        class FakeObjective(objectives.RegularIntervalObjective):
+            __qualname__ = "FakeObjective"
+
+            def __init__(self, interval):
+                super().__init__(interval)
+                self.compute_mock = MagicMock(name="compute_mock", spec=self.compute)
+
+            def compute(self, current_state: State) -> Any:
+                return self.compute_mock(current_state)
+
+        return FakeObjective
+
+    def test_if_regular_interval_objective_is_subclass_of_objective(self):
+        assert issubclass(objectives.RegularIntervalObjective, objectives.Objective)
+
+    def test_init(self, fake_objective):
+        assert fake_objective(10).interval == 10
+
+    @pytest.mark.parametrize(
+        "interval,expectation", [(-1, pytest.raises(ValueError)), (0, pytest.raises(ValueError)), (1, does_not_raise())]
+    )
+    def test_if_interval_equal_to_or_smaller_than_zero_raises_value_error(self, fake_objective, interval, expectation):
+        with expectation:
+            fake_objective(interval)
+
+    @pytest.mark.parametrize("n_states", [1, 10])
+    @pytest.mark.parametrize("interval", [1, 2, 10, 11])
+    def test_if_compute_method_is_called_correctly(self, fake_objective, n_states, interval):
+        states = [MagicMock(name="state" + str(i), spec=State, i_iter=i) for i in range(n_states)]
+        obj = fake_objective(interval)
+        for current_state in states:
+            obj(current_state)
+        calls = [call(s) for s in states if s.i_iter % interval == 0]
+        assert obj.compute_mock.mock_calls == calls
+
+    def test_repr(self, fake_objective):
+        assert repr(fake_objective(2)) == "FakeObjective(2)"
 
 
 class TestEvaluation:
