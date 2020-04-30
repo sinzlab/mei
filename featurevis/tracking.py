@@ -1,3 +1,5 @@
+"""Contains classes and functions related to tracking objectives during the optimization process."""
+
 from typing import Callable
 
 from .domain import State

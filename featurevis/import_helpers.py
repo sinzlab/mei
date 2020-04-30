@@ -1,3 +1,5 @@
+"""Contains classes and functions related to the dynamic import of objects."""
+
 from typing import Mapping, Any
 
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
