@@ -1,3 +1,11 @@
+"""Contains callable classes representing objectives that can be tracked during the optimization process.
+
+All objectives must be subclasses of the ABC called "Objective" and implement the "compute" method. Said method will be
+called, with an object encapsulating the current state of the optimization process passed as the only argument, after
+each optimization step (or in regular user-defined intervals). In response to being called the "compute" method should
+return a result object computed based on the received state.
+"""
+
 from abc import ABC, abstractmethod
 from typing import Any
 
