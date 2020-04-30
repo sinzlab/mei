@@ -13,10 +13,14 @@ class TestTracker:
 
     @pytest.fixture(params=[0, 1, 10])
     def objectives(self, request):
-        return {
-            "obj" + str(i): MagicMock(name=f"obj{i}", side_effect=lambda c_s: f"data{c_s.i_iter}")
-            for i in range(request.param)
-        }
+        objectives = dict()
+        for i in range(request.param):
+
+            def obj_side_effect(current_state, i_obj=i):
+                return f"obj{i_obj}_result{current_state.i_iter}"
+
+            objectives["obj" + str(i)] = MagicMock(name="obj" + str(i), side_effect=obj_side_effect)
+        return objectives
 
     @pytest.fixture(params=[0, 1, 10])
     def states(self, request):
@@ -34,7 +38,9 @@ class TestTracker:
     def test_if_objectives_are_correctly_represented_in_log(self, tracker, objectives, states):
         for current_state in states:
             tracker.track(current_state)
-        log = {n: ["data" + str(s.i_iter) for s in states] for n in objectives}
+        log = dict()
+        for i, obj_name in enumerate(objectives):
+            log[obj_name] = dict(times=[s.i_iter for s in states], values=[f"obj{i}_result{s.i_iter}" for s in states])
         assert tracker.log == log
 
     def test_repr(self, tracker, objectives):
