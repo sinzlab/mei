@@ -57,6 +57,25 @@ class Input:
 
 
 class State:
+    """The (current) state of the optimization process.
+
+    Attributes:
+        i_iter: An integer representing the index of the optimization step this state corresponds to.
+        evaluation: A float representing the evaluation of the function in response to the current input.
+        reg_term: A float representing the current regularization term added to the evaluation before the optimization
+            step represented by this state was made. This value will be zero if no transformation is used.
+        input_: A tensor representing the untransformed input to the function. This will be identical to the
+            post-processed input from the last step for all steps except the first one.
+        transformed_input: A tensor representing the transformed input to the function. This will be identical to the
+            untransformed input if no transformation is used.
+        post_processed_input: A tensor representing the post-processed input. This will be identical to the
+            untransformed input if no post-processing is done.
+        grad: A tensor representing the gradient.
+        preconditioned_grad: A tensor representing the preconditioned gradient. This will be identical to the gradient
+            if no preconditioning is done.
+        stopper_output: An object returned by the stopper object.
+    """
+
     def __init__(
         self,
         i_iter: int,
