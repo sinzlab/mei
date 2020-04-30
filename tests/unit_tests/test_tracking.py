@@ -11,10 +11,10 @@ class TestTracker:
     def tracker(self, objectives):
         return tracking.Tracker(**objectives)
 
-    @pytest.fixture(params=[0, 1, 10])
-    def objectives(self, request):
+    @pytest.fixture
+    def objectives(self, n_objectives):
         objectives = dict()
-        for i in range(request.param):
+        for i in range(n_objectives):
 
             def obj_side_effect(current_state, i_obj=i):
                 return f"obj{i_obj}_result{current_state.i_iter}"
@@ -23,8 +23,16 @@ class TestTracker:
         return objectives
 
     @pytest.fixture(params=[0, 1, 10])
-    def states(self, request):
-        return tuple(MagicMock(name="current_state", i_iter=i, spec=State) for i in range(request.param))
+    def n_objectives(self, request):
+        return request.param
+
+    @pytest.fixture
+    def states(self, n_states):
+        return tuple(MagicMock(name="current_state", i_iter=i, spec=State) for i in range(n_states))
+
+    @pytest.fixture(params=[0, 1, 10])
+    def n_states(self, request):
+        return request.param
 
     def test_init(self, tracker, objectives):
         assert tracker.objectives == objectives
