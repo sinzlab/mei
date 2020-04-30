@@ -3,7 +3,7 @@ import warnings
 import torch
 from torch import optim
 
-from featurevis.exceptions import FeatureVisException
+from featurevis.legacy.exceptions import FeatureVisException
 
 
 def gradient_ascent(

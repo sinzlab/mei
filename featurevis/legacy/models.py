@@ -1,6 +1,6 @@
 import torch
 
-from featurevis.utils import varargin
+from featurevis.legacy.utils import varargin
 
 
 class Ensemble:
