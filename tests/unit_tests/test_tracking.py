@@ -12,18 +12,23 @@ class TestTracker:
         return tracking.Tracker(**objectives)
 
     @pytest.fixture
-    def objectives(self, n_objectives):
+    def objectives(self, n_objectives, interval):
         objectives = dict()
         for i in range(n_objectives):
 
             def obj_side_effect(current_state, i_obj=i):
-                return f"obj{i_obj}_result{current_state.i_iter}"
+                if current_state.i_iter % interval == 0:
+                    return f"obj{i_obj}_result{current_state.i_iter}"
 
             objectives["obj" + str(i)] = MagicMock(name="obj" + str(i), side_effect=obj_side_effect)
         return objectives
 
     @pytest.fixture(params=[0, 1, 10])
     def n_objectives(self, request):
+        return request.param
+
+    @pytest.fixture(params=[1, 10, 11])
+    def interval(self, request):
         return request.param
 
     @pytest.fixture
@@ -34,6 +39,16 @@ class TestTracker:
     def n_states(self, request):
         return request.param
 
+    @pytest.fixture
+    def expected_log(self, n_objectives, n_states, interval):
+        return {
+            f"obj{o}": dict(
+                times=[s for s in range(n_states) if s % interval == 0],
+                values=[f"obj{o}_result{s}" for s in range(n_states) if s % interval == 0],
+            )
+            for o in range(n_objectives)
+        }
+
     def test_init(self, tracker, objectives):
         assert tracker.objectives == objectives
 
@@ -43,13 +58,10 @@ class TestTracker:
         calls = [call(c_s) for c_s in states]
         assert all(obj.mock_calls == calls for obj in objectives.values())
 
-    def test_if_objectives_are_correctly_represented_in_log(self, tracker, objectives, states):
+    def test_if_objectives_are_correctly_represented_in_log(self, tracker, objectives, states, expected_log):
         for current_state in states:
             tracker.track(current_state)
-        log = dict()
-        for i, obj_name in enumerate(objectives):
-            log[obj_name] = dict(times=[s.i_iter for s in states], values=[f"obj{i}_result{s.i_iter}" for s in states])
-        assert tracker.log == log
+        assert tracker.log == expected_log
 
     def test_repr(self, tracker, objectives):
         assert tracker.__repr__() == f"Tracker({', '.join(objectives)})"

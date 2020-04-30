@@ -25,8 +25,9 @@ class Tracker:
     def track(self, current_state: State) -> None:
         """Passes the current state of the MEI optimization process to each objective and logs the result."""
         for name, objective in self.objectives.items():
-            self.log[name]["times"].append(current_state.i_iter)
-            self.log[name]["values"].append(objective(current_state))
+            if (result := objective(current_state)) is not None:
+                self.log[name]["times"].append(current_state.i_iter)
+                self.log[name]["values"].append(result)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}({', '.join(self.objectives)})"
