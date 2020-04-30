@@ -10,6 +10,7 @@ from . import core
 from . import optimization
 from .import_helpers import import_object
 from .domain import Input
+from .tracking import Tracker
 
 
 def import_path(path):
@@ -104,6 +105,7 @@ def ascend_gradient(
     mei_class: Type = optimization.MEI,
     import_func: Callable = import_object,
     optimize_func: Callable = optimization.optimize,
+    tracker_cls: Type[Tracker] = Tracker,
 ) -> Tuple[Tensor, float, Dict]:
     """Generates a MEI using gradient ascent.
 
@@ -131,9 +133,10 @@ def ascend_gradient(
         mei_class: For testing purposes.
         import_func: For testing purposes.
         optimize_func: For testing purposes.
+        tracker_cls: For testing purposes.
 
     Returns:
-        The MEI, the final evaluation as a single float and an empty dictionary.
+        The MEI, the final evaluation as a single float and the log of the tracker.
     """
     set_seed(seed)
     model.eval()
@@ -144,10 +147,13 @@ def ascend_gradient(
     optimizer = import_func(config["optimizer"], dict(params=[initial_guess], **config["optimizer_kwargs"]))
     stopper = import_func(config["stopper"], config["stopper_kwargs"])
 
+    objectives = {o: import_func(o, ks) for o, ks in config["objectives"].items()}
+    tracker = tracker_cls(**objectives)
+
     optional_names = ("transform", "regularization", "precondition", "postprocessing")
     optional = {n: import_func(config[n], config[n + "_kwargs"]) for n in optional_names if config[n]}
 
     mei = mei_class(model, input_cls(initial_guess), optimizer, **optional)
 
-    final_evaluation, mei = optimize_func(mei, stopper)
-    return mei, final_evaluation, dict()
+    final_evaluation, mei = optimize_func(mei, stopper, tracker)
+    return mei, final_evaluation, tracker.log

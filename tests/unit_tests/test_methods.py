@@ -1,10 +1,12 @@
 from unittest.mock import MagicMock, call
 from functools import partial
+from typing import Type
 
 import pytest
 
 from featurevis import methods
 from featurevis.domain import Input
+from featurevis.tracking import Tracker
 
 
 class TestAscend:
@@ -188,6 +190,7 @@ class TestAscendGradient:
         mei_class,
         import_func,
         optimize_func,
+        tracker_cls,
     ):
         def _ascend_gradient(
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
@@ -209,6 +212,7 @@ class TestAscendGradient:
                 mei_class=mei_class,
                 import_func=import_func,
                 optimize_func=optimize_func,
+                tracker_cls=tracker_cls,
             )
 
         return _ascend_gradient
@@ -230,6 +234,7 @@ class TestAscendGradient:
                 optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
                 stopper="stopper",
                 stopper_kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1),
+                objectives=dict(obj1=dict(obj1_kwarg1=0, obj1_kwarg2=1), obj2=dict(obj2_kwarg1=0, obj2_kwarg2=1)),
             )
             if use_transform:
                 config = dict(
@@ -293,6 +298,16 @@ class TestAscendGradient:
         return MagicMock(name="optimize_func", return_value=("mei", "final_evaluation"))
 
     @pytest.fixture
+    def tracker_cls(self, tracker_instance):
+        return MagicMock(name="tracker_cls", spec=Type[Tracker], return_value=tracker_instance)
+
+    @pytest.fixture
+    def tracker_instance(self):
+        tracker = MagicMock(name="tracker_instance", spec=Tracker)
+        tracker.log = "tracker_log"
+        return tracker
+
+    @pytest.fixture
     def import_func_calls(self):
         def _import_func_calls(
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
@@ -300,6 +315,8 @@ class TestAscendGradient:
             import_func_calls = [
                 call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
                 call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+                call("obj1", dict(obj1_kwarg1=0, obj1_kwarg2=1)),
+                call("obj2", dict(obj2_kwarg1=0, obj2_kwarg2=1)),
             ]
             if use_transform:
                 import_func_calls.append(call("transform", dict(transform_kwarg1=0, transform_kwarg2=1)))
@@ -385,6 +402,10 @@ class TestAscendGradient:
         )
         assert import_func.mock_calls == calls
 
+    def test_if_tracker_is_correctly_called(self, ascend_gradient, tracker_cls):
+        ascend_gradient()()
+        tracker_cls.assert_called_once_with(obj1="obj1", obj2="obj2")
+
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
     @pytest.mark.parametrize("use_precondition", [True, False])
@@ -415,9 +436,9 @@ class TestAscendGradient:
             )
         ]
 
-    def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func):
+    def test_if_optimize_func_is_correctly_called(self, ascend_gradient, optimize_func, tracker_instance):
         ascend_gradient(use_transform=True)()
-        optimize_func.assert_called_once_with("mei", "stopper")
+        optimize_func.assert_called_once_with("mei", "stopper", tracker_instance)
 
     def test_if_result_is_returned(self, ascend_gradient):
-        assert ascend_gradient(use_transform=True)() == ("final_evaluation", "mei", dict())
+        assert ascend_gradient(use_transform=True)() == ("final_evaluation", "mei", "tracker_log")
