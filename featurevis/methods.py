@@ -15,7 +15,7 @@ def get_input_dimensions(dataloaders, get_dims):
     return list(get_dims(dataloaders["train"]).values())[0]["inputs"]
 
 
-def ascend_gradient(
+def gradient_ascent(
     dataloaders: Dict,
     model: Module,
     config: Dict,
