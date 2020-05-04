@@ -62,22 +62,24 @@ class TestGradientAscent:
         def _config(use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False):
             config = dict(
                 device="cpu",
-                optimizer="optimizer",
+                optimizer="optimizer_path",
                 optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
-                stopper="stopper",
+                stopper="stopper_path",
                 stopper_kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1),
-                objectives=dict(obj1=dict(obj1_kwarg1=0, obj1_kwarg2=1), obj2=dict(obj2_kwarg1=0, obj2_kwarg2=1)),
+                objectives=dict(
+                    obj1_path=dict(obj1_kwarg1=0, obj1_kwarg2=1), obj2_path=dict(obj2_kwarg1=0, obj2_kwarg2=1)
+                ),
             )
             if use_transform:
                 config = dict(
-                    config, transform="transform", transform_kwargs=dict(transform_kwarg1=0, transform_kwarg2=1)
+                    config, transform="transform_path", transform_kwargs=dict(transform_kwarg1=0, transform_kwarg2=1)
                 )
             else:
                 config = dict(config, transform=None, transform_kwargs=None)
             if use_regularization:
                 config = dict(
                     config,
-                    regularization="regularization",
+                    regularization="regularization_path",
                     regularization_kwargs=dict(regularization_kwarg1=0, regularization_kwarg2=1),
                 )
             else:
@@ -85,7 +87,7 @@ class TestGradientAscent:
             if use_precondition:
                 config = dict(
                     config,
-                    precondition="precondition",
+                    precondition="precondition_path",
                     precondition_kwargs=dict(precondition_kwarg1=0, precondition_kwarg2=1),
                 )
             else:
@@ -93,7 +95,7 @@ class TestGradientAscent:
             if use_postprocessing:
                 config = dict(
                     config,
-                    postprocessing="postprocessing",
+                    postprocessing="postprocessing_path",
                     postprocessing_kwargs=dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1),
                 )
             else:
@@ -121,7 +123,7 @@ class TestGradientAscent:
     @pytest.fixture
     def import_func(self):
         def _import_func(name, _kwargs):
-            return name
+            return name.split("_")[0]
 
         return MagicMock(name="import_func", side_effect=_import_func)
 
@@ -145,19 +147,23 @@ class TestGradientAscent:
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
         ):
             import_func_calls = [
-                call("optimizer", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
-                call("stopper", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
-                call("obj1", dict(obj1_kwarg1=0, obj1_kwarg2=1)),
-                call("obj2", dict(obj2_kwarg1=0, obj2_kwarg2=1)),
+                call("optimizer_path", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
+                call("stopper_path", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+                call("obj1_path", dict(obj1_kwarg1=0, obj1_kwarg2=1)),
+                call("obj2_path", dict(obj2_kwarg1=0, obj2_kwarg2=1)),
             ]
             if use_transform:
-                import_func_calls.append(call("transform", dict(transform_kwarg1=0, transform_kwarg2=1)))
+                import_func_calls.append(call("transform_path", dict(transform_kwarg1=0, transform_kwarg2=1)))
             if use_regularization:
-                import_func_calls.append(call("regularization", dict(regularization_kwarg1=0, regularization_kwarg2=1)))
+                import_func_calls.append(
+                    call("regularization_path", dict(regularization_kwarg1=0, regularization_kwarg2=1))
+                )
             if use_precondition:
-                import_func_calls.append(call("precondition", dict(precondition_kwarg1=0, precondition_kwarg2=1)))
+                import_func_calls.append(call("precondition_path", dict(precondition_kwarg1=0, precondition_kwarg2=1)))
             if use_postprocessing:
-                import_func_calls.append(call("postprocessing", dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1)))
+                import_func_calls.append(
+                    call("postprocessing_path", dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1))
+                )
             return import_func_calls
 
         return _import_func_calls
@@ -236,7 +242,7 @@ class TestGradientAscent:
 
     def test_if_tracker_is_correctly_called(self, gradient_ascent, tracker_cls):
         gradient_ascent()()
-        tracker_cls.assert_called_once_with(obj1="obj1", obj2="obj2")
+        tracker_cls.assert_called_once_with(obj1_path="obj1", obj2_path="obj2")
 
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
