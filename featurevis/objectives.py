@@ -51,3 +51,10 @@ class RegularIntervalObjective(Objective):
 class EvaluationObjective(RegularIntervalObjective):
     def compute(self, current_state: State) -> Any:
         return current_state.evaluation
+
+
+class PostProcessedInputObjective(RegularIntervalObjective):
+    """Objective used to track the post-processed input to the function during the optimization process"""
+
+    def compute(self, current_state: State) -> Any:
+        return current_state.post_processed_input

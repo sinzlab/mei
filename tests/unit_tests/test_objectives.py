@@ -69,3 +69,13 @@ class TestEvaluationObjective:
         current_state = MagicMock(name="current_state", spec=State)
         current_state.evaluation = "evaluation"
         assert obj.compute(current_state) == "evaluation"
+
+
+class TestPostProcessedInputObjective:
+    def test_if_objective_is_subclass_of_regular_interval_objective(self):
+        assert issubclass(objectives.PostProcessedInputObjective, objectives.RegularIntervalObjective)
+
+    def test_if_correct_value_is_computed(self):
+        obj = objectives.PostProcessedInputObjective(1)
+        current_state = MagicMock(name="current_state", spec=State, post_processed_input="post_processed_input")
+        assert obj.compute(current_state) == "post_processed_input"
