@@ -1,6 +1,6 @@
 """Contains classes and functions related to optimizing an input to a function such that its value is maximized."""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Tuple, Dict, Union
+from typing import TYPE_CHECKING, Callable, Tuple
 
 import torch
 
@@ -38,6 +38,8 @@ def default_postprocessing(mei: Tensor, _i_iteration: int) -> Tensor:
 
 class MEI:
     """Wrapper around the function and the MEI tensor."""
+
+    state_cls = State
 
     def __init__(
         self,
@@ -87,7 +89,7 @@ class MEI:
         """Evaluates the function on the current MEI."""
         return self.func(self._transformed_input)
 
-    def step(self) -> Tuple[Tensor, Dict[str, Union[int, float, Tensor]]]:
+    def step(self) -> State:
         """Performs an optimization step."""
         state = dict(i_iter=self.i_iteration, input_=self._current_input.cloned_data)
         self.optimizer.zero_grad()
@@ -107,7 +109,7 @@ class MEI:
         state["post_processed_input"] = self._current_input.cloned_data
         self.__transformed_input = None
         self.i_iteration += 1
-        return evaluation, state
+        return self.state_cls.from_dict(state)
 
     @property
     def current_input(self) -> Tensor:

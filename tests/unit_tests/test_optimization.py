@@ -32,7 +32,8 @@ class TestDefaults:
 
 class TestMEI:
     @pytest.fixture
-    def mei(self, func, initial, optimizer, transform, regularization, precondition, postprocessing):
+    def mei(self, state_cls, func, initial, optimizer, transform, regularization, precondition, postprocessing):
+        optimization.MEI.state_cls = state_cls
         return partial(
             optimization.MEI,
             func,
@@ -43,6 +44,12 @@ class TestMEI:
             precondition=precondition,
             postprocessing=postprocessing,
         )
+
+    @pytest.fixture
+    def state_cls(self):
+        state_cls = MagicMock(name="state_cls", spec=State)
+        state_cls.from_dict.return_value = "state_instance"
+        return state_cls
 
     @pytest.fixture
     def func(self, evaluation):
@@ -252,7 +259,8 @@ class TestMEI:
             mei().step()
             transformed_mei.data.cpu.return_value.clone.assert_called_once_with()
 
-        def test_if_step_returns_the_correct_value(self, mei, evaluation):
+        def test_if_state_cls_is_correctly_called(self, mei, state_cls):
+            mei().step()
             state = dict(
                 i_iter=0,
                 evaluation="evaluation_as_float",
@@ -263,7 +271,10 @@ class TestMEI:
                 transformed_input="cloned_transformed_mei_data",
                 post_processed_input="cloned_post_processed_mei_data",
             )
-            assert mei().step() == (evaluation, state)
+            state_cls.from_dict.assert_called_once_with(state)
+
+        def test_if_step_returns_the_correct_value(self, mei):
+            assert mei().step() == "state_instance"
 
     def test_if_extract_is_correctly_called_when_accessing_current_input(self, mei, current_input):
         _ = mei().current_input
