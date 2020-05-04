@@ -24,7 +24,7 @@ class Objective(ABC):
 
 
 class RegularIntervalObjective(Objective):
-    """Computes intervals in regular intervals during the optimization process.
+    """Computes objectives in regular intervals during the optimization process.
 
     Attributes:
         interval: An integer greater than zero representing the number of optimization steps between the computation of
@@ -49,6 +49,8 @@ class RegularIntervalObjective(Objective):
 
 
 class EvaluationObjective(RegularIntervalObjective):
+    """Objective used to track the function evaluation during the optimization process."""
+
     def compute(self, current_state: State) -> Any:
         return current_state.evaluation
 
