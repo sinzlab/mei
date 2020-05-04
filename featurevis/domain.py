@@ -44,10 +44,6 @@ class Input:
         """Returns a cloned CPU version of the data."""
         return self.data.cpu().clone()
 
-    def extract(self) -> Tensor:
-        """Extracts and returns the current tensor."""
-        return self.tensor.detach().clone().cpu().squeeze()
-
     def clone(self) -> Input:
         """Returns a new instance of Input with a cloned tensor."""
         return Input(self.tensor.clone())
