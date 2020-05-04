@@ -124,7 +124,7 @@ class MEI:
         )
 
 
-def optimize(mei: MEI, stopper: OptimizationStopper, tracker: Tracker, state_cls=State) -> Tuple[float, Tensor]:
+def optimize(mei: MEI, stopper: OptimizationStopper, tracker: Tracker) -> Tuple[float, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:
@@ -132,18 +132,16 @@ def optimize(mei: MEI, stopper: OptimizationStopper, tracker: Tracker, state_cls
         stopper: A subclass of "OptimizationStopper" used to stop the optimization process.
         tracker: A tracker object used to track pre-defined objectives during the optimization process. The current
             state of the optimization process is passed to the "track" method of the object in each iteration.
-        state_cls: For testing purposes.
 
     Returns:
         A float representing the final evaluation and a tensor of floats having the same shape as "initial_guess"
         representing the input that maximizes the function.
     """
-    evaluation = mei.evaluate()
     while True:
-        stop, output = stopper(mei, evaluation)
+        current_state = mei.step()
+        stop, output = stopper(current_state)
+        current_state.stopper_output = output
+        tracker.track(current_state)
         if stop:
             break
-        evaluation, state = mei.step()
-        state["stopper_output"] = output
-        tracker.track(state_cls.from_dict(state))
-    return evaluation.item(), mei.current_input
+    return current_state.evaluation, current_state.post_processed_input

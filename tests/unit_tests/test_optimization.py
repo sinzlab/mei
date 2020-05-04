@@ -294,16 +294,22 @@ class TestMEI:
 
 class TestOptimize:
     @pytest.fixture
-    def optimize(self, mei, tracker, state_cls):
-        return partial(optimization.optimize, mei, tracker=tracker, state_cls=state_cls)
+    def optimize(self, mei, tracker):
+        return partial(optimization.optimize, mei, tracker=tracker)
 
     @pytest.fixture
-    def mei(self, evaluation):
+    def mei(self, current_state):
         mei = MagicMock(name="mei", return_value="mei", spec=optimization.MEI)
-        mei.evaluate.return_value = evaluation
-        mei.step.return_value = (evaluation, dict(state=0))
+        mei.step.return_value = current_state
         mei.current_input = "current_input"
         return mei
+
+    @pytest.fixture
+    def current_state(self):
+        current_state = MagicMock(
+            name="current_state", spec=State, evaluation="evaluation", post_processed_input="post_processed_input"
+        )
+        return current_state
 
     @pytest.fixture
     def stopper(self):
@@ -317,55 +323,33 @@ class TestOptimize:
         return _stopper
 
     @pytest.fixture
-    def state_cls(self):
-        state_cls = MagicMock(name="state_cls", spec=State)
-        state_cls.from_dict.return_value = "state_instance"
-        return state_cls
-
-    @pytest.fixture
     def tracker(self):
         return MagicMock(name="tracker", spec=Tracker)
-
-    @pytest.fixture
-    def evaluation(self, negated_evaluation):
-        evaluation = MagicMock(name="evaluation", spec=Tensor)
-        evaluation.__neg__.return_value = negated_evaluation
-        evaluation.item.return_value = "evaluation"
-        return evaluation
-
-    @pytest.fixture
-    def negated_evaluation(self):
-        return MagicMock(name="negated_evaluation", spec=Tensor)
 
     @pytest.fixture(params=[0, 1, 100])
     def num_iterations(self, request):
         return request.param
 
-    def test_if_mei_is_evaluated_correctly(self, optimize, mei, stopper):
-        optimize(stopper())
-        mei.evaluate.assert_called_once_with()
-
-    def test_if_optimized_is_called_correctly(self, optimize, mei, stopper, evaluation, num_iterations):
-        stopper = stopper(num_iterations)
-        optimize(stopper)
-        calls = [call(mei, evaluation) for _ in range(num_iterations + 1)]
-        assert stopper.mock_calls == calls
-
     def test_if_mei_takes_steps_correctly(self, optimize, mei, stopper, num_iterations):
         optimize(stopper(num_iterations))
-        calls = [call() for _ in range(num_iterations)]
+        calls = [call() for _ in range(num_iterations + 1)]
         assert mei.step.mock_calls == calls
 
-    def test_if_state_class_is_correctly_initialized(self, optimize, stopper, state_cls, num_iterations):
-        optimize(stopper(num_iterations))
-        calls = [call(dict(state=0, stopper_output="stopper_output")) for _ in range(num_iterations)]
-        assert state_cls.from_dict.mock_calls == calls
+    def test_if_stopper_is_called_correctly(self, optimize, stopper, current_state, num_iterations):
+        stopper = stopper(num_iterations)
+        optimize(stopper)
+        calls = [call(current_state) for _ in range(num_iterations + 1)]
+        assert stopper.mock_calls == calls
 
-    def test_if_tracker_is_called_correctly(self, optimize, stopper, tracker, num_iterations):
+    def test_if_stopper_output_is_assigned_to_current_state(self, optimize, stopper, current_state):
+        optimize(stopper())
+        assert current_state.stopper_output == "stopper_output"
+
+    def test_if_tracker_is_called_correctly(self, optimize, current_state, stopper, tracker, num_iterations):
         optimize(stopper(num_iterations))
-        calls = [call("state_instance") for _ in range(num_iterations)]
+        calls = [call(current_state) for _ in range(num_iterations + 1)]
         assert tracker.track.mock_calls == calls
 
     def test_if_result_is_correctly_returned(self, optimize, stopper):
         result = optimize(stopper())
-        assert result == ("evaluation", "current_input")
+        assert result == ("evaluation", "post_processed_input")
