@@ -19,11 +19,10 @@ class TestNumIterations:
     @pytest.mark.parametrize("num_iterations", [0, 1, 1000])
     def test_call(self, stopper, num_iterations):
         stopper = stopper(num_iterations)
-        mei = MagicMock(name="mei")
-        evaluation = 0.5
+        current_state = MagicMock(name="current_state")
         for _ in range(num_iterations):
-            assert stopper(mei, evaluation) == (False, None)
-        assert stopper(mei, evaluation) == (True, None)
+            assert stopper(current_state) == (False, None)
+        assert stopper(current_state) == (True, None)
 
     def test_repr(self, stopper):
         assert stopper(5).__repr__() == f"NumIterations(5)"
