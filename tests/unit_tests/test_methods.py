@@ -62,44 +62,46 @@ class TestGradientAscent:
         def _config(use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False):
             config = dict(
                 device="cpu",
-                optimizer="optimizer_path",
-                optimizer_kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1),
-                stopper="stopper_path",
-                stopper_kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1),
-                objectives=dict(
-                    obj1_path=dict(obj1_kwarg1=0, obj1_kwarg2=1), obj2_path=dict(obj2_kwarg1=0, obj2_kwarg2=1)
-                ),
+                optimizer=dict(path="optimizer_path", kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1)),
+                stopper=dict(path="stopper_path", kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+                objectives=[
+                    dict(path="obj1_path", kwargs=dict(obj1_kwarg1=0, obj1_kwarg2=1)),
+                    dict(path="obj2_path", kwargs=dict(obj2_kwarg1=0, obj2_kwarg2=1)),
+                ],
             )
             if use_transform:
                 config = dict(
-                    config, transform="transform_path", transform_kwargs=dict(transform_kwarg1=0, transform_kwarg2=1)
+                    config, transform=dict(path="transform_path", kwargs=dict(transform_kwarg1=0, transform_kwarg2=1))
                 )
             else:
-                config = dict(config, transform=None, transform_kwargs=None)
+                config = dict(config, transform=None)
             if use_regularization:
                 config = dict(
                     config,
-                    regularization="regularization_path",
-                    regularization_kwargs=dict(regularization_kwarg1=0, regularization_kwarg2=1),
+                    regularization=dict(
+                        path="regularization_path", kwargs=dict(regularization_kwarg1=0, regularization_kwarg2=1)
+                    ),
                 )
             else:
-                config = dict(config, regularization=None, regularization_kwargs=None)
+                config = dict(config, regularization=None)
             if use_precondition:
                 config = dict(
                     config,
-                    precondition="precondition_path",
-                    precondition_kwargs=dict(precondition_kwarg1=0, precondition_kwarg2=1),
+                    precondition=dict(
+                        path="precondition_path", kwargs=dict(precondition_kwarg1=0, precondition_kwarg2=1)
+                    ),
                 )
             else:
-                config = dict(config, precondition=None, precondition_kwargs=None)
+                config = dict(config, precondition=None)
             if use_postprocessing:
                 config = dict(
                     config,
-                    postprocessing="postprocessing_path",
-                    postprocessing_kwargs=dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1),
+                    postprocessing=dict(
+                        path="postprocessing_path", kwargs=dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1)
+                    ),
                 )
             else:
-                config = dict(config, postprocessing=None, postprocessing_kwargs=None)
+                config = dict(config, postprocessing=None)
             return config
 
         return _config

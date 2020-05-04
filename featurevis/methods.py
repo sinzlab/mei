@@ -66,14 +66,14 @@ def gradient_ascent(
     shape = get_input_dimensions(dataloaders, get_dims)
     initial_guess = create_initial_guess(1, *shape[1:], device=config["device"])
 
-    optimizer = import_func(config["optimizer"], dict(params=[initial_guess], **config["optimizer_kwargs"]))
-    stopper = import_func(config["stopper"], config["stopper_kwargs"])
+    optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
+    stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])
 
-    objectives = {o: import_func(o, ks) for o, ks in config["objectives"].items()}
+    objectives = {o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]}
     tracker = tracker_cls(**objectives)
 
     optional_names = ("transform", "regularization", "precondition", "postprocessing")
-    optional = {n: import_func(config[n], config[n + "_kwargs"]) for n in optional_names if config[n]}
+    optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if config[n]}
 
     mei = mei_class(model, input_cls(initial_guess), optimizer, **optional)
 
