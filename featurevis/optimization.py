@@ -111,11 +111,6 @@ class MEI:
         self.i_iteration += 1
         return self.state_cls.from_dict(state)
 
-    @property
-    def current_input(self) -> Tensor:
-        """Detaches the current MEI and returns it."""
-        return self._current_input.extract()
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__qualname__}({self.func}, {self.initial}, {self.optimizer}, "

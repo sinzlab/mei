@@ -276,13 +276,6 @@ class TestMEI:
         def test_if_step_returns_the_correct_value(self, mei):
             assert mei().step() == "state_instance"
 
-    def test_if_extract_is_correctly_called_when_accessing_current_input(self, mei, current_input):
-        _ = mei().current_input
-        current_input.extract.assert_called_once_with()
-
-    def test_return_value_of_current_input_property(self, mei):
-        assert mei().current_input == "current_input"
-
     def test_repr(self, mei):
         assert repr(mei()) == (
             (
