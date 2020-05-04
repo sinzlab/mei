@@ -1,7 +1,7 @@
 """This module contains domain models."""
 
 from __future__ import annotations
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from torch import Tensor
 
@@ -73,7 +73,7 @@ class State:
         grad: A tensor representing the gradient.
         preconditioned_grad: A tensor representing the preconditioned gradient. This will be identical to the gradient
             if no preconditioning is done.
-        stopper_output: An object returned by the stopper object.
+        stopper_output: An object returned by the stopper object. Optional.
     """
 
     def __init__(
@@ -86,7 +86,7 @@ class State:
         post_processed_input: Tensor,
         grad: Tensor,
         preconditioned_grad: Tensor,
-        stopper_output: Any,
+        stopper_output: Optional[Any] = None,
     ):
         self.i_iter = i_iter
         self.evaluation = evaluation

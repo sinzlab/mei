@@ -147,6 +147,11 @@ class TestState:
             and state.stopper_output is state_data["stopper_output"]
         )
 
+    def test_if_stopper_output_is_optional(self, state_data):
+        del state_data["stopper_output"]
+        state = domain.State(**state_data)
+        assert state.stopper_output is None
+
     def test_repr(self, state_data):
         state = domain.State(**state_data)
         assert (
