@@ -38,34 +38,34 @@ def gradient_ascent(
     list (but not "None") if no objectives are to be tracked. Example config:
 
         {
-            'device': 'cuda',
-            'optimizer': {
-                'path': 'path.to.optimizer',
-                'kwargs': {'optimizer_kwarg1': 0, 'optimizer_kwarg2': 1},
+            "device": "cuda",
+            "optimizer": {
+                "path": "path.to.optimizer",
+                "kwargs": {"optimizer_kwarg1": 0, "optimizer_kwarg2": 1},
             },
-            'stopper': {
-                'path': 'path.to.stopper',
-                'kwargs': {'stopper_kwarg1': 0, 'stopper_kwarg2': 0},
+            "stopper": {
+                "path": "path.to.stopper",
+                "kwargs": {"stopper_kwarg1": 0, "stopper_kwarg2": 0},
             },
-            'transform': {
-                'path': 'path.to.transform',
-                'kwargs': {'transform_kwarg1': 0, 'transform_kwarg2': 1},
+            "transform": {
+                "path": "path.to.transform",
+                "kwargs": {"transform_kwarg1": 0, "transform_kwarg2": 1},
             },
-            'regularization': {
-                'path': 'path.to.regularization',
-                'kwargs': {'regularization_kwarg1': 0, 'regularization_kwarg2': 1},
+            "regularization": {
+                "path": "path.to.regularization",
+                "kwargs": {"regularization_kwarg1": 0, "regularization_kwarg2": 1},
             },
-            'precondition': {
-                'path': 'path.to.precondition',
-                'kwargs': {'precondition_kwarg1': 0, 'precondition_kwarg2': 1},
+            "precondition": {
+                "path": "path.to.precondition",
+                "kwargs": {"precondition_kwarg1": 0, "precondition_kwarg2": 1},
             },
-            'postprocessing': {
-                'path': 'path.to.postprocessing',
-                'kwargs': {'postprocessing_kwarg1': 0, 'postprocessing_kwarg2': 1},
+            "postprocessing": {
+                "path": "path.to.postprocessing",
+                "kwargs": {"postprocessing_kwarg1": 0, "postprocessing_kwarg2": 1},
             },
-            'objectives': [
-                {'path': 'path.to.objective1', 'kwargs': {'objective1_kwarg1': 0, 'objective1_kwarg2': 1}},
-                {'path': 'path.to.objective2', 'kwargs': {'objective2_kwarg1': 0, 'objective2_kwarg2': 1}},
+            "objectives": [
+                {"path": "path.to.objective1", "kwargs": {"objective1_kwarg1": 0, "objective1_kwarg2": 1}},
+                {"path": "path.to.objective2", "kwargs": {"objective2_kwarg1": 0, "objective2_kwarg2": 1}},
             ],
         }
 
