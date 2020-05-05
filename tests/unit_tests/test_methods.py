@@ -15,7 +15,6 @@ class TestGradientAscent:
         self,
         dataloaders,
         model,
-        config,
         get_dims,
         create_initial_guess,
         input_cls,
@@ -24,35 +23,19 @@ class TestGradientAscent:
         optimize_func,
         tracker_cls,
     ):
-        def _gradient_ascent(
-            n_objectives=0,
-            use_transform=False,
-            use_regularization=False,
-            use_precondition=False,
-            use_postprocessing=False,
-        ):
-            return partial(
-                methods.gradient_ascent,
-                dataloaders,
-                model,
-                config(
-                    n_objectives=n_objectives,
-                    use_transform=use_transform,
-                    use_regularization=use_regularization,
-                    use_precondition=use_precondition,
-                    use_postprocessing=use_postprocessing,
-                ),
-                42,
-                get_dims=get_dims,
-                create_initial_guess=create_initial_guess,
-                input_cls=input_cls,
-                mei_class=mei_class,
-                import_func=import_func,
-                optimize_func=optimize_func,
-                tracker_cls=tracker_cls,
-            )
-
-        return _gradient_ascent
+        return partial(
+            methods.gradient_ascent,
+            dataloaders=dataloaders,
+            model=model,
+            seed=42,
+            get_dims=get_dims,
+            create_initial_guess=create_initial_guess,
+            input_cls=input_cls,
+            mei_class=mei_class,
+            import_func=import_func,
+            optimize_func=optimize_func,
+            tracker_cls=tracker_cls,
+        )
 
     @pytest.fixture
     def dataloaders(self):
@@ -206,29 +189,29 @@ class TestGradientAscent:
 
         return _mei_class_call
 
-    def test_if_seed_is_set(self, gradient_ascent):
+    def test_if_seed_is_set(self, gradient_ascent, config):
         set_seed = MagicMock(name="set_seed")
-        gradient_ascent(use_transform=True)(set_seed=set_seed)
+        gradient_ascent(config=config(), set_seed=set_seed)
         set_seed.assert_called_once_with(42)
 
-    def test_model_is_switched_to_eval_mode(self, gradient_ascent, model):
-        gradient_ascent(use_transform=True)()
+    def test_model_is_switched_to_eval_mode(self, gradient_ascent, model, config):
+        gradient_ascent(config=config())
         model.eval.assert_called_once_with()
 
-    def test_if_model_is_switched_to_device(self, gradient_ascent, model):
-        gradient_ascent(use_transform=True)()
+    def test_if_model_is_switched_to_device(self, gradient_ascent, model, config):
+        gradient_ascent(config=config())
         model.to.assert_called_once_with("cpu")
 
-    def test_if_get_dims_is_correctly_called(self, gradient_ascent, get_dims):
-        gradient_ascent(use_transform=True)()
+    def test_if_get_dims_is_correctly_called(self, gradient_ascent, config, get_dims):
+        gradient_ascent(config=config())
         get_dims.assert_called_once_with("train_dataloaders")
 
-    def test_if_create_initial_guess_is_correctly_called(self, gradient_ascent, create_initial_guess):
-        gradient_ascent(use_transform=True)()
+    def test_if_create_initial_guess_is_correctly_called(self, gradient_ascent, config, create_initial_guess):
+        gradient_ascent(config=config())
         create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
 
-    def test_if_input_class_is_correctly_called(self, gradient_ascent, input_cls):
-        gradient_ascent()()
+    def test_if_input_class_is_correctly_called(self, gradient_ascent, config, input_cls):
+        gradient_ascent(config=config())
         input_cls.assert_called_once_with("initial_guess")
 
     @pytest.mark.parametrize("n_objectives", [0, 1, 10])
@@ -239,6 +222,7 @@ class TestGradientAscent:
     def test_if_import_func_is_correctly_called(
         self,
         gradient_ascent,
+        config,
         import_func,
         import_func_calls,
         n_objectives,
@@ -248,12 +232,14 @@ class TestGradientAscent:
         use_postprocessing,
     ):
         gradient_ascent(
-            n_objectives=n_objectives,
-            use_transform=use_transform,
-            use_regularization=use_regularization,
-            use_precondition=use_precondition,
-            use_postprocessing=use_postprocessing,
-        )()
+            config=config(
+                n_objectives=n_objectives,
+                use_transform=use_transform,
+                use_regularization=use_regularization,
+                use_precondition=use_precondition,
+                use_postprocessing=use_postprocessing,
+            )
+        )
         calls = import_func_calls(
             n_objectives=n_objectives,
             use_transform=use_transform,
@@ -264,8 +250,8 @@ class TestGradientAscent:
         assert import_func.mock_calls == calls
 
     @pytest.mark.parametrize("n_objectives", [0, 1, 10])
-    def test_if_tracker_is_correctly_called(self, gradient_ascent, tracker_cls, n_objectives):
-        gradient_ascent(n_objectives=n_objectives)()
+    def test_if_tracker_is_correctly_called(self, gradient_ascent, config, tracker_cls, n_objectives):
+        gradient_ascent(config=config(n_objectives=n_objectives))
         tracker_cls.assert_called_once_with(**{f"obj{i}_path": f"obj{i}" for i in range(1, n_objectives + 1)})
 
     @pytest.mark.parametrize("use_transform", [True, False])
@@ -276,6 +262,7 @@ class TestGradientAscent:
         self,
         gradient_ascent,
         model,
+        config,
         mei_class,
         mei_class_call,
         use_transform,
@@ -284,11 +271,13 @@ class TestGradientAscent:
         use_postprocessing,
     ):
         gradient_ascent(
-            use_transform=use_transform,
-            use_regularization=use_regularization,
-            use_precondition=use_precondition,
-            use_postprocessing=use_postprocessing,
-        )()
+            config=config(
+                use_transform=use_transform,
+                use_regularization=use_regularization,
+                use_precondition=use_precondition,
+                use_postprocessing=use_postprocessing,
+            )
+        )
         assert mei_class.mock_calls == [
             mei_class_call(
                 use_transform=use_transform,
@@ -298,9 +287,9 @@ class TestGradientAscent:
             )
         ]
 
-    def test_if_optimize_func_is_correctly_called(self, gradient_ascent, optimize_func, tracker_instance):
-        gradient_ascent(use_transform=True)()
+    def test_if_optimize_func_is_correctly_called(self, gradient_ascent, config, optimize_func, tracker_instance):
+        gradient_ascent(config=config())
         optimize_func.assert_called_once_with("mei", "stopper", tracker_instance)
 
-    def test_if_result_is_returned(self, gradient_ascent):
-        assert gradient_ascent(use_transform=True)() == ("final_evaluation", "mei", "tracker_log")
+    def test_if_result_is_returned(self, gradient_ascent, config):
+        assert gradient_ascent(config=config()) == ("final_evaluation", "mei", "tracker_log")
