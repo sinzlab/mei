@@ -1,3 +1,5 @@
+"""This module contains classes and functions pertaining to the NNFabrik integration."""
+
 import pickle
 
 import torch

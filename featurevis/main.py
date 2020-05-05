@@ -1,3 +1,5 @@
+"""This module contains the main tables and table templates used in the MEI generation process."""
+
 import datajoint as dj
 
 from nnfabrik.main import Dataset, schema

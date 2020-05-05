@@ -1,3 +1,5 @@
+"""This module contains mix-ins for the main tables and table templates."""
+
 from __future__ import annotations
 import os
 import tempfile

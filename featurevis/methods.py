@@ -1,3 +1,5 @@
+"""This module contains methods used to generate MEIs."""
+
 from typing import Tuple, Dict, Callable, Type
 
 import torch
