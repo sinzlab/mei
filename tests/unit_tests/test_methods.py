@@ -48,7 +48,7 @@ class TestGradientAscent:
     @pytest.fixture
     def config(self):
         def _config(
-            n_objectives=0,
+            n_objectives=None,
             use_transform=False,
             use_regularization=False,
             use_precondition=False,
@@ -59,10 +59,13 @@ class TestGradientAscent:
                 optimizer=dict(path="optimizer_path", kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1)),
                 stopper=dict(path="stopper_path", kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1)),
             )
-            objectives = [
-                dict(path=f"obj{i}_path", kwargs={f"obj{i}_kwarg1": 0, f"obj{i}_kwarg2": 1})
-                for i in range(1, n_objectives + 1)
-            ]
+            if n_objectives is None:
+                objectives = None
+            else:
+                objectives = [
+                    dict(path=f"obj{i}_path", kwargs={f"obj{i}_kwarg1": 0, f"obj{i}_kwarg2": 1})
+                    for i in range(1, n_objectives + 1)
+                ]
             config = dict(config, objectives=objectives)
             if use_transform:
                 config = dict(
@@ -252,8 +255,7 @@ class TestGradientAscent:
     def test_if_import_func_is_correctly_called_if_objectives_is_none(
         self, gradient_ascent, config, import_func, import_func_calls
     ):
-        config = config()
-        config["objectives"] = None
+        config = config(n_objectives=None)
         gradient_ascent(config=config)
         assert import_func.mock_calls == import_func_calls()
 
