@@ -25,13 +25,18 @@ class TestGradientAscent:
         tracker_cls,
     ):
         def _gradient_ascent(
-            use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
+            n_objectives=0,
+            use_transform=False,
+            use_regularization=False,
+            use_precondition=False,
+            use_postprocessing=False,
         ):
             return partial(
                 methods.gradient_ascent,
                 dataloaders,
                 model,
                 config(
+                    n_objectives=n_objectives,
                     use_transform=use_transform,
                     use_regularization=use_regularization,
                     use_precondition=use_precondition,
@@ -59,16 +64,23 @@ class TestGradientAscent:
 
     @pytest.fixture
     def config(self):
-        def _config(use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False):
+        def _config(
+            n_objectives=0,
+            use_transform=False,
+            use_regularization=False,
+            use_precondition=False,
+            use_postprocessing=False,
+        ):
             config = dict(
                 device="cpu",
                 optimizer=dict(path="optimizer_path", kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1)),
                 stopper=dict(path="stopper_path", kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1)),
-                objectives=[
-                    dict(path="obj1_path", kwargs=dict(obj1_kwarg1=0, obj1_kwarg2=1)),
-                    dict(path="obj2_path", kwargs=dict(obj2_kwarg1=0, obj2_kwarg2=1)),
-                ],
             )
+            objectives = [
+                dict(path=f"obj{i}_path", kwargs={f"obj{i}_kwarg1": 0, f"obj{i}_kwarg2": 1})
+                for i in range(1, n_objectives + 1)
+            ]
+            config = dict(config, objectives=objectives)
             if use_transform:
                 config = dict(
                     config, transform=dict(path="transform_path", kwargs=dict(transform_kwarg1=0, transform_kwarg2=1))
@@ -146,14 +158,19 @@ class TestGradientAscent:
     @pytest.fixture
     def import_func_calls(self):
         def _import_func_calls(
-            use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
+            n_objectives=0,
+            use_transform=False,
+            use_regularization=False,
+            use_precondition=False,
+            use_postprocessing=False,
         ):
             import_func_calls = [
                 call("optimizer_path", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
                 call("stopper_path", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
-                call("obj1_path", dict(obj1_kwarg1=0, obj1_kwarg2=1)),
-                call("obj2_path", dict(obj2_kwarg1=0, obj2_kwarg2=1)),
             ]
+            import_func_calls.extend(
+                [call(f"obj{i}_path", {f"obj{i}_kwarg1": 0, f"obj{i}_kwarg2": 1}) for i in range(1, n_objectives + 1)]
+            )
             if use_transform:
                 import_func_calls.append(call("transform_path", dict(transform_kwarg1=0, transform_kwarg2=1)))
             if use_regularization:
@@ -214,6 +231,7 @@ class TestGradientAscent:
         gradient_ascent()()
         input_cls.assert_called_once_with("initial_guess")
 
+    @pytest.mark.parametrize("n_objectives", [0, 1, 10])
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
     @pytest.mark.parametrize("use_precondition", [True, False])
@@ -223,18 +241,21 @@ class TestGradientAscent:
         gradient_ascent,
         import_func,
         import_func_calls,
+        n_objectives,
         use_transform,
         use_regularization,
         use_precondition,
         use_postprocessing,
     ):
         gradient_ascent(
+            n_objectives=n_objectives,
             use_transform=use_transform,
             use_regularization=use_regularization,
             use_precondition=use_precondition,
             use_postprocessing=use_postprocessing,
         )()
         calls = import_func_calls(
+            n_objectives=n_objectives,
             use_transform=use_transform,
             use_regularization=use_regularization,
             use_precondition=use_precondition,
@@ -242,9 +263,10 @@ class TestGradientAscent:
         )
         assert import_func.mock_calls == calls
 
-    def test_if_tracker_is_correctly_called(self, gradient_ascent, tracker_cls):
-        gradient_ascent()()
-        tracker_cls.assert_called_once_with(obj1_path="obj1", obj2_path="obj2")
+    @pytest.mark.parametrize("n_objectives", [0, 1, 10])
+    def test_if_tracker_is_correctly_called(self, gradient_ascent, tracker_cls, n_objectives):
+        gradient_ascent(n_objectives=n_objectives)()
+        tracker_cls.assert_called_once_with(**{f"obj{i}_path": f"obj{i}" for i in range(1, n_objectives + 1)})
 
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
