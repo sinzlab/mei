@@ -36,6 +36,7 @@ def gradient_ascent(
     The value corresponding to the "device" key must be either "cpu" or "cuda". The "transform", "regularization",
     "precondition" and "postprocessing" components are optional and can be omitted. All "kwargs" items in the config
     are optional and can be omitted as well. Furthermore the "objectives" item is optional and can be omitted.
+    Example config:
 
         {
             "device": "cuda",
