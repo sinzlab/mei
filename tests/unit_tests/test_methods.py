@@ -48,7 +48,7 @@ class TestGradientAscent:
     @pytest.fixture
     def config(self):
         def _config(
-            n_kwargs=0,
+            n_kwargs=None,
             n_objectives=None,
             use_transform=False,
             use_regularization=False,
@@ -137,7 +137,7 @@ class TestGradientAscent:
     @pytest.fixture
     def import_func_calls(self):
         def _import_func_calls(
-            n_kwargs=0,
+            n_kwargs=None,
             n_objectives=None,
             use_transform=False,
             use_regularization=False,
@@ -146,7 +146,7 @@ class TestGradientAscent:
         ):
             def get_kwargs(name):
                 if n_kwargs is None:
-                    return None
+                    return dict()
                 else:
                     return {name + "_kwarg" + str(i): i - 1 for i in range(1, n_kwargs + 1)}
 

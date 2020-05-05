@@ -33,9 +33,9 @@ def gradient_ascent(
 
     The value corresponding to the "device" key must be either "cpu" or "cuda". The values corresponding to the
     "transform", "regularization", "precondition" and "postprocessing" keys should be "None" if the corresponding
-    feature is not used. All values corresponding to keys called "kwargs" should be "None" if there are no keyword
-    arguments to pass to the corresponding object. The value corresponding to the "objectives" key should be an empty
-    list or "None" if no objectives are to be tracked. Example config:
+    component is not used. All values corresponding to keys called "kwargs" should be "None" if there are no keyword
+    arguments to pass to the corresponding component. The value corresponding to the "objectives" key should be "None"
+    if no objectives are to be tracked. Example config:
 
         {
             "device": "cuda",
@@ -86,6 +86,18 @@ def gradient_ascent(
     Returns:
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
+    for component_name, component_config in config.items():
+        if component_name in ("device", "objectives"):
+            continue
+        if component_config is not None and component_config["kwargs"] is None:
+            component_config["kwargs"] = dict()
+    if config["objectives"] is None:
+        config["objectives"] = []
+    else:
+        for obj in config["objectives"]:
+            if obj["kwargs"] is None:
+                obj["kwargs"] = dict()
+
     set_seed(seed)
     model.eval()
     model.to(config["device"])
@@ -95,8 +107,6 @@ def gradient_ascent(
     optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
     stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])
 
-    if config["objectives"] is None:
-        config["objectives"] = []
     objectives = {o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]}
     tracker = tracker_cls(**objectives)
 
