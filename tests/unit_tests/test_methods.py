@@ -48,55 +48,48 @@ class TestGradientAscent:
     @pytest.fixture
     def config(self):
         def _config(
+            n_kwargs=0,
             n_objectives=None,
             use_transform=False,
             use_regularization=False,
             use_precondition=False,
             use_postprocessing=False,
         ):
+            def get_kwargs(name):
+                if n_kwargs is None:
+                    return None
+                else:
+                    return {name + "_kwarg" + str(i): i - 1 for i in range(1, n_kwargs + 1)}
+
             config = dict(
                 device="cpu",
-                optimizer=dict(path="optimizer_path", kwargs=dict(optimizer_kwarg1=0, optimizer_kwarg2=1)),
-                stopper=dict(path="stopper_path", kwargs=dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+                optimizer=dict(path="optimizer_path", kwargs=get_kwargs("optimizer")),
+                stopper=dict(path="stopper_path", kwargs=get_kwargs("stopper")),
             )
             if n_objectives is None:
                 objectives = None
             else:
                 objectives = [
-                    dict(path=f"obj{i}_path", kwargs={f"obj{i}_kwarg1": 0, f"obj{i}_kwarg2": 1})
-                    for i in range(1, n_objectives + 1)
+                    dict(path=f"obj{i}_path", kwargs=get_kwargs(f"obj{i}")) for i in range(1, n_objectives + 1)
                 ]
             config = dict(config, objectives=objectives)
             if use_transform:
-                config = dict(
-                    config, transform=dict(path="transform_path", kwargs=dict(transform_kwarg1=0, transform_kwarg2=1))
-                )
+                config = dict(config, transform=dict(path="transform_path", kwargs=get_kwargs("transform")))
             else:
                 config = dict(config, transform=None)
             if use_regularization:
                 config = dict(
-                    config,
-                    regularization=dict(
-                        path="regularization_path", kwargs=dict(regularization_kwarg1=0, regularization_kwarg2=1)
-                    ),
+                    config, regularization=dict(path="regularization_path", kwargs=get_kwargs("regularization")),
                 )
             else:
                 config = dict(config, regularization=None)
             if use_precondition:
-                config = dict(
-                    config,
-                    precondition=dict(
-                        path="precondition_path", kwargs=dict(precondition_kwarg1=0, precondition_kwarg2=1)
-                    ),
-                )
+                config = dict(config, precondition=dict(path="precondition_path", kwargs=get_kwargs("precondition")),)
             else:
                 config = dict(config, precondition=None)
             if use_postprocessing:
                 config = dict(
-                    config,
-                    postprocessing=dict(
-                        path="postprocessing_path", kwargs=dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1)
-                    ),
+                    config, postprocessing=dict(path="postprocessing_path", kwargs=get_kwargs("postprocessing")),
                 )
             else:
                 config = dict(config, postprocessing=None)
@@ -144,31 +137,35 @@ class TestGradientAscent:
     @pytest.fixture
     def import_func_calls(self):
         def _import_func_calls(
-            n_objectives=0,
+            n_kwargs=0,
+            n_objectives=None,
             use_transform=False,
             use_regularization=False,
             use_precondition=False,
             use_postprocessing=False,
         ):
+            def get_kwargs(name):
+                if n_kwargs is None:
+                    return None
+                else:
+                    return {name + "_kwarg" + str(i): i - 1 for i in range(1, n_kwargs + 1)}
+
             import_func_calls = [
-                call("optimizer_path", dict(params=["initial_guess"], optimizer_kwarg1=0, optimizer_kwarg2=1)),
-                call("stopper_path", dict(stopper_kwarg1=0, stopper_kwarg2=1)),
+                call("optimizer_path", dict(params=["initial_guess"], **get_kwargs("optimizer"))),
+                call("stopper_path", get_kwargs("stopper")),
             ]
-            import_func_calls.extend(
-                [call(f"obj{i}_path", {f"obj{i}_kwarg1": 0, f"obj{i}_kwarg2": 1}) for i in range(1, n_objectives + 1)]
-            )
+            if n_objectives is not None:
+                import_func_calls.extend(
+                    [call(f"obj{i}_path", get_kwargs(f"obj{i}")) for i in range(1, n_objectives + 1)]
+                )
             if use_transform:
-                import_func_calls.append(call("transform_path", dict(transform_kwarg1=0, transform_kwarg2=1)))
+                import_func_calls.append(call("transform_path", get_kwargs("transform")))
             if use_regularization:
-                import_func_calls.append(
-                    call("regularization_path", dict(regularization_kwarg1=0, regularization_kwarg2=1))
-                )
+                import_func_calls.append(call("regularization_path", get_kwargs("regularization")))
             if use_precondition:
-                import_func_calls.append(call("precondition_path", dict(precondition_kwarg1=0, precondition_kwarg2=1)))
+                import_func_calls.append(call("precondition_path", get_kwargs("precondition")))
             if use_postprocessing:
-                import_func_calls.append(
-                    call("postprocessing_path", dict(postprocessing_kwarg1=0, postprocessing_kwarg2=1))
-                )
+                import_func_calls.append(call("postprocessing_path", get_kwargs("postprocessing")))
             return import_func_calls
 
         return _import_func_calls
@@ -217,6 +214,7 @@ class TestGradientAscent:
         gradient_ascent(config=config())
         input_cls.assert_called_once_with("initial_guess")
 
+    @pytest.mark.parametrize("n_kwargs", [0, 1, 10])
     @pytest.mark.parametrize("n_objectives", [0, 1, 10])
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
@@ -228,6 +226,7 @@ class TestGradientAscent:
         config,
         import_func,
         import_func_calls,
+        n_kwargs,
         n_objectives,
         use_transform,
         use_regularization,
@@ -236,6 +235,7 @@ class TestGradientAscent:
     ):
         gradient_ascent(
             config=config(
+                n_kwargs=n_kwargs,
                 n_objectives=n_objectives,
                 use_transform=use_transform,
                 use_regularization=use_regularization,
@@ -244,6 +244,7 @@ class TestGradientAscent:
             )
         )
         calls = import_func_calls(
+            n_kwargs=n_kwargs,
             n_objectives=n_objectives,
             use_transform=use_transform,
             use_regularization=use_regularization,
