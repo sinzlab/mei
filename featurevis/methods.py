@@ -33,11 +33,9 @@ def gradient_ascent(
 ) -> Tuple[Tensor, float, Dict]:
     """Generates a MEI using gradient ascent.
 
-    The value corresponding to the "device" key must be either "cpu" or "cuda". The values corresponding to the
-    "transform", "regularization", "precondition" and "postprocessing" keys should be "None" if the corresponding
-    component is not used. All values corresponding to keys called "kwargs" should be "None" if there are no keyword
-    arguments to pass to the corresponding component. The value corresponding to the "objectives" key should be "None"
-    if no objectives are to be tracked. Example config:
+    The value corresponding to the "device" key must be either "cpu" or "cuda". The "transform", "regularization",
+    "precondition" and "postprocessing" components are optional and can be omitted. All "kwargs" items in the config
+    are optional and can be omitted as well. Furthermore the "objectives" item is optional and can be omitted.
 
         {
             "device": "cuda",
@@ -91,13 +89,13 @@ def gradient_ascent(
     for component_name, component_config in config.items():
         if component_name in ("device", "objectives"):
             continue
-        if component_config is not None and component_config["kwargs"] is None:
+        if "kwargs" not in component_config:
             component_config["kwargs"] = dict()
-    if config["objectives"] is None:
+    if "objectives" not in config:
         config["objectives"] = []
     else:
         for obj in config["objectives"]:
-            if obj["kwargs"] is None:
+            if "kwargs" not in obj:
                 obj["kwargs"] = dict()
 
     set_seed(seed)
@@ -113,7 +111,7 @@ def gradient_ascent(
     tracker = tracker_cls(**objectives)
 
     optional_names = ("transform", "regularization", "precondition", "postprocessing")
-    optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if config[n]}
+    optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if n in config}
 
     mei = mei_class(model, input_cls(initial_guess), optimizer, **optional)
 

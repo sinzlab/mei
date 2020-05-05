@@ -55,44 +55,26 @@ class TestGradientAscent:
             use_precondition=False,
             use_postprocessing=False,
         ):
-            def get_kwargs(name):
-                if n_kwargs is None:
-                    return None
-                else:
-                    return {name + "_kwarg" + str(i): i - 1 for i in range(1, n_kwargs + 1)}
+            def get_component_config(name):
+                component_config = dict(path=name + "_path")
+                if n_kwargs is not None:
+                    component_config["kwargs"] = {name + "_kwarg" + str(i): i - 1 for i in range(1, n_kwargs + 1)}
+                return component_config
 
             config = dict(
-                device="cpu",
-                optimizer=dict(path="optimizer_path", kwargs=get_kwargs("optimizer")),
-                stopper=dict(path="stopper_path", kwargs=get_kwargs("stopper")),
+                device="cpu", optimizer=get_component_config("optimizer"), stopper=get_component_config("stopper")
             )
-            if n_objectives is None:
-                objectives = None
-            else:
-                objectives = [
-                    dict(path=f"obj{i}_path", kwargs=get_kwargs(f"obj{i}")) for i in range(1, n_objectives + 1)
-                ]
-            config = dict(config, objectives=objectives)
+            if n_objectives is not None:
+                objectives = [get_component_config("obj" + str(i)) for i in range(1, n_objectives + 1)]
+                config = dict(config, objectives=objectives)
             if use_transform:
-                config = dict(config, transform=dict(path="transform_path", kwargs=get_kwargs("transform")))
-            else:
-                config = dict(config, transform=None)
+                config = dict(config, transform=get_component_config("transform"))
             if use_regularization:
-                config = dict(
-                    config, regularization=dict(path="regularization_path", kwargs=get_kwargs("regularization")),
-                )
-            else:
-                config = dict(config, regularization=None)
+                config = dict(config, regularization=get_component_config("regularization"))
             if use_precondition:
-                config = dict(config, precondition=dict(path="precondition_path", kwargs=get_kwargs("precondition")),)
-            else:
-                config = dict(config, precondition=None)
+                config = dict(config, precondition=get_component_config("precondition"))
             if use_postprocessing:
-                config = dict(
-                    config, postprocessing=dict(path="postprocessing_path", kwargs=get_kwargs("postprocessing")),
-                )
-            else:
-                config = dict(config, postprocessing=None)
+                config = dict(config, postprocessing=get_component_config("postprocessing"))
             return config
 
         return _config
