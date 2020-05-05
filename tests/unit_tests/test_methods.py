@@ -260,6 +260,12 @@ class TestGradientAscent:
         gradient_ascent(config=config)
         assert import_func.mock_calls == import_func_calls()
 
+    def test_if_import_func_is_correctly_called_if_kwargs_are_none(
+        self, gradient_ascent, config, import_func, import_func_calls
+    ):
+        gradient_ascent(config=config(n_objectives=None))
+        assert import_func.mock_calls == import_func_calls()
+
     @pytest.mark.parametrize("n_objectives", [0, 1, 10])
     def test_if_tracker_is_correctly_called(self, gradient_ascent, config, tracker_cls, n_objectives):
         gradient_ascent(config=config(n_objectives=n_objectives))
