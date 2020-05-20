@@ -37,10 +37,6 @@ def test_if_model_loader_is_correctly_initialized(mei_template, trained_model_ta
 
 class TestMake:
     @pytest.fixture
-    def key(self):
-        return MagicMock(name="key")
-
-    @pytest.fixture
     def mei_template(self, mei_template, selector_table, method_table, seed_table, insert1, save, model_loader_class):
         mei_template.selector_table = selector_table
         mei_template.method_table = method_table

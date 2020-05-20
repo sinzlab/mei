@@ -31,10 +31,6 @@ def trained_model_table():
 
 class TestCreateEnsemble:
     @pytest.fixture
-    def key(self):
-        return "key"
-
-    @pytest.fixture
     def trained_ensemble_model_template(self, trained_ensemble_model_template, dataset_table, insert1):
         trained_ensemble_model_template.dataset_table = dataset_table
         trained_ensemble_model_template.insert1 = insert1

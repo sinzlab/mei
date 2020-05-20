@@ -6,11 +6,6 @@ from featurevis import mixins
 
 
 @pytest.fixture
-def key():
-    return MagicMock(name="key")
-
-
-@pytest.fixture
 def selector_template(dataset_table):
     selector_template = mixins.CSRFV1SelectorTemplateMixin
     selector_template.dataset_table = dataset_table
