@@ -14,11 +14,6 @@ def mei_method(insert1):
 
 
 @pytest.fixture
-def insert1():
-    return MagicMock(name="insert1")
-
-
-@pytest.fixture
 def method_fn():
     return MagicMock(name="method_fn", return_value=("mei", "score", "output"))
 

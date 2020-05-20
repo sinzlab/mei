@@ -51,10 +51,6 @@ class TestCreateEnsemble:
         dataset_table.return_value.proj.return_value.__and__.return_value.fetch1.return_value = dict(ds=0)
         return dataset_table
 
-    @pytest.fixture
-    def insert1(self):
-        return MagicMock()
-
     @pytest.mark.parametrize(
         "n_datasets,expectation",
         [(0, pytest.raises(ValueError)), (1, does_not_raise()), (2, pytest.raises(ValueError))],

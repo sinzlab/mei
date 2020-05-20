@@ -71,10 +71,6 @@ class TestMake:
         return seed_table
 
     @pytest.fixture
-    def insert1(self):
-        return MagicMock(name="insert1")
-
-    @pytest.fixture
     def save(self):
         return MagicMock(name="save")
 
