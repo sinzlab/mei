@@ -243,7 +243,12 @@ class TestMEIMethodMixin:
         method_config = MagicMock(name="method_config")
         mei_method().add_method("method_fn", method_config)
         insert1.assert_called_once_with(
-            dict(method_fn="method_fn", method_hash="d41d8cd98f00b204e9800998ecf8427e", method_config=method_config)
+            dict(
+                method_fn="method_fn",
+                method_hash="d41d8cd98f00b204e9800998ecf8427e",
+                method_config=method_config,
+                method_comment="",
+            )
         )
 
     def test_that_method_is_correctly_fetched(self, generate_mei, magic_and):
