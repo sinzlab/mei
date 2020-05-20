@@ -57,6 +57,8 @@ class TrainedEnsembleModelTemplateMixin:
         self.Member().insert([{**primary_key, **m} for m in models])
 
     def load_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, integration.EnsembleModel]:
+        if key is None:
+            key = self.fetch1("KEY")
         return self._load_ensemble_model(key=key)
 
     def _load_ensemble_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, integration.EnsembleModel]:

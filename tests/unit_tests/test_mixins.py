@@ -20,7 +20,7 @@ def key():
 class TestTrainedEnsembleModelTemplateMixin:
     @pytest.fixture
     def trained_ensemble_model_template(
-        self, member_table, dataset_table, trained_model_table, ensemble_model_class, insert1, magic_and
+        self, member_table, dataset_table, trained_model_table, ensemble_model_class, insert1, fetch1, magic_and
     ):
         trained_ensemble_model_template = mixins.TrainedEnsembleModelTemplateMixin
         trained_ensemble_model_template.Member = member_table
@@ -28,6 +28,7 @@ class TestTrainedEnsembleModelTemplateMixin:
         trained_ensemble_model_template.trained_model_table = trained_model_table
         trained_ensemble_model_template.ensemble_model_class = ensemble_model_class
         trained_ensemble_model_template.insert1 = insert1
+        trained_ensemble_model_template.fetch1 = fetch1
         trained_ensemble_model_template.__and__ = magic_and
         return trained_ensemble_model_template
 
@@ -65,6 +66,10 @@ class TestTrainedEnsembleModelTemplateMixin:
     @pytest.fixture
     def insert1(self):
         return MagicMock()
+
+    @pytest.fixture
+    def fetch1(self):
+        return MagicMock(name="fetch1", return_value="key")
 
     @pytest.fixture
     def magic_and(self):
@@ -111,6 +116,11 @@ class TestTrainedEnsembleModelTemplateMixin:
                 dict(ds=0, ensemble_hash="536072017a2a3501ea8f09fffa51ee61", m=1),
             ]
         )
+
+    def test_if_key_is_fetched_if_not_provided(self, key, trained_ensemble_model_template, fetch1, magic_and):
+        trained_ensemble_model_template().load_model()
+        fetch1.assert_called_once_with("KEY")
+        magic_and.assert_called_once_with("key")
 
     def test_if_model_keys_are_correctly_fetched(self, key, trained_ensemble_model_template, magic_and, member_table):
         trained_ensemble_model_template().load_model(key)
