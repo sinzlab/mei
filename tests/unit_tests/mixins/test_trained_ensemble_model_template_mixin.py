@@ -137,13 +137,22 @@ class TestLoadModel:
         return magic_and
 
     @pytest.mark.parametrize("provided_key,used_key", [("provided_key", "provided_key"), (None, "fetched_key")])
-    def test_if_model_keys_are_correctly_fetched(
-        self, trained_ensemble_model_template, magic_and, member_table, provided_key, used_key
+    def test_if_ensemble_model_table_is_correctly_restricted(
+        self, trained_ensemble_model_template, magic_and, provided_key, used_key
     ):
         trained_ensemble_model_template().load_model(provided_key)
         magic_and.assert_called_once_with(used_key)
+
+    def test_if_ensemble_model_key_is_correctly_fetched(self, trained_ensemble_model_template, magic_and):
+        trained_ensemble_model_template().load_model()
         magic_and.return_value.fetch1.assert_called_once_with()
+
+    def test_if_member_table_is_correctly_restricted(self, trained_ensemble_model_template, member_table):
+        trained_ensemble_model_template().load_model()
         member_table.return_value.__and__.assert_called_once_with("ensemble_model_key")
+
+    def test_if_model_keys_are_correctly_fetched(self, trained_ensemble_model_template, member_table):
+        trained_ensemble_model_template().load_model()
         member_table.return_value.__and__.return_value.fetch.assert_called_once_with(as_dict=True)
 
     def test_if_models_are_correctly_loaded(self, trained_ensemble_model_template, trained_model_table):
