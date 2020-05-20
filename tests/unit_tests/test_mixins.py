@@ -20,15 +20,20 @@ def key():
 class TestTrainedEnsembleModelTemplateMixin:
     @pytest.fixture
     def trained_ensemble_model_template(
-        self, dataset_table, trained_model_table, ensemble_model_class, insert1, insert
+        self, member_table, dataset_table, trained_model_table, ensemble_model_class, insert1
     ):
         trained_ensemble_model_template = mixins.TrainedEnsembleModelTemplateMixin
+        trained_ensemble_model_template.Member = member_table
         trained_ensemble_model_template.dataset_table = dataset_table
         trained_ensemble_model_template.trained_model_table = trained_model_table
         trained_ensemble_model_template.ensemble_model_class = ensemble_model_class
         trained_ensemble_model_template.insert1 = insert1
-        trained_ensemble_model_template.Member.insert = insert
         return trained_ensemble_model_template
+
+    @pytest.fixture
+    def member_table(self):
+        member_table = MagicMock(name="member_table", spec=mixins.TrainedEnsembleModelTemplateMixin.Member)
+        return member_table
 
     @pytest.fixture
     def dataset_table(self):
@@ -56,10 +61,6 @@ class TestTrainedEnsembleModelTemplateMixin:
 
     @pytest.fixture
     def insert1(self):
-        return MagicMock()
-
-    @pytest.fixture
-    def insert(self):
         return MagicMock()
 
     @pytest.mark.parametrize(
@@ -93,9 +94,9 @@ class TestTrainedEnsembleModelTemplateMixin:
             dict(ds=0, ensemble_hash="536072017a2a3501ea8f09fffa51ee61", ensemble_comment="")
         )
 
-    def test_if_member_models_are_correctly_inserted(self, key, trained_ensemble_model_template, insert):
+    def test_if_member_models_are_correctly_inserted(self, key, trained_ensemble_model_template, member_table):
         trained_ensemble_model_template().create_ensemble(key)
-        insert.assert_called_once_with(
+        member_table.return_value.insert.assert_called_once_with(
             [
                 dict(ds=0, ensemble_hash="536072017a2a3501ea8f09fffa51ee61", m=0),
                 dict(ds=0, ensemble_hash="536072017a2a3501ea8f09fffa51ee61", m=1),
