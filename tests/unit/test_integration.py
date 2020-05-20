@@ -31,7 +31,6 @@ def fake_trained_model_table():
             primary_key = None
             models = []
 
-            # noinspection PyUnusedLocal
             @classmethod
             def load_model(cls, key):
                 model = FakeModel(key["trained_model_attr"] + 1)
@@ -106,7 +105,7 @@ class TestHashListOfDictionaries:
 
     @staticmethod
     def hash_and_compare(list_of_dicts1, list_of_dicts2):
-        hashed1, hashed2 = (integration.hash_list_of_dictionaries(l) for l in (list_of_dicts1, list_of_dicts2))
+        hashed1, hashed2 = (integration.hash_list_of_dictionaries(x) for x in (list_of_dicts1, list_of_dicts2))
         return hashed1 == hashed2
 
     def test_invariance_to_dictionary_key_order(self):
