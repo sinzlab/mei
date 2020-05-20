@@ -1,89 +1,86 @@
 from unittest.mock import MagicMock, call
-from contextlib import contextmanager
-from functools import partial
 
 import pytest
 
 from featurevis import mixins
 
 
-@contextmanager
-def does_not_raise():
-    yield
+@pytest.fixture
+def mei_template(trained_model_table, model_loader_class):
+    mei_template = mixins.MEITemplateMixin
+    mei_template.trained_model_table = trained_model_table
+    mei_template.model_loader_class = model_loader_class
+    return mei_template
 
 
 @pytest.fixture
-def key():
-    return MagicMock(name="key")
+def trained_model_table():
+    return MagicMock(name="trained_model_table")
 
 
 @pytest.fixture
-def model():
-    return MagicMock(name="Model")
+def model_loader_class(model_loader):
+    return MagicMock(name="model_loader_class", return_value=model_loader)
 
 
-class TestMEITemplateMixin:
+@pytest.fixture
+def model_loader():
+    model_loader = MagicMock(name="model_loader")
+    model_loader.load.return_value = "dataloaders", "model"
+    return model_loader
+
+
+def test_if_model_loader_is_correctly_initialized(mei_template, trained_model_table, model_loader_class):
+    mei_template(cache_size_limit=5)
+    model_loader_class.assert_called_once_with(trained_model_table, cache_size_limit=5)
+
+
+class TestMake:
     @pytest.fixture
-    def mei_template(
-        self, trained_model_table, selector_table, method_table, seed_table, insert1, save, model_loader_class
-    ):
-        mei_template = mixins.MEITemplateMixin
-        mei_template.trained_model_table = trained_model_table
+    def key(self):
+        return MagicMock(name="key")
+
+    @pytest.fixture
+    def mei_template(self, mei_template, selector_table, method_table, seed_table, insert1, save, model_loader_class):
         mei_template.selector_table = selector_table
         mei_template.method_table = method_table
         mei_template.seed_table = seed_table
         mei_template.insert1 = insert1
         mei_template.save = save
         mei_template.model_loader_class = model_loader_class
-        get_temp_dir = MagicMock()
+        get_temp_dir = MagicMock(name="get_temp_dir")
         get_temp_dir.return_value.__enter__.return_value = "/temp_dir"
         mei_template.get_temp_dir = get_temp_dir
-        mei_template._create_random_filename = MagicMock(side_effect=["filename1", "filename2"])
+        mei_template._create_random_filename = MagicMock(
+            name="create_random_filename", side_effect=["filename1", "filename2"]
+        )
         return mei_template
 
     @pytest.fixture
-    def trained_model_table(self):
-        return MagicMock()
-
-    @pytest.fixture
     def selector_table(self):
-        selector_table = MagicMock()
+        selector_table = MagicMock(name="selector_table")
         selector_table.return_value.get_output_selected_model.return_value = "output_selected_model"
         return selector_table
 
     @pytest.fixture
     def method_table(self):
-        method_table = MagicMock()
+        method_table = MagicMock(name="method_table")
         method_table.return_value.generate_mei.return_value = dict(mei="mei", output="output")
         return method_table
 
     @pytest.fixture
     def seed_table(self):
-        seed_table = MagicMock()
+        seed_table = MagicMock(name="seed_table")
         seed_table.return_value.__and__.return_value.fetch1.return_value = "seed"
         return seed_table
 
     @pytest.fixture
     def insert1(self):
-        return MagicMock()
+        return MagicMock(name="insert1")
 
     @pytest.fixture
     def save(self):
-        return MagicMock()
-
-    @pytest.fixture
-    def model_loader_class(self, model_loader):
-        return MagicMock(return_value=model_loader)
-
-    @pytest.fixture
-    def model_loader(self):
-        model_loader = MagicMock()
-        model_loader.load.return_value = "dataloaders", "model"
-        return model_loader
-
-    def test_if_model_loader_is_correctly_initialized(self, mei_template, trained_model_table, model_loader_class):
-        mei_template(cache_size_limit=5)
-        model_loader_class.assert_called_once_with(trained_model_table, cache_size_limit=5)
+        return MagicMock(name="save")
 
     def test_if_model_is_correctly_loaded(self, key, mei_template, model_loader):
         mei_template().make(key)
