@@ -134,7 +134,7 @@ class MEIMethodMixin:
 class MEISeedMixin:
     definition = """
     # contains seeds used to make the MEI generation process reproducible
-    mei_seed    : tinyint unsigned  # MEI seed
+    mei_seed    : int   # MEI seed
     """
 
 
