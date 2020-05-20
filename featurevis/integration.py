@@ -119,7 +119,7 @@ class EnsembleModel:
             member.to(*args, **kwargs)
 
     def __repr__(self):
-        return f"{self.__class__.__qualname__}({', '.join(self.members)})"
+        return f"{self.__class__.__qualname__}({', '.join(m.__repr__() for m in self.members)})"
 
 
 class ConstrainedOutputModel:

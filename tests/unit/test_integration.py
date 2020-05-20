@@ -123,10 +123,13 @@ class TestHashListOfDictionaries:
 class TestEnsembleModel:
     @pytest.fixture
     def members(self):
-        member1 = MagicMock(return_value=torch.tensor([1.0, 2.0, 3.0]))
-        member2 = MagicMock(return_value=torch.tensor([4.0, 5.0, 6.0]))
-        member3 = MagicMock(return_value=torch.tensor([7.0, 8.0, 9.0]))
-        return member1, member2, member3
+        members = []
+        for i in range(3):
+            values = list(x + i * 3 for x in range(1, 4))
+            member = MagicMock(name="member" + str(i + 1), return_value=torch.tensor([values], dtype=torch.float))
+            member.__repr__ = MagicMock(return_value="member" + str(i + 1))
+            members.append(member)
+        return members
 
     def test_if_input_is_passed_to_ensemble_members(self, members):
         ensemble = integration.EnsembleModel(*members)
@@ -137,7 +140,7 @@ class TestEnsembleModel:
     def test_if_outputs_of_ensemble_members_is_correctly_averaged(self, members):
         ensemble = integration.EnsembleModel(*members)
         output = ensemble("x")
-        assert torch.allclose(output, torch.tensor([4.0, 5.0, 6.0]))
+        assert torch.allclose(output, torch.tensor([4, 5, 6], dtype=torch.float))
 
     def test_if_eval_mode_is_passed_to_ensemble_members(self, members):
         ensemble = integration.EnsembleModel(*members)
@@ -151,8 +154,8 @@ class TestEnsembleModel:
         for member in members:
             member.to.assert_called_once_with("arg", kwarg="kwarg")
 
-    def test_repr(self):
-        ensemble = integration.EnsembleModel("member1", "member2", "member3")
+    def test_repr(self, members):
+        ensemble = integration.EnsembleModel(*members)
         assert str(ensemble) == "EnsembleModel(member1, member2, member3)"
 
 
