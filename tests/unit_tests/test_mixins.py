@@ -20,7 +20,7 @@ def key():
 class TestTrainedEnsembleModelTemplateMixin:
     @pytest.fixture
     def trained_ensemble_model_template(
-        self, member_table, dataset_table, trained_model_table, ensemble_model_class, insert1
+        self, member_table, dataset_table, trained_model_table, ensemble_model_class, insert1, magic_and
     ):
         trained_ensemble_model_template = mixins.TrainedEnsembleModelTemplateMixin
         trained_ensemble_model_template.Member = member_table
@@ -28,11 +28,15 @@ class TestTrainedEnsembleModelTemplateMixin:
         trained_ensemble_model_template.trained_model_table = trained_model_table
         trained_ensemble_model_template.ensemble_model_class = ensemble_model_class
         trained_ensemble_model_template.insert1 = insert1
+        trained_ensemble_model_template.__and__ = magic_and
         return trained_ensemble_model_template
 
     @pytest.fixture
     def member_table(self):
         member_table = MagicMock(name="member_table", spec=mixins.TrainedEnsembleModelTemplateMixin.Member)
+        member_table.return_value.__and__.return_value.fetch = MagicMock(
+            name="member_and", return_value=[dict(m=0, a=0), dict(m=1, a=1)]
+        )
         return member_table
 
     @pytest.fixture
@@ -49,7 +53,6 @@ class TestTrainedEnsembleModelTemplateMixin:
             dict(m=0),
             dict(m=1),
         ]
-        trained_model_table.return_value.__and__.return_value.fetch.return_value = [dict(m=0, a=0), dict(m=1, a=1)]
         trained_model_table.return_value.load_model = MagicMock(
             side_effect=[("dataloaders1", "model1"), ("dataloaders2", "model2")]
         )
@@ -62,6 +65,12 @@ class TestTrainedEnsembleModelTemplateMixin:
     @pytest.fixture
     def insert1(self):
         return MagicMock()
+
+    @pytest.fixture
+    def magic_and(self):
+        magic_and = MagicMock(name="and")
+        magic_and.return_value.fetch1 = MagicMock(name="fetch1", return_value="ensemble_model_key")
+        return magic_and
 
     @pytest.mark.parametrize(
         "n_datasets,expectation",
@@ -103,10 +112,12 @@ class TestTrainedEnsembleModelTemplateMixin:
             ]
         )
 
-    def test_if_model_keys_are_correctly_fetched(self, key, trained_ensemble_model_template, trained_model_table):
+    def test_if_model_keys_are_correctly_fetched(self, key, trained_ensemble_model_template, magic_and, member_table):
         trained_ensemble_model_template().load_model(key)
-        trained_model_table.return_value.__and__.assert_called_once_with(key)
-        trained_model_table.return_value.__and__.return_value.fetch.assert_called_once_with(as_dict=True)
+        magic_and.assert_called_once_with(key)
+        magic_and.return_value.fetch1.assert_called_once_with()
+        member_table.return_value.__and__.assert_called_once_with("ensemble_model_key")
+        member_table.return_value.__and__.return_value.fetch.assert_called_once_with(as_dict=True)
 
     def test_if_models_are_correctly_loaded(self, key, trained_ensemble_model_template, trained_model_table):
         trained_ensemble_model_template().load_model(key)

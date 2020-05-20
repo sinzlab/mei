@@ -36,12 +36,16 @@ class TrainedEnsembleModelTemplateMixin:
         """
 
         insert: Callable[[Iterable], None]
+        __and__: Callable[[Key], TrainedEnsembleModelTemplateMixin.Member]
+        fetch: Callable
 
     dataset_table = None
     trained_model_table = None
     ensemble_model_class = integration.EnsembleModel
 
     insert1: Callable[[Mapping], None]
+    __and__: Callable[[Key], TrainedEnsembleModelTemplateMixin]
+    fetch1: Callable
 
     def create_ensemble(self, key: Key, comment: str = "") -> None:
         if len(self.dataset_table() & key) != 1:
@@ -56,7 +60,8 @@ class TrainedEnsembleModelTemplateMixin:
         return self._load_ensemble_model(key=key)
 
     def _load_ensemble_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, integration.EnsembleModel]:
-        model_keys = (self.trained_model_table() & key).fetch(as_dict=True)
+        ensemble_key = (self & key).fetch1()
+        model_keys = (self.Member() & ensemble_key).fetch(as_dict=True)
         dataloaders, models = tuple(
             list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
         )
