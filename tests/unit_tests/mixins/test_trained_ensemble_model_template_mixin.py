@@ -8,7 +8,7 @@ from featurevis import mixins
 
 @pytest.fixture
 def key():
-    return MagicMock(name="key")
+    return "key"
 
 
 @contextmanager
@@ -73,7 +73,7 @@ def insert1():
 
 @pytest.fixture
 def fetch1():
-    return MagicMock(name="fetch1", return_value="key")
+    return MagicMock(name="fetch1", return_value="fetched_key")
 
 
 @pytest.fixture
@@ -126,30 +126,26 @@ class TestCreateEnsemble:
 
 
 class TestLoadModel:
-    def test_if_key_is_fetched_if_not_provided(self, key, trained_ensemble_model_template, fetch1, magic_and):
-        trained_ensemble_model_template().load_model()
-        fetch1.assert_called_once_with("KEY")
-        magic_and.assert_called_once_with("key")
-
-    def test_if_model_keys_are_correctly_fetched(self, key, trained_ensemble_model_template, magic_and, member_table):
-        trained_ensemble_model_template().load_model(key)
-        magic_and.assert_called_once_with(key)
+    @pytest.mark.parametrize("provided_key,used_key", [("provided_key", "provided_key"), (None, "fetched_key")])
+    def test_if_model_keys_are_correctly_fetched(
+        self, trained_ensemble_model_template, magic_and, member_table, provided_key, used_key
+    ):
+        trained_ensemble_model_template().load_model(provided_key)
+        magic_and.assert_called_once_with(used_key)
         magic_and.return_value.fetch1.assert_called_once_with()
         member_table.return_value.__and__.assert_called_once_with("ensemble_model_key")
         member_table.return_value.__and__.return_value.fetch.assert_called_once_with(as_dict=True)
 
-    def test_if_models_are_correctly_loaded(self, key, trained_ensemble_model_template, trained_model_table):
-        trained_ensemble_model_template().load_model(key)
+    def test_if_models_are_correctly_loaded(self, trained_ensemble_model_template, trained_model_table):
+        trained_ensemble_model_template().load_model()
         trained_model_table.return_value.load_model.assert_has_calls(
             [call(key=dict(m=0, a=0)), call(key=dict(m=1, a=1))]
         )
 
-    def test_if_ensemble_model_is_correctly_initialized(
-        self, key, trained_ensemble_model_template, ensemble_model_class
-    ):
-        trained_ensemble_model_template().load_model(key)
+    def test_if_ensemble_model_is_correctly_initialized(self, trained_ensemble_model_template, ensemble_model_class):
+        trained_ensemble_model_template().load_model()
         ensemble_model_class.assert_called_once_with("model1", "model2")
 
-    def test_if_only_first_dataloader_is_returned(self, key, trained_ensemble_model_template):
-        dataloaders, _ = trained_ensemble_model_template().load_model(key)
+    def test_if_only_first_dataloader_is_returned(self, trained_ensemble_model_template):
+        dataloaders, _ = trained_ensemble_model_template().load_model()
         assert dataloaders == "dataloaders1"
