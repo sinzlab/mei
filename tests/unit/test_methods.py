@@ -81,11 +81,18 @@ class TestGradientAscent:
         return MagicMock(name="mei_class", return_value="mei")
 
     @pytest.fixture
-    def import_func(self):
+    def import_func(self, imported_objects):
         def _import_func(name, _kwargs):
-            return name.split("_")[0]
+            name = name.split("_")[0]
+            imported_object = MagicMock(name=name)
+            imported_objects[name] = imported_object
+            return imported_object
 
         return MagicMock(name="import_func", side_effect=_import_func)
+
+    @pytest.fixture
+    def imported_objects(self):
+        return dict()
 
     @pytest.fixture
     def optimize_func(self):
@@ -138,20 +145,20 @@ class TestGradientAscent:
         return _import_func_calls
 
     @pytest.fixture
-    def mei_class_call(self, model):
+    def mei_class_call(self, model, imported_objects):
         def _mei_class_call(
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
         ):
-            args = (model, "initial_guess", "optimizer")
+            args = (model, "initial_guess", imported_objects["optimizer"])
             kwargs = {}
             if use_transform:
-                kwargs["transform"] = "transform"
+                kwargs["transform"] = imported_objects["transform"]
             if use_regularization:
-                kwargs["regularization"] = "regularization"
+                kwargs["regularization"] = imported_objects["regularization"]
             if use_precondition:
-                kwargs["precondition"] = "precondition"
+                kwargs["precondition"] = imported_objects["precondition"]
             if use_postprocessing:
-                kwargs["postprocessing"] = "postprocessing"
+                kwargs["postprocessing"] = imported_objects["postprocessing"]
             return call(*args, **kwargs)
 
         return _mei_class_call
@@ -230,9 +237,11 @@ class TestGradientAscent:
         assert import_func.mock_calls == import_func_calls()
 
     @pytest.mark.parametrize("n_objectives", [0, 1, 10])
-    def test_if_tracker_is_correctly_called(self, gradient_ascent, config, tracker_cls, n_objectives):
+    def test_if_tracker_is_correctly_called(self, gradient_ascent, config, tracker_cls, imported_objects, n_objectives):
         gradient_ascent(config=config(n_objectives=n_objectives))
-        tracker_cls.assert_called_once_with(**{f"obj{i}_path": f"obj{i}" for i in range(1, n_objectives + 1)})
+        tracker_cls.assert_called_once_with(
+            **{f"obj{i}_path": imported_objects[f"obj{i}"] for i in range(1, n_objectives + 1)}
+        )
 
     @pytest.mark.parametrize("use_transform", [True, False])
     @pytest.mark.parametrize("use_regularization", [True, False])
@@ -267,9 +276,11 @@ class TestGradientAscent:
             )
         ]
 
-    def test_if_optimize_func_is_correctly_called(self, gradient_ascent, config, optimize_func, tracker_instance):
+    def test_if_optimize_func_is_correctly_called(
+        self, gradient_ascent, config, optimize_func, imported_objects, tracker_instance
+    ):
         gradient_ascent(config=config())
-        optimize_func.assert_called_once_with("mei", "stopper", tracker_instance)
+        optimize_func.assert_called_once_with("mei", imported_objects["stopper"], tracker_instance)
 
     def test_if_result_is_returned(self, gradient_ascent, config):
         assert gradient_ascent(config=config()) == ("final_evaluation", "mei", "tracker_log")
