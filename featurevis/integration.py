@@ -6,21 +6,19 @@ from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
 
 
-def get_mappings(dataset_config, key, load_func=None):
-    if load_func is None:
-        load_func = load_pickled_data
+def load_pickled_data(path):
+    with open(path, "rb") as datafile:
+        data = pickle.load(datafile)
+    return data
+
+
+def get_mappings(dataset_config, key, load_func=load_pickled_data):
     entities = []
     for datafile_path in dataset_config["datafiles"]:
         data = load_func(datafile_path)
         for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
             entities.append(dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"]))
     return entities
-
-
-def load_pickled_data(path):
-    with open(path, "rb") as datafile:
-        data = pickle.load(datafile)
-    return data
 
 
 def import_module(path):
