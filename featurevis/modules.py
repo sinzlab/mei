@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 import torch
 from torch import Tensor
-from torch.nn import Module
+from torch.nn import Module, ModuleList
 
 
 class EnsembleModel(Module):
@@ -14,10 +14,12 @@ class EnsembleModel(Module):
         *members: PyTorch modules representing the members of the ensemble.
     """
 
+    _module_container_cls = ModuleList
+
     def __init__(self, *members: Module):
         """Initializes EnsembleModel."""
         super().__init__()
-        self.members = members
+        self.members = self._module_container_cls(members)
 
     def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
         """Calculates the forward pass through the ensemble.

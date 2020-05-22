@@ -1,9 +1,10 @@
 from unittest.mock import MagicMock
+from typing import Type
 
 import pytest
 import torch
 from torch import Tensor
-from torch.nn import Module
+from torch.nn import Module, ModuleList
 
 from featurevis import modules
 
@@ -18,8 +19,14 @@ def module_mock():
 
 class TestEnsembleModel:
     @pytest.fixture
-    def ensemble_model(self, members):
-        return modules.EnsembleModel(*members)
+    def ensemble_model(self, ensemble_model_cls, members):
+        return ensemble_model_cls(*members)
+
+    @pytest.fixture
+    def ensemble_model_cls(self, module_container_cls):
+        ensemble_model_cls = modules.EnsembleModel
+        ensemble_model_cls._module_container_cls = module_container_cls
+        return ensemble_model_cls
 
     @pytest.fixture
     def members(self):
@@ -32,18 +39,32 @@ class TestEnsembleModel:
         return members
 
     @pytest.fixture
+    def module_container_cls(self, members, module_container):
+        return MagicMock(name="module_container_cls", spec=Type[ModuleList], return_value=module_container)
+
+    @pytest.fixture
+    def module_container(self, members):
+        return [m for m in members]
+
+    @pytest.fixture
     def ensemble_input(self):
         return MagicMock(name="ensemble_input", spec=Tensor)
 
-    def test_if_ensemble_model_is_pytorch_module(self):
-        assert issubclass(modules.EnsembleModel, Module)
+    def test_if_ensemble_model_is_pytorch_module(self, ensemble_model_cls):
+        assert issubclass(ensemble_model_cls, Module)
 
-    def test_if_ensemble_model_initializes_super_class(self, module_mock):
-        class EnsembleModelTestable(modules.EnsembleModel, module_mock):
+    def test_if_ensemble_model_initializes_super_class(self, ensemble_model_cls, module_mock):
+        class EnsembleModelTestable(ensemble_model_cls, module_mock):
             pass
 
         EnsembleModelTestable()
         module_mock.__init__.assert_called_once_with()
+
+    def test_if_module_container_class_is_correctly_initialized(self, ensemble_model, module_container_cls, members):
+        module_container_cls.assert_called_once_with(tuple(members))
+
+    def test_if_module_container_is_assigned_as_attribute(self, ensemble_model, module_container):
+        assert ensemble_model.members == module_container
 
     def test_if_input_is_passed_to_ensemble_members(self, ensemble_model, members, ensemble_input):
         ensemble_model(ensemble_input, "arg", kwarg="kwarg")
