@@ -9,8 +9,7 @@ class Tracker:
     """Tracks the MEI optimization process.
 
     Attributes:
-        objectives: A number of objectives to be tracked. The must be passed as keyword arguments and they must be
-            callable.
+        objectives: One or more objectives to be tracked, passed in as keyword arguments with callables as values.
         log: A dictionary where each key is the name of a tracked objective and the values are dictionaries containing
             two keys: "times" and "values". The "times" key corresponds to a list of integers representing the indexes
             of the optimization steps in which the objective in question was tracked. The "values" key corresponds to a
