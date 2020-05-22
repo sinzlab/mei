@@ -155,18 +155,6 @@ class TestEnsembleModel:
         output = ensemble("x")
         assert torch.allclose(output, torch.tensor([4, 5, 6], dtype=torch.float))
 
-    def test_if_eval_mode_is_passed_to_ensemble_members(self, members):
-        ensemble = integration.EnsembleModel(*members)
-        ensemble.eval()
-        for member in members:
-            member.eval.assert_called_once_with()
-
-    def test_if_to_is_correctly_called_on_all_ensemble_members(self, members):
-        ensemble = integration.EnsembleModel(*members)
-        ensemble.to("arg", kwarg="kwarg")
-        for member in members:
-            member.to.assert_called_once_with("arg", kwarg="kwarg")
-
     def test_repr(self, members):
         ensemble = integration.EnsembleModel(*members)
         assert str(ensemble) == "EnsembleModel(member1, member2, member3)"

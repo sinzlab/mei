@@ -110,16 +110,6 @@ class EnsembleModel(Module):
         mean_output = torch.stack(outputs, dim=0).mean(dim=0)
         return mean_output
 
-    def eval(self):
-        """Switches all ensemble members to evaluation mode."""
-        for member in self.members:
-            member.eval()
-
-    def to(self, *args, **kwargs):
-        """Moves and/or casts the parameters and buffers of all ensemble members."""
-        for member in self.members:
-            member.to(*args, **kwargs)
-
     def __repr__(self):
         return f"{self.__class__.__qualname__}({', '.join(m.__repr__() for m in self.members)})"
 
