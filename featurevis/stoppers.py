@@ -25,15 +25,12 @@ class NumIterations(OptimizationStopper):
             num_iterations: The number of optimization steps before the process is stopped.
         """
         self.num_iterations = num_iterations
-        self._current_iteration = 0
 
     def __call__(self, current_state: State) -> Tuple[bool, Optional[Any]]:
         """Stops the optimization process after a set number of steps by returning True."""
-        if self._current_iteration == self.num_iterations:
+        if current_state.i_iter == self.num_iterations:
             return True, None
-        else:
-            self._current_iteration += 1
-            return False, None
+        return False, None
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self.num_iterations})"
