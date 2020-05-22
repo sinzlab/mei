@@ -165,6 +165,19 @@ class TestConstrainedOutputModel:
     def model(self):
         return MagicMock(return_value=torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]]))
 
+    def test_if_constrained_output_model_is_pytorch_module(self):
+        assert issubclass(integration.ConstrainedOutputModel, Module)
+
+    def test_if_super_class_is_initialized(self, model):
+        class MockModule(Module):
+            __init__ = MagicMock(name="__init__", return_value=None)
+
+        class ConstrainedOutputModelTestable(integration.ConstrainedOutputModel, MockModule):
+            pass
+
+        ConstrainedOutputModelTestable(model, 0)
+        MockModule.__init__.assert_called_once_with()
+
     def test_if_input_is_passed_to_model(self, model):
         constrained_model = integration.ConstrainedOutputModel(model, 0)
         constrained_model("x", "arg", kwarg="kwarg")

@@ -115,7 +115,7 @@ class EnsembleModel(Module):
         return f"{self.__class__.__qualname__}({', '.join(m.__repr__() for m in self.members)})"
 
 
-class ConstrainedOutputModel:
+class ConstrainedOutputModel(Module):
     """A model that has its output constrained.
 
     Attributes:
@@ -128,6 +128,7 @@ class ConstrainedOutputModel:
 
     def __init__(self, model, constraint, forward_kwargs=None):
         """Initializes ConstrainedOutputModel."""
+        super().__init__()
         self.model = model
         self.constraint = constraint
         self.forward_kwargs = forward_kwargs if forward_kwargs else dict()
