@@ -189,16 +189,6 @@ class TestConstrainedOutputModel:
         output = constrained_model("x")
         assert torch.allclose(output, torch.tensor([expected]))
 
-    def test_if_eval_mode_is_passed_to_model(self, model):
-        constrained_model = integration.ConstrainedOutputModel(model, 0)
-        constrained_model.eval()
-        model.eval.assert_called_once_with()
-
-    def test_if_cuda_is_passed_to_model(self, model):
-        constrained_model = integration.ConstrainedOutputModel(model, 0)
-        constrained_model.to("arg", kwarg="kwarg")
-        model.to.assert_called_once_with("arg", kwarg="kwarg")
-
     def test_if_forward_kwargs_are_passed_to_model(self, model):
         constrained_model = integration.ConstrainedOutputModel(
             model, 0, forward_kwargs=dict(forward_kwarg="forward_kwarg")
