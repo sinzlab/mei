@@ -168,7 +168,13 @@ class TestEnsembleModel:
 class TestConstrainedOutputModel:
     @pytest.fixture
     def model(self):
-        return MagicMock(return_value=torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]]))
+        model = MagicMock(name="model", return_value=torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0]]))
+        model.__repr__ = MagicMock(name="__repr__", return_value="model")
+        return model
+
+    @pytest.fixture
+    def model_input(self):
+        return MagicMock(name="model_input", spec=Tensor)
 
     def test_if_constrained_output_model_is_pytorch_module(self):
         assert issubclass(integration.ConstrainedOutputModel, Module)
@@ -183,24 +189,24 @@ class TestConstrainedOutputModel:
         ConstrainedOutputModelTestable(model, 0)
         MockModule.__init__.assert_called_once_with()
 
-    def test_if_input_is_passed_to_model(self, model):
+    def test_if_input_is_passed_to_model(self, model, model_input):
         constrained_model = integration.ConstrainedOutputModel(model, 0)
-        constrained_model("x", "arg", kwarg="kwarg")
-        model.assert_called_once_with("x", "arg", kwarg="kwarg")
+        constrained_model(model_input, "arg", kwarg="kwarg")
+        model.assert_called_once_with(model_input, "arg", kwarg="kwarg")
 
     @pytest.mark.parametrize("constraint,expected", [(0, 1.0), (1, 2.0), (2, 3.0), (3, 4.0), (4, 5.0)])
-    def test_if_output_constraint_is_correct(self, model, constraint, expected):
+    def test_if_output_constraint_is_correct(self, model, model_input, constraint, expected):
         constrained_model = integration.ConstrainedOutputModel(model, constraint)
-        output = constrained_model("x")
+        output = constrained_model(model_input)
         assert torch.allclose(output, torch.tensor([expected]))
 
-    def test_if_forward_kwargs_are_passed_to_model(self, model):
+    def test_if_forward_kwargs_are_passed_to_model(self, model, model_input):
         constrained_model = integration.ConstrainedOutputModel(
             model, 0, forward_kwargs=dict(forward_kwarg="forward_kwarg")
         )
-        constrained_model("x")
-        model.assert_called_once_with("x", forward_kwarg="forward_kwarg")
+        constrained_model(model_input)
+        model.assert_called_once_with(model_input, forward_kwarg="forward_kwarg")
 
-    def test_repr(self):
-        constrained_model = integration.ConstrainedOutputModel("model", 0, forward_kwargs=dict(kwarg="kwarg"))
+    def test_repr(self, model):
+        constrained_model = integration.ConstrainedOutputModel(model, 0, forward_kwargs=dict(kwarg="kwarg"))
         assert str(constrained_model) == "ConstrainedOutputModel(model, 0, forward_kwargs={'kwarg': 'kwarg'})"

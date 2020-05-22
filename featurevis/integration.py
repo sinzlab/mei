@@ -1,6 +1,7 @@
 """This module contains classes and functions pertaining to the NNFabrik integration."""
 
 import pickle
+from typing import Dict, Any
 
 import torch
 from torch import Tensor
@@ -126,14 +127,14 @@ class ConstrainedOutputModel(Module):
             called. Optional.
     """
 
-    def __init__(self, model, constraint, forward_kwargs=None):
+    def __init__(self, model: Module, constraint: int, forward_kwargs: Dict[str, Any] = None):
         """Initializes ConstrainedOutputModel."""
         super().__init__()
         self.model = model
         self.constraint = constraint
         self.forward_kwargs = forward_kwargs if forward_kwargs else dict()
 
-    def __call__(self, x, *args, **kwargs):
+    def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
         """Computes the constrained output of the model.
 
         Args:
