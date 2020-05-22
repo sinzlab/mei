@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, Tuple
 
 import torch
 
-from .domain import State
+from .domain import Input, State
 
 # Prevents circular import error
 if TYPE_CHECKING:
@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from torch.optim.optimizer import Optimizer
 
     from .stoppers import OptimizationStopper
-    from .domain import Input
     from .tracking import Tracker
 
 
@@ -40,12 +39,13 @@ def default_postprocessing(mei: Tensor, _i_iteration: int) -> Tensor:
 class MEI:
     """Wrapper around the function and the MEI tensor."""
 
+    input_cls = Input
     state_cls = State
 
     def __init__(
         self,
         func: Callable[[Tensor], Tensor],
-        initial: Input,
+        initial: Tensor,
         optimizer: Optimizer,
         transform: Callable[[Tensor, int], Tensor] = default_transform,
         regularization: Callable[[Tensor, int], Tensor] = default_regularization,
@@ -57,7 +57,7 @@ class MEI:
         Args:
             func: A callable that will receive the to be optimized MEI tensor of floats as its only argument and that
                 must return a tensor containing a single float.
-            initial: An instance of "Input" initialized with the tensor from which the optimization process will start.
+            initial: A tensor from which the optimization process will start.
             optimizer: A PyTorch-style optimizer class.
             transform: A callable that will receive the current MEI and the index of the current iteration as inputs and
                 that must return a transformed version of the current MEI. Optional.
@@ -69,6 +69,7 @@ class MEI:
                 parameters and that should return a post-processed MEI. The operation performed by this callable on the
                 MEI has no influence on its gradient.
         """
+        initial = self.input_cls(initial)
         self.func = func
         self.initial = initial.clone()
         self.optimizer = optimizer

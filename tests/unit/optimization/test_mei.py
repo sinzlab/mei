@@ -5,22 +5,30 @@ import pytest
 from torch import Tensor
 
 from featurevis import optimization
-from featurevis.domain import State
+from featurevis.domain import Input, State
 
 
 @pytest.fixture
-def mei(state_cls, func, initial_input, optimizer, transform, regularization, precondition, postprocessing):
+def mei(
+    input_cls, state_cls, func, initial_input_tensor, optimizer, transform, regularization, precondition, postprocessing
+):
+    optimization.MEI.input_cls = input_cls
     optimization.MEI.state_cls = state_cls
     return partial(
         optimization.MEI,
         func,
-        initial_input,
+        initial_input_tensor,
         optimizer,
         transform=transform,
         regularization=regularization,
         precondition=precondition,
         postprocessing=postprocessing,
     )
+
+
+@pytest.fixture
+def input_cls(initial_input):
+    return MagicMock(name="input_cls", spec=Input, return_value=initial_input)
 
 
 @pytest.fixture
@@ -36,6 +44,11 @@ def func(evaluation):
     representation = MagicMock(return_value="func")
     func.__repr__ = representation
     return func
+
+
+@pytest.fixture
+def initial_input_tensor():
+    return MagicMock(name="initial_input_tensor", spec=Tensor)
 
 
 @pytest.fixture
@@ -136,6 +149,10 @@ def postprocessing():
 class TestInit:
     def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
         assert mei().func is func
+
+    def test_if_input_cls_gets_correctly_initialized(self, mei, input_cls, initial_input_tensor):
+        mei()
+        input_cls.assert_called_once_with(initial_input_tensor)
 
     def test_if_clone_of_initial_input_gets_stored_as_instance_attribute(self, mei, cloned_initial_input):
         assert mei().initial is cloned_initial_input

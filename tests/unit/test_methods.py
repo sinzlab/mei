@@ -5,23 +5,13 @@ from typing import Type
 import pytest
 
 from featurevis import methods
-from featurevis.domain import Input
 from featurevis.tracking import Tracker
 
 
 class TestGradientAscent:
     @pytest.fixture
     def gradient_ascent(
-        self,
-        dataloaders,
-        model,
-        get_dims,
-        create_initial_guess,
-        input_cls,
-        mei_class,
-        import_func,
-        optimize_func,
-        tracker_cls,
+        self, dataloaders, model, get_dims, create_initial_guess, mei_class, import_func, optimize_func, tracker_cls,
     ):
         return partial(
             methods.gradient_ascent,
@@ -30,7 +20,6 @@ class TestGradientAscent:
             seed=42,
             get_dims=get_dims,
             create_initial_guess=create_initial_guess,
-            input_cls=input_cls,
             mei_class=mei_class,
             import_func=import_func,
             optimize_func=optimize_func,
@@ -86,10 +75,6 @@ class TestGradientAscent:
     @pytest.fixture
     def create_initial_guess(self):
         return MagicMock(name="create_initial_guess", return_value="initial_guess")
-
-    @pytest.fixture
-    def input_cls(self):
-        return MagicMock(name="input_cls", return_value="input_instance", spec=Input)
 
     @pytest.fixture
     def mei_class(self):
@@ -157,7 +142,7 @@ class TestGradientAscent:
         def _mei_class_call(
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
         ):
-            args = (model, "input_instance", "optimizer")
+            args = (model, "initial_guess", "optimizer")
             kwargs = {}
             if use_transform:
                 kwargs["transform"] = "transform"
@@ -191,10 +176,6 @@ class TestGradientAscent:
     def test_if_create_initial_guess_is_correctly_called(self, gradient_ascent, config, create_initial_guess):
         gradient_ascent(config=config())
         create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
-
-    def test_if_input_class_is_correctly_called(self, gradient_ascent, config, input_cls):
-        gradient_ascent(config=config())
-        input_cls.assert_called_once_with("initial_guess")
 
     @pytest.mark.parametrize("n_kwargs", [0, 1, 10])
     @pytest.mark.parametrize("n_objectives", [0, 1, 10])
