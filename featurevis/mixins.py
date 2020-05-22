@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from nnfabrik.utility.dj_helpers import make_hash
 
 from . import integration
+from .modules import EnsembleModel, ConstrainedOutputModel
 
 
 Key = Dict[str, Any]
@@ -41,7 +42,7 @@ class TrainedEnsembleModelTemplateMixin:
 
     dataset_table = None
     trained_model_table = None
-    ensemble_model_class = integration.EnsembleModel
+    ensemble_model_class = EnsembleModel
 
     insert1: Callable[[Mapping], None]
     __and__: Callable[[Key], TrainedEnsembleModelTemplateMixin]
@@ -56,12 +57,12 @@ class TrainedEnsembleModelTemplateMixin:
         self.insert1(dict(primary_key, ensemble_comment=comment))
         self.Member().insert([{**primary_key, **m} for m in models])
 
-    def load_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, integration.EnsembleModel]:
+    def load_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, EnsembleModel]:
         if key is None:
             key = self.fetch1("KEY")
         return self._load_ensemble_model(key=key)
 
-    def _load_ensemble_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, integration.EnsembleModel]:
+    def _load_ensemble_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, EnsembleModel]:
         ensemble_key = (self & key).fetch1()
         model_keys = (self.Member() & ensemble_key).fetch(as_dict=True)
         dataloaders, models = tuple(
@@ -83,7 +84,7 @@ class CSRFV1SelectorTemplateMixin:
 
     dataset_table = None
     dataset_fn = "csrf_v1"
-    constrained_output_model = integration.ConstrainedOutputModel
+    constrained_output_model = ConstrainedOutputModel
 
     insert: Callable[[Iterable], None]
     __and__: Callable[[Mapping], CSRFV1SelectorTemplateMixin]
