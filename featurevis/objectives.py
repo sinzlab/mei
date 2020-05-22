@@ -42,7 +42,7 @@ class RegularIntervalObjective(Objective):
 
     @abstractmethod
     def compute(self, current_state: State) -> Any:
-        pass
+        """Returns an object computed from the current state of the optimization process."""
 
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}({self.interval})"
