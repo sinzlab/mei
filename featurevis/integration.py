@@ -3,6 +3,7 @@
 import pickle
 
 import torch
+from torch import Tensor
 from torch.nn import Module
 
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
@@ -88,12 +89,12 @@ class EnsembleModel(Module):
         *members: PyTorch modules representing the members of the ensemble.
     """
 
-    def __init__(self, *members):
+    def __init__(self, *members: Module):
         """Initializes EnsembleModel."""
         super().__init__()
         self.members = members
 
-    def __call__(self, x, *args, **kwargs):
+    def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
         """Calculates the forward pass through the ensemble.
 
         The input is passed through all individual members of the ensemble and their outputs are averaged.
