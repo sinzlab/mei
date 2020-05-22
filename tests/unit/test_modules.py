@@ -8,6 +8,14 @@ from torch.nn import Module
 from featurevis import modules
 
 
+@pytest.fixture
+def module_mock():
+    class ModuleMock(Module):
+        __init__ = MagicMock(name="ModuleMock().__init__", return_value=None)
+
+    return ModuleMock
+
+
 class TestEnsembleModel:
     @pytest.fixture
     def members(self):
@@ -26,15 +34,12 @@ class TestEnsembleModel:
     def test_if_ensemble_model_is_pytorch_module(self):
         assert issubclass(modules.EnsembleModel, Module)
 
-    def test_if_ensemble_model_initializes_super_class(self):
-        class MockModule(Module):
-            __init__ = MagicMock(name="__init__", return_value=None)
-
-        class EnsembleModelTestable(modules.EnsembleModel, MockModule):
+    def test_if_ensemble_model_initializes_super_class(self, module_mock):
+        class EnsembleModelTestable(modules.EnsembleModel, module_mock):
             pass
 
         EnsembleModelTestable()
-        MockModule.__init__.assert_called_once_with()
+        module_mock.__init__.assert_called_once_with()
 
     def test_if_input_is_passed_to_ensemble_members(self, members, ensemble_input):
         ensemble = modules.EnsembleModel(*members)
@@ -66,15 +71,12 @@ class TestConstrainedOutputModel:
     def test_if_constrained_output_model_is_pytorch_module(self):
         assert issubclass(modules.ConstrainedOutputModel, Module)
 
-    def test_if_super_class_is_initialized(self, model):
-        class MockModule(Module):
-            __init__ = MagicMock(name="__init__", return_value=None)
-
-        class ConstrainedOutputModelTestable(modules.ConstrainedOutputModel, MockModule):
+    def test_if_super_class_is_initialized(self, model, module_mock):
+        class ConstrainedOutputModelTestable(modules.ConstrainedOutputModel, module_mock):
             pass
 
         ConstrainedOutputModelTestable(model, 0)
-        MockModule.__init__.assert_called_once_with()
+        module_mock.__init__.assert_called_once_with()
 
     def test_if_input_is_passed_to_model(self, model, model_input):
         constrained_model = modules.ConstrainedOutputModel(model, 0)
