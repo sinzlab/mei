@@ -9,12 +9,12 @@ from featurevis.domain import State
 
 
 @pytest.fixture
-def mei(state_cls, func, initial, optimizer, transform, regularization, precondition, postprocessing):
+def mei(state_cls, func, initial_input, optimizer, transform, regularization, precondition, postprocessing):
     optimization.MEI.state_cls = state_cls
     return partial(
         optimization.MEI,
         func,
-        initial,
+        initial_input,
         optimizer,
         transform=transform,
         regularization=regularization,
@@ -59,29 +59,29 @@ def negated_evaluation_plus_reg_term():
 
 
 @pytest.fixture
-def current_input(initial):
-    return initial
+def current_input(initial_input):
+    return initial_input
 
 
 @pytest.fixture
-def initial(cloned_initial):
-    initial = MagicMock()
-    initial.clone.return_value = cloned_initial
-    initial.grad = "grad"
-    cloned_grad_prop = PropertyMock(side_effect=lambda: "cloned_" + initial.grad)
-    type(initial).cloned_grad = cloned_grad_prop
-    initial.data = "mei_data"
-    cloned_data_prop = PropertyMock(side_effect=lambda: "cloned_" + initial.data)
-    type(initial).cloned_data = cloned_data_prop
-    initial.extract.return_value = "current_input"
-    return initial
+def initial_input(cloned_initial_input):
+    initial_input = MagicMock()
+    initial_input.clone.return_value = cloned_initial_input
+    initial_input.grad = "grad"
+    cloned_grad_prop = PropertyMock(side_effect=lambda: "cloned_" + initial_input.grad)
+    type(initial_input).cloned_grad = cloned_grad_prop
+    initial_input.data = "mei_data"
+    cloned_data_prop = PropertyMock(side_effect=lambda: "cloned_" + initial_input.data)
+    type(initial_input).cloned_data = cloned_data_prop
+    initial_input.extract.return_value = "current_input"
+    return initial_input
 
 
 @pytest.fixture
-def cloned_initial():
-    cloned_initial = MagicMock(name="cloned_initial")
-    cloned_initial.__repr__ = MagicMock(return_value="initial")
-    return cloned_initial
+def cloned_initial_input():
+    cloned_initial_input = MagicMock(name="cloned_initial_input")
+    cloned_initial_input.__repr__ = MagicMock(return_value="initial_input")
+    return cloned_initial_input
 
 
 @pytest.fixture
@@ -137,8 +137,8 @@ class TestInit:
     def test_if_func_gets_stored_as_instance_attribute(self, mei, func):
         assert mei().func is func
 
-    def test_if_clone_of_initial_guess_gets_stored_as_instance_attribute(self, mei, cloned_initial):
-        assert mei().initial is cloned_initial
+    def test_if_clone_of_initial_input_gets_stored_as_instance_attribute(self, mei, cloned_initial_input):
+        assert mei().initial is cloned_initial_input
 
     def test_if_optimizer_gets_stored_as_instance_attribute(self, mei, optimizer):
         assert mei().optimizer is optimizer
@@ -146,20 +146,20 @@ class TestInit:
     def test_if_transform_gets_stored_as_instance_attribute_if_provided(self, mei, transform):
         assert mei().transform is transform
 
-    def test_if_transform_is_default_transform_if_not_provided(self, func, initial, optimizer):
-        assert optimization.MEI(func, initial, optimizer).transform is optimization.default_transform
+    def test_if_transform_is_default_transform_if_not_provided(self, func, initial_input, optimizer):
+        assert optimization.MEI(func, initial_input, optimizer).transform is optimization.default_transform
 
     def test_if_regularization_gets_stored_as_instance_attribute_if_provided(self, mei, regularization):
         assert mei().regularization is regularization
 
-    def test_if_regularization_is_default_regularization_if_not_provided(self, func, initial, optimizer):
-        assert optimization.MEI(func, initial, optimizer).regularization is optimization.default_regularization
+    def test_if_regularization_is_default_regularization_if_not_provided(self, func, initial_input, optimizer):
+        assert optimization.MEI(func, initial_input, optimizer).regularization is optimization.default_regularization
 
     def test_if_precondition_gets_stored_as_instance_attribute_if_provided(self, mei, precondition):
         assert mei().precondition is precondition
 
-    def test_if_precondition_is_default_precondition_if_not_provided(self, func, initial, optimizer):
-        assert optimization.MEI(func, initial, optimizer).precondition is optimization.default_precondition
+    def test_if_precondition_is_default_precondition_if_not_provided(self, func, initial_input, optimizer):
+        assert optimization.MEI(func, initial_input, optimizer).precondition is optimization.default_precondition
 
 
 class TestEvaluate:
@@ -275,7 +275,7 @@ class TestStep:
 def test_repr(mei):
     assert repr(mei()) == (
         (
-            "MEI(func, initial, optimizer, transform=transform, regularization=regularization, "
+            "MEI(func, initial_input, optimizer, transform=transform, regularization=regularization, "
             "precondition=precondition, postprocessing=postprocessing)"
         )
     )
