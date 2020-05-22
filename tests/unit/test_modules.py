@@ -18,6 +18,10 @@ def module_mock():
 
 class TestEnsembleModel:
     @pytest.fixture
+    def ensemble_model(self, members):
+        return modules.EnsembleModel(*members)
+
+    @pytest.fixture
     def members(self):
         members = []
         for i in range(3):
@@ -41,20 +45,17 @@ class TestEnsembleModel:
         EnsembleModelTestable()
         module_mock.__init__.assert_called_once_with()
 
-    def test_if_input_is_passed_to_ensemble_members(self, members, ensemble_input):
-        ensemble = modules.EnsembleModel(*members)
-        ensemble(ensemble_input, "arg", kwarg="kwarg")
+    def test_if_input_is_passed_to_ensemble_members(self, ensemble_model, members, ensemble_input):
+        ensemble_model(ensemble_input, "arg", kwarg="kwarg")
         for member in members:
             member.assert_called_once_with(ensemble_input, "arg", kwarg="kwarg")
 
-    def test_if_outputs_of_ensemble_members_is_correctly_averaged(self, members, ensemble_input):
-        ensemble = modules.EnsembleModel(*members)
-        output = ensemble(ensemble_input)
+    def test_if_outputs_of_ensemble_members_is_correctly_averaged(self, ensemble_model, ensemble_input):
+        output = ensemble_model(ensemble_input)
         assert torch.allclose(output, torch.tensor([4, 5, 6], dtype=torch.float))
 
-    def test_repr(self, members):
-        ensemble = modules.EnsembleModel(*members)
-        assert str(ensemble) == "EnsembleModel(member1, member2, member3)"
+    def test_repr(self, ensemble_model):
+        assert str(ensemble_model) == "EnsembleModel(member1, member2, member3)"
 
 
 class TestConstrainedOutputModel:
