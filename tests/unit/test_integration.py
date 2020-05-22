@@ -2,6 +2,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 import torch
+from torch import Tensor
 from torch.nn import Module
 
 from featurevis import integration
@@ -131,6 +132,10 @@ class TestEnsembleModel:
             members.append(member)
         return members
 
+    @pytest.fixture
+    def ensemble_input(self):
+        return MagicMock(name="ensemble_input", spec=Tensor)
+
     def test_if_ensemble_model_is_pytorch_module(self):
         assert issubclass(integration.EnsembleModel, Module)
 
@@ -144,15 +149,15 @@ class TestEnsembleModel:
         EnsembleModelTestable()
         MockModule.__init__.assert_called_once_with()
 
-    def test_if_input_is_passed_to_ensemble_members(self, members):
+    def test_if_input_is_passed_to_ensemble_members(self, members, ensemble_input):
         ensemble = integration.EnsembleModel(*members)
-        ensemble("x", "arg", kwarg="kwarg")
+        ensemble(ensemble_input, "arg", kwarg="kwarg")
         for member in members:
-            member.assert_called_once_with("x", "arg", kwarg="kwarg")
+            member.assert_called_once_with(ensemble_input, "arg", kwarg="kwarg")
 
-    def test_if_outputs_of_ensemble_members_is_correctly_averaged(self, members):
+    def test_if_outputs_of_ensemble_members_is_correctly_averaged(self, members, ensemble_input):
         ensemble = integration.EnsembleModel(*members)
-        output = ensemble("x")
+        output = ensemble(ensemble_input)
         assert torch.allclose(output, torch.tensor([4, 5, 6], dtype=torch.float))
 
     def test_repr(self, members):
