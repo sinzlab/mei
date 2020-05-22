@@ -2,6 +2,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 import torch
+from torch.nn import Module
 
 from featurevis import integration
 
@@ -129,6 +130,19 @@ class TestEnsembleModel:
             member.__repr__ = MagicMock(return_value="member" + str(i + 1))
             members.append(member)
         return members
+
+    def test_if_ensemble_model_is_pytorch_module(self):
+        assert issubclass(integration.EnsembleModel, Module)
+
+    def test_if_ensemble_model_initializes_super_class(self):
+        class MockModule(Module):
+            __init__ = MagicMock(name="__init__", return_value=None)
+
+        class EnsembleModelTestable(integration.EnsembleModel, MockModule):
+            pass
+
+        EnsembleModelTestable()
+        MockModule.__init__.assert_called_once_with()
 
     def test_if_input_is_passed_to_ensemble_members(self, members):
         ensemble = integration.EnsembleModel(*members)

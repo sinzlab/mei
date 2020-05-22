@@ -3,6 +3,7 @@
 import pickle
 
 import torch
+from torch.nn import Module
 
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
@@ -80,7 +81,7 @@ def hash_list_of_dictionaries(list_of_dicts):
     return make_hash(sorted_list_of_dicts)
 
 
-class EnsembleModel:
+class EnsembleModel(Module):
     """A ensemble model consisting of several individual ensemble members.
 
     Attributes:
@@ -89,6 +90,7 @@ class EnsembleModel:
 
     def __init__(self, *members):
         """Initializes EnsembleModel."""
+        super().__init__()
         self.members = members
 
     def __call__(self, x, *args, **kwargs):
