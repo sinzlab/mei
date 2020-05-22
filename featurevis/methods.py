@@ -24,7 +24,6 @@ def gradient_ascent(
     seed: int,
     set_seed: Callable = torch.manual_seed,
     get_dims: Callable = get_dims_for_loader_dict,
-    create_initial_guess: Callable = torch.randn,
     mei_class: Type = optimization.MEI,
     import_func: Callable = import_object,
     optimize_func: Callable = optimization.optimize,
@@ -32,13 +31,17 @@ def gradient_ascent(
 ) -> Tuple[Tensor, float, Dict]:
     """Generates a MEI using gradient ascent.
 
-    The value corresponding to the "device" key must be either "cpu" or "cuda". The "transform", "regularization",
-    "precondition" and "postprocessing" components are optional and can be omitted. All "kwargs" items in the config
-    are optional and can be omitted as well. Furthermore the "objectives" item is optional and can be omitted.
-    Example config:
+    The value corresponding to the "device" key must be either "cpu" or "cuda". The "transform",
+    "regularization", "precondition" and "postprocessing" components are optional and can be omitted. All "kwargs" items
+    in the config are optional and can be omitted as well. Furthermore the "objectives" item is optional and can be
+    omitted. Example config:
 
         {
             "device": "cuda",
+            "initial": {
+                "path": "path.to.initial",
+                "kwargs": {"initial_kwarg1": 0, "initial_kwarg2": 1},
+            },
             "optimizer": {
                 "path": "path.to.optimizer",
                 "kwargs": {"optimizer_kwarg1": 0, "optimizer_kwarg2": 1},
@@ -76,7 +79,6 @@ def gradient_ascent(
         seed: Integer used to make the MEI generation process reproducible.
         set_seed: For testing purposes.
         get_dims: For testing purposes.
-        create_initial_guess: For testing purposes.
         mei_class: For testing purposes.
         import_func: For testing purposes.
         optimize_func: For testing purposes.
@@ -100,8 +102,10 @@ def gradient_ascent(
     set_seed(seed)
     model.eval()
     model.to(config["device"])
+
     shape = get_input_dimensions(dataloaders, get_dims)
-    initial_guess = create_initial_guess(1, *shape[1:], device=config["device"])
+    create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
+    initial_guess = create_initial_guess(1, *shape[1:]).to(config["device"])
 
     optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
     stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])

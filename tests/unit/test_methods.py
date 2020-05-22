@@ -3,6 +3,7 @@ from functools import partial
 from typing import Type
 
 import pytest
+from torch import Tensor
 
 from featurevis import methods
 from featurevis.tracking import Tracker
@@ -11,7 +12,7 @@ from featurevis.tracking import Tracker
 class TestGradientAscent:
     @pytest.fixture
     def gradient_ascent(
-        self, dataloaders, model, get_dims, create_initial_guess, mei_class, import_func, optimize_func, tracker_cls,
+        self, dataloaders, model, get_dims, mei_class, import_func, optimize_func, tracker_cls,
     ):
         return partial(
             methods.gradient_ascent,
@@ -19,7 +20,6 @@ class TestGradientAscent:
             model=model,
             seed=42,
             get_dims=get_dims,
-            create_initial_guess=create_initial_guess,
             mei_class=mei_class,
             import_func=import_func,
             optimize_func=optimize_func,
@@ -51,7 +51,10 @@ class TestGradientAscent:
                 return component_config
 
             config = dict(
-                device="cpu", optimizer=get_component_config("optimizer"), stopper=get_component_config("stopper")
+                device="cpu",
+                initial=get_component_config("initial"),
+                optimizer=get_component_config("optimizer"),
+                stopper=get_component_config("stopper"),
             )
             if n_objectives is not None:
                 objectives = [get_component_config("obj" + str(i)) for i in range(1, n_objectives + 1)]
@@ -73,18 +76,17 @@ class TestGradientAscent:
         return MagicMock(name="get_dims", return_value=dict(dl1=dict(inputs=(10, 5, 15, 15))))
 
     @pytest.fixture
-    def create_initial_guess(self):
-        return MagicMock(name="create_initial_guess", return_value="initial_guess")
-
-    @pytest.fixture
     def mei_class(self):
         return MagicMock(name="mei_class", return_value="mei")
 
     @pytest.fixture
-    def import_func(self, imported_objects):
+    def import_func(self, imported_objects, create_initial_guess):
         def _import_func(name, _kwargs):
             name = name.split("_")[0]
-            imported_object = MagicMock(name=name)
+            if name == "initial":
+                imported_object = create_initial_guess
+            else:
+                imported_object = MagicMock(name=name)
             imported_objects[name] = imported_object
             return imported_object
 
@@ -93,6 +95,20 @@ class TestGradientAscent:
     @pytest.fixture
     def imported_objects(self):
         return dict()
+
+    @pytest.fixture
+    def create_initial_guess(self, initial_guess):
+        return MagicMock(name="create_initial_guess", return_value=initial_guess)
+
+    @pytest.fixture
+    def initial_guess(self, initial_guess_on_device):
+        initial_guess = MagicMock(name="initial_guess", spec=Tensor)
+        initial_guess.to.return_value = initial_guess_on_device
+        return initial_guess
+
+    @pytest.fixture
+    def initial_guess_on_device(self):
+        return MagicMock(name="initial_guess_on_device", spec=Tensor)
 
     @pytest.fixture
     def optimize_func(self):
@@ -109,7 +125,7 @@ class TestGradientAscent:
         return tracker
 
     @pytest.fixture
-    def import_func_calls(self):
+    def import_func_calls(self, initial_guess_on_device):
         def _import_func_calls(
             n_kwargs=None,
             n_objectives=None,
@@ -125,7 +141,8 @@ class TestGradientAscent:
                     return {name + "_kwarg" + str(i): i - 1 for i in range(1, n_kwargs + 1)}
 
             import_func_calls = [
-                call("optimizer_path", dict(params=["initial_guess"], **get_kwargs("optimizer"))),
+                call("initial_path", get_kwargs("initial")),
+                call("optimizer_path", dict(params=[initial_guess_on_device], **get_kwargs("optimizer"))),
                 call("stopper_path", get_kwargs("stopper")),
             ]
             if n_objectives is not None:
@@ -145,11 +162,11 @@ class TestGradientAscent:
         return _import_func_calls
 
     @pytest.fixture
-    def mei_class_call(self, model, imported_objects):
+    def mei_class_call(self, model, imported_objects, initial_guess_on_device):
         def _mei_class_call(
             use_transform=False, use_regularization=False, use_precondition=False, use_postprocessing=False
         ):
-            args = (model, "initial_guess", imported_objects["optimizer"])
+            args = (model, initial_guess_on_device, imported_objects["optimizer"])
             kwargs = {}
             if use_transform:
                 kwargs["transform"] = imported_objects["transform"]
@@ -180,9 +197,13 @@ class TestGradientAscent:
         gradient_ascent(config=config())
         get_dims.assert_called_once_with("train_dataloaders")
 
-    def test_if_create_initial_guess_is_correctly_called(self, gradient_ascent, config, create_initial_guess):
+    def test_if_initial_guess_creator_is_correctly_called(self, gradient_ascent, config, create_initial_guess):
         gradient_ascent(config=config())
-        create_initial_guess.assert_called_once_with(1, 5, 15, 15, device="cpu")
+        create_initial_guess.assert_called_once_with(1, 5, 15, 15)
+
+    def test_if_initial_guess_is_switched_to_device(self, gradient_ascent, config, initial_guess):
+        gradient_ascent(config=config())
+        initial_guess.to.assert_called_once_with("cpu")
 
     @pytest.mark.parametrize("n_kwargs", [0, 1, 10])
     @pytest.mark.parametrize("n_objectives", [0, 1, 10])
