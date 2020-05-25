@@ -75,13 +75,13 @@ class MEI:
         self.postprocessing = postprocessing
         self.i_iteration = 0
         self._current_input = initial
-        self.__transformed_input = None
+        self._transformed = None
 
     @property
     def _transformed_input(self) -> Tensor:
-        if self.__transformed_input is None:
-            self.__transformed_input = self.transform(self._current_input.tensor, self.i_iteration)
-        return self.__transformed_input
+        if self._transformed is None:
+            self._transformed = self.transform(self._current_input.tensor, self.i_iteration)
+        return self._transformed
 
     def evaluate(self) -> Tensor:
         """Evaluates the function on the current MEI."""
@@ -105,7 +105,7 @@ class MEI:
         self.optimizer.step()
         self._current_input.data = self.postprocessing(self._current_input.data, self.i_iteration)
         state["post_processed_input"] = self._current_input.cloned_data
-        self.__transformed_input = None
+        self._transformed = None
         self.i_iteration += 1
         return self.state_cls.from_dict(state)
 
