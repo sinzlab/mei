@@ -227,7 +227,7 @@ You can then use your custom stopper component by specifying it in the `method_c
 
 ```Python
 method_config = {
-    "stopper": {"path": "mymodule/EvaluationThreshold", "kwargs": {"threshold": 2.5}},
+    "stopper": {"path": "mymodule.EvaluationThreshold", "kwargs": {"threshold": 2.5}},
     ...
 }
 ```
