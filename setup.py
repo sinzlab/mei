@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(
-    name="featurevis",
+    name="mei",
     version="0.2.1",
     description="Visualize features cells are responsive to via gradient ascent",
     author="Erick Cobos",
@@ -10,7 +10,7 @@ setup(
     license="MIT",
     url="https://github.com/cajal/featurevis",
     keywords="feature visualization MEI pytorch",
-    packages=["featurevis"],
+    packages=["mei"],
     install_requires=["torch>=0.4.0", "scipy", "numpy", "torchvision", "datajoint", "nnfabrik", "pytest"],
     classifiers=[
         "Development Status :: 3 - Alpha",

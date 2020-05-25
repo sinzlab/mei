@@ -5,8 +5,8 @@ from typing import Type
 import pytest
 from torch import Tensor
 
-from featurevis import methods
-from featurevis.tracking import Tracker
+from mei import methods
+from mei.tracking import Tracker
 
 
 class TestGradientAscent:

@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from featurevis import stoppers
-from featurevis.domain import State
+from mei import stoppers
+from mei.domain import State
 
 
 class TestNumIterations:

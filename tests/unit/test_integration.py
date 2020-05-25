@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from featurevis import integration
+from mei import integration
 
 
 class FakeModel:

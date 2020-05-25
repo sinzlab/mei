@@ -4,10 +4,10 @@ from functools import partial
 import pytest
 from torch import Tensor
 
-from featurevis import optimization
-from featurevis.stoppers import OptimizationStopper
-from featurevis.domain import State
-from featurevis.tracking import Tracker
+from mei import optimization
+from mei.stoppers import OptimizationStopper
+from mei.domain import State
+from mei.tracking import Tracker
 
 
 class TestDefaults:

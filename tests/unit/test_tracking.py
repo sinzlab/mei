@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from featurevis import tracking
-from featurevis.domain import State
+from mei import tracking
+from mei.domain import State
 
 
 class TestTracker:

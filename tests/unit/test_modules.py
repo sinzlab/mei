@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module, ModuleList
 
-from featurevis import modules
+from mei import modules
 
 
 @pytest.fixture

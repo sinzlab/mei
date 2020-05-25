@@ -4,9 +4,9 @@ import pytest
 import torch
 from torch.optim import SGD
 
-from featurevis import optimization
-from featurevis.stoppers import NumIterations
-from featurevis.tracking import Tracker
+from mei import optimization
+from mei.stoppers import NumIterations
+from mei.tracking import Tracker
 
 
 @pytest.fixture

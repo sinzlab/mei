@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from featurevis import mixins
+from mei import mixins
 
 
 @pytest.fixture

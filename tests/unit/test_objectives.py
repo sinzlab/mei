@@ -5,8 +5,8 @@ from contextlib import contextmanager
 
 import pytest
 
-from featurevis import objectives
-from featurevis.domain import State
+from mei import objectives
+from mei.domain import State
 
 
 @contextmanager

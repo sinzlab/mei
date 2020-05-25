@@ -3,7 +3,7 @@ from functools import partial
 
 import pytest
 
-from featurevis import mixins
+from mei import mixins
 
 
 @pytest.fixture

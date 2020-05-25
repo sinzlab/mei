@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from featurevis import import_helpers
+from mei import import_helpers
 
 
 class TestImportObject:

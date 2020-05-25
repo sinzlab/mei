@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from featurevis import initial
+from mei import initial
 
 
 def test_if_initial_guess_creator_is_subclass_of_abc():

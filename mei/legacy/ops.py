@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from scipy import signal
 
-from featurevis.legacy.utils import varargin
+from mei.legacy.utils import varargin
 
 
 ################################## REGULARIZERS ##########################################

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from torch import Tensor
 
-from featurevis import domain
+from mei import domain
 
 
 class TestInput:

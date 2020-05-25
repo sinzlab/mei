@@ -4,8 +4,8 @@ from functools import partial
 import pytest
 from torch import Tensor
 
-from featurevis import optimization
-from featurevis.domain import Input, State
+from mei import optimization
+from mei.domain import Input, State
 
 
 @pytest.fixture

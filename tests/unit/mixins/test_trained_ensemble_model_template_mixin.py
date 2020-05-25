@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from featurevis import mixins
+from mei import mixins
 
 
 @contextmanager
