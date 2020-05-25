@@ -1,4 +1,8 @@
-"""This module contains the main tables and table templates used in the MEI generation process."""
+"""This module contains the main tables and table templates used in the MEI generation process.
+
+Due to a bug in DataJoint's processing of part tables it is recommended to use NNFabrik's "CustomSchema" class instead
+of the regular DataJoint schema with the templates in this module.
+"""
 
 import datajoint as dj
 
