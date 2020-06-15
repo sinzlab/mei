@@ -12,22 +12,26 @@ from .stoppers import OptimizationStopper
 from .tracking import Tracker
 
 
-def default_transform(mei: Tensor, _i_iteration: int) -> Tensor:
+# noinspection PyUnusedLocal
+def default_transform(mei: Tensor, i_iteration: int) -> Tensor:
     """Default transform used when no transform is provided to MEI."""
     return mei
 
 
-def default_regularization(_mei: Tensor, _i_iteration: int) -> Tensor:
+# noinspection PyUnusedLocal
+def default_regularization(mei: Tensor, i_iteration: int) -> Tensor:
     """Default regularization used when no regularization is provided to MEI."""
     return torch.tensor(0.0)
 
 
-def default_precondition(grad: Tensor, _i_iteration: int) -> Tensor:
+# noinspection PyUnusedLocal
+def default_precondition(grad: Tensor, i_iteration: int) -> Tensor:
     """Default preconditioning used when no preconditioning is provided to MEI."""
     return grad
 
 
-def default_postprocessing(mei: Tensor, _i_iteration: int) -> Tensor:
+# noinspection PyUnusedLocal
+def default_postprocessing(mei: Tensor, i_iteration: int) -> Tensor:
     """Default postprocessing function used when not postprocessing function is provided to MEI."""
     return mei
 
