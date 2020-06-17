@@ -1,0 +1,17 @@
+language: python
+
+services:
+    - docker
+
+before_install:
+    - mkdir .ssh
+    - openssl aes-256-cbc -K $encrypted_6e245bcd2662_key -iv $encrypted_6e245bcd2662_iv -in id_rsa.enc -out .ssh/id_rsa -d
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker build -t mei .
+
+script:
+    - docker run --entrypoint pytest mei
+
+notifications:
+  slack:
+    secure: LDnpN7Nmvj8iqwD0SvqvR+ooyklWsScsVp3FrlnTugeq/gcPdkn4clFWuX9sVVoXkHAgP2oxWfCURv4F3XoijiOcmLQfYyX2E3JPUjGelUDqzNvYw5bRcQp1g7hogQIwsMXlruRc1Jk4NhFOfVpk5+hfo8vqcbMRXVuddvF3SNqLl8NC1otmsW1y+ow64BiFE/waHIvRM9sXBjs3siY17oTGcY069rWNwjMr0Zt3e+mLgzkh7VwoxXaBBaU0Indsa5wIXtUd4YXnFCOUclxuzVb1E5Msdqtt3eUxR/QUm+zDwrK4nZY+faeTvxZps2EHVgUm9bwfKPMUKuSxgTdGgPfLX4Ay5u245qhdmvO4ixrWveXo2ux4OWy+qRLnTpUjvt6Gg/KTw4HuAuYLw1qXZ5Wgz5dUyQcL1dTBESXDbgmsj+PmpCa+v5O+hlx0CuDWrtztMZ9kJfUMOFMqROQYg6HpCOrxZIQXQ8xsES5SluqLyxxPjXDdh8WMCTqZBw4qOy59iPua8ZKp+yLispU5gj2XDqD14OlVwLT4CG2J7QL9+e8KekUI4ti3AT8TJwbgpNn5V/LAuH2oDE0N0bZDvQmR4ZEKxU9hAgA3BRZ1EZ9Ona0a04Z/TDX9gwkYeufHD2jWatgaGQ5uPpLX/nHcQZglgreuZQY62uJBra5i818=
