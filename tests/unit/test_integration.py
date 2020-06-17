@@ -1,9 +1,8 @@
 from unittest.mock import Mock
 
 import pytest
-import torch
 
-from featurevis import integration
+from mei import integration
 
 
 class FakeModel:
@@ -31,7 +30,6 @@ def fake_trained_model_table():
             primary_key = None
             models = []
 
-            # noinspection PyUnusedLocal
             @classmethod
             def load_model(cls, key):
                 model = FakeModel(key["trained_model_attr"] + 1)
@@ -42,28 +40,6 @@ def fake_trained_model_table():
         return FakeTrainedModelTable
 
     return _fake_trained_model_table
-
-
-class TestLoadEnsemble:
-    def test_load_ensemble(self, fake_trained_model_table):
-        dataloaders, ensemble_model = integration.load_ensemble_model(FakeMemberTable, fake_trained_model_table())
-        ensemble_input = torch.tensor([1, 2, 3], dtype=torch.float)
-        expected_output = torch.tensor([2, 4, 6], dtype=torch.float)
-        assert dataloaders == "dataloaders0"
-        assert torch.allclose(ensemble_model(ensemble_input), expected_output)
-
-    def test_eval_mode(self, fake_trained_model_table):
-        fake_trained_model_table = fake_trained_model_table()
-        integration.load_ensemble_model(FakeMemberTable, fake_trained_model_table)
-        for model in fake_trained_model_table.models:
-            model.eval.assert_called_once()
-
-
-def test_get_output_selected_model():
-    model = integration.get_output_selected_model(0, 10, FakeModel(1))
-    output = model(torch.tensor([[1, 2, 3]], dtype=torch.float))
-    expected_output = torch.tensor([[11]], dtype=torch.float)
-    assert output == expected_output
 
 
 def get_fake_load_function(data):
@@ -89,36 +65,6 @@ def test_get_mappings():
 
 def fake_get_dims(dataloaders):
     return dataloaders
-
-
-def test_get_input_shape():
-    dataloaders = dict(
-        train=dict(session_id0=dict(inputs=0), session_id1=dict(inputs=1)),
-        validation=dict(session_id0=dict(inputs=2), session_id1=dict(inputs=3)),
-    )
-    shape = integration.get_input_shape(dataloaders, get_dims_func=fake_get_dims)
-    assert shape == 0
-
-
-@pytest.mark.parametrize("raw_optim_kwargs,optim_kwargs", [(None, dict()), (dict(a=1), dict(a=1))])
-def test_prepare_mei_method(raw_optim_kwargs, optim_kwargs):
-    method = dict(
-        method_id=0,
-        optim_kwargs=raw_optim_kwargs,
-        transform="module0.func1",
-        regularization=None,
-        gradient_f="module3.func6",
-        post_update=None,
-    )
-    prepared = integration.prepare_mei_method(method, import_func=lambda x: x)
-    expected = dict(
-        optim_kwargs=optim_kwargs,
-        transform="module0.func1",
-        regularization=None,
-        gradient_f="module3.func6",
-        post_update=None,
-    )
-    assert prepared == expected
 
 
 class TestModelLoader:
@@ -158,7 +104,7 @@ class TestHashListOfDictionaries:
 
     @staticmethod
     def hash_and_compare(list_of_dicts1, list_of_dicts2):
-        hashed1, hashed2 = (integration.hash_list_of_dictionaries(l) for l in (list_of_dicts1, list_of_dicts2))
+        hashed1, hashed2 = (integration.hash_list_of_dictionaries(x) for x in (list_of_dicts1, list_of_dicts2))
         return hashed1 == hashed2
 
     def test_invariance_to_dictionary_key_order(self):

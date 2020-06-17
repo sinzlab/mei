@@ -2,15 +2,15 @@
 from setuptools import setup
 
 setup(
-    name="featurevis",
-    version="0.2.1",
-    description="Visualize features cells are responsive to via gradient ascent",
-    author="Erick Cobos",
-    author_email="ecobos@bcm.edu",
+    name="mei",
+    version="0.0.0",
+    description="A framework used to generate most exciting images (MEIs)",
+    author="Christoph Blessing",
+    author_email="chris24.blessing@gmail.com",
     license="MIT",
-    url="https://github.com/cajal/featurevis",
+    url="https://github.com/sinzlab/mei",
     keywords="feature visualization MEI pytorch",
-    packages=["featurevis"],
+    packages=["mei"],
     install_requires=["torch>=0.4.0", "scipy", "numpy", "torchvision", "datajoint", "nnfabrik", "pytest"],
     classifiers=[
         "Development Status :: 3 - Alpha",
