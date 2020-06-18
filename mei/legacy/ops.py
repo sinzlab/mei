@@ -458,13 +458,21 @@ class ChangeStd:
 
         Arguments:
         std (float or tensor): Desired std. If tensor, it should be the same length as x.
+        zero_mean (boolean):   If False, the mean of x will be preserved after the std is changed. Defaults to False,
+                                   such that the mean will is preserved by default.
     """
 
-    def __init__(self, std):
+    def __init__(self, std, zero_mean=False):
         self.std = std
+        self.zero_mean = zero_mean
 
     @varargin
     def __call__(self, x, iteration=None):
         x_std = torch.std(x.view(len(x), -1), dim=-1)
+        x_mean = torch.mean(x.view(len(x), -1), dim=-1)
         fixed_std = x * (self.std / (x_std + 1e-9)).view(len(x), *[1] * (x.dim() - 1))
-        return fixed_std
+
+        x_mean_rescaled = torch.mean(fixed_std.view(len(fixed_std), -1), dim=-1)
+        rescaled_x = fixed_std + (x_mean - x_mean_rescaled).view(len(x), *[1] * (x.dim() - 1))
+
+        return fixed_std if self.zero_mean else rescaled_x
