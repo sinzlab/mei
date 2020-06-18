@@ -57,18 +57,37 @@ class TrainedEnsembleModelTemplateMixin:
         self.insert1(dict(primary_key, ensemble_comment=comment))
         self.Member().insert([{**primary_key, **m} for m in models])
 
-    def load_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, EnsembleModel]:
+    def load_model(self, key: Optional[Key] = None,
+                   include_dataloader: Optional[bool] = True,
+                   include_state_dict: Optional[bool] = True,) -> Tuple[Dataloaders, integration.EnsembleModel]:
         if key is None:
             key = self.fetch1("KEY")
-        return self._load_ensemble_model(key=key)
+        return self._load_ensemble_model(key=key,
+                                         include_dataloader=include_dataloader,
+                                         include_state_dict=include_state_dict)
 
-    def _load_ensemble_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, EnsembleModel]:
+    def _load_ensemble_model(self, key: Optional[Key] = None,
+                             include_dataloader: Optional[bool] = True,
+                             include_state_dict: Optional[bool] = True,
+                             ) -> Tuple[Dataloaders, integration.EnsembleModel]:
+
         ensemble_key = (self & key).fetch1()
         model_keys = (self.Member() & ensemble_key).fetch(as_dict=True)
-        dataloaders, models = tuple(
-            list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
-        )
-        return dataloaders[0], self.ensemble_model_class(*models)
+
+        if include_dataloader:
+            dataloaders, models = tuple(
+                list(x) for x in zip(*[self.trained_model_table().load_model(key=k,
+                                                                             include_dataloader=include_dataloader,
+                                                                             include_state_dict=include_state_dict)
+                                       for k in model_keys])
+            )
+        else:
+            models = [self.trained_model_table().load_model(key=k,
+                                                       include_dataloader=include_dataloader,
+                                                       include_state_dict=include_state_dict)
+                      for k in model_keys]
+
+        return (dataloaders[0], self.ensemble_model_class(*models)) if include_dataloader else self.ensemble_model_class(*models)
 
 
 class CSRFV1SelectorTemplateMixin:
