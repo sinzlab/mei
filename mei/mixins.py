@@ -59,7 +59,7 @@ class TrainedEnsembleModelTemplateMixin:
 
     def load_model(self, key: Optional[Key] = None,
                    include_dataloader: Optional[bool] = True,
-                   include_state_dict: Optional[bool] = True,) -> Tuple[Dataloaders, integration.EnsembleModel]:
+                   include_state_dict: Optional[bool] = True,) -> Tuple[Dataloaders, EnsembleModel]:
         if key is None:
             key = self.fetch1("KEY")
         return self._load_ensemble_model(key=key,
@@ -69,7 +69,7 @@ class TrainedEnsembleModelTemplateMixin:
     def _load_ensemble_model(self, key: Optional[Key] = None,
                              include_dataloader: Optional[bool] = True,
                              include_state_dict: Optional[bool] = True,
-                             ) -> Tuple[Dataloaders, integration.EnsembleModel]:
+                             ) -> Tuple[Dataloaders, EnsembleModel]:
 
         ensemble_key = (self & key).fetch1()
         model_keys = (self.Member() & ensemble_key).fetch(as_dict=True)
