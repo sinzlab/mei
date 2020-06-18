@@ -141,7 +141,7 @@ class Jitter:
         self.max_jitter = max_jitter if isinstance(max_jitter, tuple) else (max_jitter, max_jitter)
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         # Sample how much to jitter
         jitter_y = torch.randint(-self.max_jitter[0], self.max_jitter[0] + 1, (1,), dtype=torch.int32).item()
         jitter_x = torch.randint(-self.max_jitter[1], self.max_jitter[1] + 1, (1,), dtype=torch.int32).item()
@@ -464,7 +464,7 @@ class ChangeStd:
         self.std = std
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         x_std = torch.std(x.view(len(x), -1), dim=-1)
         fixed_std = x * (self.std / (x_std + 1e-9)).view(len(x), *[1] * (x.dim() - 1))
         return fixed_std
