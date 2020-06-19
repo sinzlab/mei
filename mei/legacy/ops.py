@@ -22,7 +22,7 @@ class TotalVariation:
         self.isotropic = isotropic
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         # Using the definitions from Wikipedia.
         diffs_y = torch.abs(x[:, :, 1:] - x[:, :, -1:])
         diffs_x = torch.abs(x[:, :, :, 1:] - x[:, :, :, :-1])
@@ -50,7 +50,7 @@ class LpNorm:
         self.p = p
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         lpnorm = (torch.abs(x) ** self.p).reshape(len(x), -1).sum(-1) ** (1 / self.p)
         loss = self.weight * torch.mean(lpnorm)
         return loss
@@ -77,7 +77,7 @@ class Similarity:
         self.mask = mask
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         if len(x) < 2:
             warnings.warn("Only one image in the batch. Similarity regularization will" "return 0")
             return 0
@@ -175,7 +175,7 @@ class RandomCrop:
         self.width = width
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         crop_y = torch.randint(0, max(0, x.shape[-2] - self.height) + 1, (1,), dtype=torch.int32).item()
         crop_x = torch.randint(0, max(0, x.shape[-1] - self.width) + 1, (1,), dtype=torch.int32).item()
         cropped_x = x[..., crop_y : crop_y + self.height, crop_x : crop_x + self.width]
@@ -212,7 +212,7 @@ class BatchedCrops:
             self.mask = y_gaussian[:, None] * x_gaussian
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         if len(x) > 1:
             raise ValueError("x can only have one example.")
         if x.shape[-2] < self.height or x.shape[-1] < self.width:
@@ -249,7 +249,7 @@ class ChangeRange:
         self.x_max = x_max
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         new_x = torch.sigmoid(x) * (self.x_max - self.x_min) + self.x_min
         return new_x
 
@@ -271,7 +271,7 @@ class Resize:
         self.resample_method = resize_method
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         new_height = int(round(x.shape[-2] * self.scale_factor))
         new_width = int(round(x.shape[-1] * self.scale_factor))
         return F.upsample(x, (new_height, new_width), mode=self.resize_method)
@@ -281,7 +281,7 @@ class GrayscaleToRGB:
     """ Transforms a single channel image into three channels (by copying the channel)."""
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x,iteration=None):
         if x.dim() != 4 or x.shape[1] != 1:
             raise ValueError("Image is not grayscale!")
 
@@ -292,7 +292,7 @@ class Identity:
     """ Transform that returns the input as is."""
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         return x
 
 
@@ -309,7 +309,7 @@ class ChangeNorm:
         self.norm = norm
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         x_norm = torch.norm(x.view(len(x), -1), dim=-1)
         renorm = x * (self.norm / x_norm).view(len(x), *[1] * (x.dim() - 1))
         return renorm
@@ -328,7 +328,7 @@ class ClipRange:
         self.x_max = x_max
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         return torch.clamp(x, self.x_min, self.x_max)
 
 
@@ -352,7 +352,7 @@ class FourierSmoothing:
         self.freq_exp = freq_exp
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         # Create mask of frequencies (following np.fft.rfftfreq and np.fft.fftfreq docs)
         h, w = x.shape[-2:]
         freq_y = (
@@ -379,7 +379,7 @@ class DivideByMeanOfAbsolute:
     """ Divides x by the mean of absolute x. """
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         return x / torch.abs(x).view(len(x), -1).mean(-1)
 
 
