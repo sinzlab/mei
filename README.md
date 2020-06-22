@@ -1,4 +1,6 @@
 # MEI
+![Black](https://github.com/cblessing24/mei/workflows/Black/badge.svg)
+
 Generate most exciting images (MEIs).
 
 ## Installation
