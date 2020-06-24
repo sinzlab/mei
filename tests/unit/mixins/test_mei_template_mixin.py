@@ -55,7 +55,7 @@ class TestMake:
     @pytest.fixture
     def objective_table(self):
         objective_table = MagicMock(name="objective_table")
-        objective_table.return_value.get_output_selected_model.return_value = "output_selected_model"
+        objective_table.return_value.get_objective.return_value = "objective"
         return objective_table
 
     @pytest.fixture
@@ -78,9 +78,9 @@ class TestMake:
         mei_template().make(key)
         model_loader.load.assert_called_once_with(key=key)
 
-    def test_if_correct_model_output_is_selected(self, key, mei_template, objective_table):
+    def test_if_get_objective_is_correctly_called(self, key, mei_template, objective_table):
         mei_template().make(key)
-        objective_table.return_value.get_output_selected_model.assert_called_once_with("model", key)
+        objective_table.return_value.get_objective.assert_called_once_with("model", key)
 
     def test_if_seed_is_correctly_fetched(self, key, mei_template, seed_table):
         mei_template().make(key)
@@ -89,9 +89,7 @@ class TestMake:
 
     def test_if_mei_is_correctly_generated(self, key, mei_template, method_table):
         mei_template().make(key)
-        method_table.return_value.generate_mei.assert_called_once_with(
-            "dataloaders", "output_selected_model", key, "seed"
-        )
+        method_table.return_value.generate_mei.assert_called_once_with("dataloaders", "objective", key, "seed")
 
     def test_if_mei_is_correctly_saved(self, key, mei_template, save):
         mei_template().make(key)
