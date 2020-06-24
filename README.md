@@ -133,7 +133,8 @@ method table using its  `add_method` method (see example below). This method exp
 (`method_fn`) and method configuration object (`method_config`).
 
 The function name needs to be the absolute path to a callable object. A function that can be used to generate MEIs using
-gradient ascent is provided with the framework and its path is `mei.methods.gradient_ascent`.
+gradient ascent is provided with the framework and its path is `mei.methods.gradient_ascent`. You can also implement
+your own function and use it with the framework. Further information on how to do that can be found [here](#method).
 
 The  configuration object will be passed to the function by the framework and should contain information that will be
 used by the method function to alter its behavior.
@@ -256,7 +257,8 @@ def method(dataloaders, model, config, seed):
     return mei, score, output
 ```
 
-After you have implemented your method you can use it by adding it to the MEI method table as described [here](#23-configuring-the-generation-process).
+After you have implemented your method you can use it by adding it to the MEI method table as described
+[here](#23-configuring-the-generation-process).
 
 ### Stopper
 
