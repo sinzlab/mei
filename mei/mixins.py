@@ -99,7 +99,7 @@ class CSRFV1ObjectiveTemplateMixin:
         mappings = get_mappings(dataset_config, key)
         self.insert(mappings)
 
-    def get_output_selected_model(self, model: Module, key: Key) -> constrained_output_model:
+    def get_objective(self, model: Module, key: Key) -> constrained_output_model:
         neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
         return self.constrained_output_model(model, neuron_pos, forward_kwargs=dict(data_key=session_id))
 
@@ -176,8 +176,8 @@ class MEITemplateMixin:
     def make(self, key: Key) -> None:
         dataloaders, model = self.model_loader.load(key=key)
         seed = (self.seed_table() & key).fetch1("mei_seed")
-        output_selected_model = self.objective_table().get_output_selected_model(model, key)
-        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
+        objective = self.objective_table().get_objective(model, key)
+        mei_entity = self.method_table().generate_mei(dataloaders, objective, key, seed)
         self._insert_mei(mei_entity)
 
     def _insert_mei(self, mei_entity: Dict[str, Any]) -> None:

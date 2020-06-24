@@ -57,7 +57,7 @@ class TestMake:
         insert.assert_called_once_with("mappings")
 
 
-class TestGetOutputSelectedModel:
+class TestGetObjective:
     @pytest.fixture
     def objective_template(self, objective_template, constrained_output_model, magic_and):
         objective_template.constrained_output_model = constrained_output_model
@@ -79,18 +79,18 @@ class TestGetOutputSelectedModel:
         return MagicMock(name="model")
 
     def test_if_neuron_position_and_session_id_are_correctly_fetched(self, key, model, objective_template, magic_and):
-        objective_template().get_output_selected_model(model, key)
+        objective_template().get_objective(model, key)
         magic_and.assert_called_once_with(key)
         magic_and.return_value.fetch1.assert_called_once_with("neuron_position", "session_id")
 
     def test_if_constrained_output_model_is_correctly_initialized(
         self, key, model, objective_template, constrained_output_model
     ):
-        objective_template().get_output_selected_model(model, key)
+        objective_template().get_objective(model, key)
         constrained_output_model.assert_called_once_with(
             model, "neuron_pos", forward_kwargs=dict(data_key="session_id")
         )
 
-    def test_if_output_selected_model_is_correctly_returned(self, key, model, objective_template):
-        output_selected_model = objective_template().get_output_selected_model(model, key)
-        assert output_selected_model == "constrained_output_model"
+    def test_if_objective_is_correctly_returned(self, key, model, objective_template):
+        objective = objective_template().get_objective(model, key)
+        assert objective == "constrained_output_model"
