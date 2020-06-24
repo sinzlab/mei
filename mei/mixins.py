@@ -71,7 +71,7 @@ class TrainedEnsembleModelTemplateMixin:
         return dataloaders[0], self.ensemble_model_class(*models)
 
 
-class CSRFV1SelectorTemplateMixin:
+class CSRFV1ObjectiveTemplateMixin:
     definition = """
     # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
     # the model. 
@@ -87,7 +87,7 @@ class CSRFV1SelectorTemplateMixin:
     constrained_output_model = ConstrainedOutputModel
 
     insert: Callable[[Iterable], None]
-    __and__: Callable[[Mapping], CSRFV1SelectorTemplateMixin]
+    __and__: Callable[[Mapping], CSRFV1ObjectiveTemplateMixin]
     fetch1: Callable
 
     @property
@@ -151,7 +151,7 @@ class MEITemplateMixin:
     # contains maximally exciting images (MEIs)
     -> self.method_table
     -> self.trained_model_table
-    -> self.selector_table
+    -> self.objective_table
     -> self.seed_table
     ---
     mei                 : attach@minio  # the MEI as a tensor
@@ -160,7 +160,7 @@ class MEITemplateMixin:
     """
 
     trained_model_table = None
-    selector_table = None
+    objective_table = None
     method_table = None
     seed_table = None
     model_loader_class = integration.ModelLoader
@@ -176,7 +176,7 @@ class MEITemplateMixin:
     def make(self, key: Key) -> None:
         dataloaders, model = self.model_loader.load(key=key)
         seed = (self.seed_table() & key).fetch1("mei_seed")
-        output_selected_model = self.selector_table().get_output_selected_model(model, key)
+        output_selected_model = self.objective_table().get_output_selected_model(model, key)
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
         self._insert_mei(mei_entity)
 
