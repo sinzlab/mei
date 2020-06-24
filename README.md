@@ -240,6 +240,24 @@ process. This information is used by various components in the framework. The at
 
 This section describes each component type in greater detail and how you can implement your own variants.
 
+### Method
+
+This component is the point of entry for the whole optimization process.
+
+It will be called with your NNFabrik-style dataloaders dictionary, your model, your configuration object and an
+integer representing the seed. It must return the MEI, a float representing the score the MEI achieved and an output
+object. The MEI and the output object must be compatible with PyTorch's `save` function.
+
+##### Example
+
+```python
+def method(dataloaders, model, config, seed):
+    """Generates a MEI."""
+    return mei, score, output
+```
+
+After you have implemented your method you can use it by adding it to the MEI method table as described [here](#23-configuring-the-generation-process).
+
 ### Stopper
 
 This component is used to check whether or not to stop the MEI generation process based on the current state of the
