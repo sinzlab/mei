@@ -37,25 +37,28 @@ class TrainedEnsembleModel(TrainedEnsembleModelTemplate):
 
 
 
-#### 1.2 Selector Table
+#### 1.2 Objective Table
 
 This table has two jobs:
 
-1. Contain information that can be used to map the ID of a real neuron to the index of the corresponding unit in the 
-   model's output
-2. Provide a method that can be used to constrain a model to a single output unit
+1. Provide a method that can be used to get the to-be-optimized objective.
+2. Contain the information that is needed to come up with the aforementioned objective.
 
-Note that you will have to implement your own selector table because the exact implementation is heavily dependent on 
+Note that you will have to implement your own objective table because the exact implementation is heavily dependent on 
 the structure of the data you want to use and the architecture of your models. 
 
 ##### Example
+
+The objective table implemented below contains information that can be used to map the ID of a real neuron (`neuron_id`)
+to the index of its corresponding output unit (`output_unit`) in the model's output. The `get_objective`
+method uses this information to constrain a given model to a single output unit and therefore to a single real neuron.
 
 ```python
 from mei.modules import ConstrainedOutputModel
 
 
 @schema
-class Selector(dj.Computed):
+class Objective(dj.Computed):
     definition = """
     -> self.dataset_table
     neuron_id:		int
@@ -68,19 +71,20 @@ class Selector(dj.Computed):
     def make(self, key):
         """Fills the table."""
         
-    def get_output_selected_model(self, model, key):
+    def get_objective(self, model, key):
         output_unit = (self & key).fetch1("output_unit")
         return ConstrainedOutputModel(model, output_unit)
 ```
 
-Your implementation must provide a method  called `get_output_selected_model` that has a PyTorch module (`model`) and a
-dictionary (`key`) as its only parameters and that must return a PyTorch module. The returned module must furthermore
-have its output constrained to a single unit.
+Your implementation must provide a method  called `get_objective` that has a PyTorch module (`model`) and a
+dictionary (`key`) as its only parameters and that must return a PyTorch module representing the objective. The returned
+module must itself return
+a scalar value when called.
 
 #### 1.4 MEI Table
 
 This table contains generated MEIs. You can create your own MEI table by inheriting from the provided template class.
-Afterwards you have to link up your table with your trained (ensemble) model and selector tables via class attributes.
+Afterwards you have to link up your table with your trained (ensemble) model and objective tables via class attributes.
 
 ##### Example
 
@@ -91,7 +95,7 @@ from mei.main import MEITemplate
 @schema
 class MEI(MEITemplate):
     trained_model_table = TrainedEnsembleModel
-    selector_table = Selector
+    objective_table = Objective
 ```
 
 ### 2. Generating MEIs
@@ -115,15 +119,15 @@ ensemble.
 TrainedEnsembleModel().create_ensemble(key, comment="My ensemble")
 ```
 
-#### 2.2 Populating the Selector Table
+#### 2.2 Populating the Objective Table
 
-Before generating MEIs you have to populate the selector table by either calling its `populate` method if your
+Before generating MEIs you have to populate the objective table by either calling its `populate` method if your
 implementation provides it or by manually inserting entries.
 
 ##### Example
 
 ```python
-Selector().populate()
+Objective().populate()
 ```
 
 #### 2.3 Configuring the Generation Process
