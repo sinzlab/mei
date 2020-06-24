@@ -37,8 +37,8 @@ def test_if_model_loader_is_correctly_initialized(mei_template, trained_model_ta
 
 class TestMake:
     @pytest.fixture
-    def mei_template(self, mei_template, selector_table, method_table, seed_table, insert1, save, model_loader_class):
-        mei_template.selector_table = selector_table
+    def mei_template(self, mei_template, objective_table, method_table, seed_table, insert1, save, model_loader_class):
+        mei_template.objective_table = objective_table
         mei_template.method_table = method_table
         mei_template.seed_table = seed_table
         mei_template.insert1 = insert1
@@ -53,10 +53,10 @@ class TestMake:
         return mei_template
 
     @pytest.fixture
-    def selector_table(self):
-        selector_table = MagicMock(name="selector_table")
-        selector_table.return_value.get_output_selected_model.return_value = "output_selected_model"
-        return selector_table
+    def objective_table(self):
+        objective_table = MagicMock(name="objective_table")
+        objective_table.return_value.get_output_selected_model.return_value = "output_selected_model"
+        return objective_table
 
     @pytest.fixture
     def method_table(self):
@@ -78,9 +78,9 @@ class TestMake:
         mei_template().make(key)
         model_loader.load.assert_called_once_with(key=key)
 
-    def test_if_correct_model_output_is_selected(self, key, mei_template, selector_table):
+    def test_if_correct_model_output_is_selected(self, key, mei_template, objective_table):
         mei_template().make(key)
-        selector_table.return_value.get_output_selected_model.assert_called_once_with("model", key)
+        objective_table.return_value.get_output_selected_model.assert_called_once_with("model", key)
 
     def test_if_seed_is_correctly_fetched(self, key, mei_template, seed_table):
         mei_template().make(key)
