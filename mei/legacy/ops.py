@@ -462,7 +462,7 @@ class ChangeStd:
                                    such that the mean will is preserved by default.
     """
 
-    def __init__(self, std, zero_mean=False):
+    def __init__(self, std, zero_mean=True):
         self.std = std
         self.zero_mean = zero_mean
 
