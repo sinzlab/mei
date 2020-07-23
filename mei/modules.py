@@ -57,6 +57,8 @@ class ConstrainedOutputModel(Module):
     def __init__(self, model: Module, constraint: int, target_fn=None, forward_kwargs: Dict[str, Any] = None):
         """Initializes ConstrainedOutputModel."""
         super().__init__()
+        if target_fn is None:
+            target_fn = lambda x: x
         self.model = model
         self.constraint = constraint
         self.forward_kwargs = forward_kwargs if forward_kwargs else dict()
@@ -74,7 +76,7 @@ class ConstrainedOutputModel(Module):
             A tensor representing the constrained output of the model.
         """
         output = self.model(x, *args, **self.forward_kwargs, **kwargs)
-        return self.target_fn(output[:, self.constraint]) if self.target_fn is not None else output[:, self.constraint]
+        return self.target_fn(output[:, self.constraint])
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self.model}, {self.constraint}, forward_kwargs={self.forward_kwargs})"
