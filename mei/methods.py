@@ -12,9 +12,13 @@ from .import_helpers import import_object
 from .tracking import Tracker
 
 
-def get_input_dimensions(dataloaders, get_dims):
-    dataloaders_dimensions = list(get_dims(dataloaders["train"]).values())
-    return list(dataloaders_dimensions[0].values())[0]
+def get_input_dimensions(dataloaders, get_dims, data_key=None):
+    if data_key is None or data_key not in dataloaders["train"]:
+        dataloaders_dimensions = list(get_dims(dataloaders["train"]).values())
+        return list(dataloaders_dimensions[0].values())[0]
+    else:
+        return get_dims(dataloaders["train"])[data_key]["inputs"]
+
 
 
 def gradient_ascent(
@@ -104,7 +108,9 @@ def gradient_ascent(
     model.to(config["device"])
 
     n_meis = config.get("n_meis", 1)
-    shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims))
+
+    data_key = model.forward_kwargs["data_key"]
+    shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
 
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
     initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"])
