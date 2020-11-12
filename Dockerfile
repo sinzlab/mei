@@ -9,7 +9,7 @@ RUN chmod 400 id_rsa && \
     ssh-add id_rsa && \
     ssh-keyscan -H github.com >> /etc/ssh/ssh_known_hosts && \
     git clone git@github.com:sinzlab/nnfabrik /src/nnfabrik && \
-    git clone git@github.com:sinzlab/ml-utils /src/ml-utils
+    git clone git@github.com:sinzlab/neuralpredictors /src/neuralpredictors
 
 
 
