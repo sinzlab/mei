@@ -17,7 +17,8 @@ def get_input_dimensions(dataloaders, get_dims, data_key=None):
         dataloaders_dimensions = list(get_dims(dataloaders["train"]).values())
         return list(dataloaders_dimensions[0].values())[0]
     else:
-        return get_dims(dataloaders["train"])[data_key]["inputs"]
+        in_name = "images" if "images" in dataloaders["train"][data_key].dataset.statistics.keys() else "inputs"
+        return get_dims(dataloaders["train"])[data_key][in_name]
 
 
 
