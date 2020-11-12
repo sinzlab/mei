@@ -12,9 +12,13 @@ from .import_helpers import import_object
 from .tracking import Tracker
 
 
-def get_input_dimensions(dataloaders, get_dims):
-    dataloaders_dimensions = list(get_dims(dataloaders["train"]).values())
-    return list(dataloaders_dimensions[0].values())[0]
+def get_input_dimensions(dataloaders, get_dims, data_key=None):
+    if data_key is None or data_key not in dataloaders["train"]:
+        dataloaders_dimensions = list(get_dims(dataloaders["train"]).values())
+        return list(dataloaders_dimensions[0].values())[0]
+    else:
+        return get_dims(dataloaders["train"])[data_key]["inputs"]
+
 
 
 def gradient_ascent(
@@ -88,7 +92,7 @@ def gradient_ascent(
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
     for component_name, component_config in config.items():
-        if component_name in ("device", "objectives"):
+        if component_name in ("device", "objectives", "n_meis", "mei_shape"):
             continue
         if "kwargs" not in component_config:
             component_config["kwargs"] = dict()
@@ -103,9 +107,13 @@ def gradient_ascent(
     model.eval()
     model.to(config["device"])
 
-    shape = get_input_dimensions(dataloaders, get_dims)
+    n_meis = config.get("n_meis", 1)
+
+    data_key = model.forward_kwargs["data_key"]
+    shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
+
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
-    initial_guess = create_initial_guess(1, *shape[1:]).to(config["device"])
+    initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"])
 
     optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
     stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])
