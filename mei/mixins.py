@@ -204,7 +204,7 @@ class MEITemplateMixin:
         with self.get_temp_dir() as temp_dir:
             for name in ("mei", "output"):
                 self._save_to_disk(mei_entity, temp_dir, name)
-            self.insert1(mei_entity)
+            self.insert1(mei_entity, ignore_extra_fields=True)
 
     def _save_to_disk(self, mei_entity: Dict[str, Any], temp_dir: str, name: str) -> None:
         data = mei_entity.pop(name)

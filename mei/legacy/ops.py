@@ -3,6 +3,7 @@ import warnings
 import torch
 import torch.nn.functional as F
 from scipy import signal
+from mlutils.regularizers import LaplaceL2
 
 from mei.legacy.utils import varargin
 
@@ -114,6 +115,46 @@ class Similarity:
         loss = self.weight * similarity
 
         return loss
+
+
+class BoxContrast():
+    def __init__(self, weight=0.1, filter_size=7, box_constraint=10, p=2, padding=0, l1_weight=1e-3):
+        self.weight = weight
+        self.filter_size = filter_size
+        self.box_constraint = box_constraint
+        self.p = p
+        self.box_filter = torch.ones([1, 1, filter_size, filter_size])
+        self.ReLU = torch.nn.ReLU()
+        self.padding = padding
+        self.l1_regularizer = LpNorm(weight=l1_weight, p=1)
+
+    @varargin
+    def __call__(self, x, iteration=None):
+        box_loss = self.weight * torch.mean(self.ReLU(F.conv2d(x**2, self.box_filter.to(x.device), padding=self.padding)
+                                                 - self.box_constraint) ** self.p)
+        l1_loss = self.l1_regularizer(x)
+        return box_loss + l1_loss
+
+
+class BoxContrastPixelL2():
+    def __init__(self, weight=0.1, upper=2.0, lower=-1.5, p=2, l2_weight=1, l1_weight=0, filter_size=3):
+        self.weight = weight
+        self.upper = upper
+        self.lower = lower
+        self.p = p
+        self.ReLU = torch.nn.ReLU()
+        self.l2_regularizer = LaplaceL2(filter_size=filter_size)
+        self.l2_weight = l2_weight
+        self.l1_regularizer = LpNorm(weight=l1_weight, p=1)
+
+    @varargin
+    def __call__(self, x, iteration=None):
+        pixel_loss = self.weight * torch.sum((self.ReLU(x - self.upper) ** self.p)
+                                              + self.ReLU(-(x - self.lower) ** self.p))
+
+        l2_loss = self.l2_weight * self.l2_regularizer.to(x.device)(x, avg=True)
+        l1_loss = self.l1_regularizer(x)
+        return pixel_loss + l2_loss + l1_loss
 
 
 # class PixelCNN():
