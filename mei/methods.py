@@ -93,7 +93,7 @@ def gradient_ascent(
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
     for component_name, component_config in config.items():
-        if component_name in ("device", "objectives", "n_meis", "mei_shape"):
+        if component_name in ("device", "objectives", "n_meis", "mei_shape", "model_forward_kwargs"):
             continue
         if "kwargs" not in component_config:
             component_config["kwargs"] = dict()
@@ -109,6 +109,8 @@ def gradient_ascent(
     model.to(config["device"])
 
     n_meis = config.get("n_meis", 1)
+    model_forward_kwargs = config.get("model_forward_kwargs", dict())
+    model.forward_kwargs.update(model_forward_kwargs)
 
     data_key = model.forward_kwargs["data_key"]
     shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
