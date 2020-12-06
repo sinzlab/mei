@@ -5,8 +5,26 @@ from typing import Mapping, Any
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 
 
+def resolve_object_path(path: str):
+    module_path, name = split_module_name(path)
+    if not module_path:
+        raise ValueError(f"'{path}' is not a absolute path")
+    try:
+        obj = dynamic_import(module_path, name)
+    except ModuleNotFoundError:
+        raise ValueError(f"Module in '{path}' not found")
+    except AttributeError:
+        raise ValueError(f"Object in '{path}' not found")
+    if not callable(obj):
+        raise ValueError(f"Imported object from '{path}' is not callable")
+    return obj
+
+
 def import_object(
-    path: str, object_kwargs: Mapping[str, Any] = None, split_func=split_module_name, import_func=dynamic_import,
+    path: str,
+    object_kwargs: Mapping[str, Any] = None,
+    split_func=split_module_name,
+    import_func=dynamic_import,
 ) -> Any:
     """Imports an object given a path, calls it with the given keyword arguments and returns the object returned by the
     imported object.
