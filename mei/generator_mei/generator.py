@@ -72,7 +72,7 @@ class BankFactorGenerator(nn.Module):
         f2 = F.linear(self.factor2_bank, self.factor2_weights)
         comb = f1 * f2
         comb = comb.view(*comb.shape[:-1], self.n_inputs, self.n_factors).sum(dim=-1)
-        return comb.permute(-1, *range(len(comb.shape) - 1)) + self.modules
+        return comb.permute(-1, *range(len(comb.shape) - 1)) + self.mu
 
 
 class CPPN(nn.Module):
@@ -163,6 +163,7 @@ class ExpandedCPPN(nn.Module):
         aux_dim=1,
         out_channels=1,
         expand_sinusoids=True,
+        output_range=(0, 255),
         nonlinearity=nn.Tanh,
         final_nonlinearity=nn.Sigmoid,
         bias=False,
@@ -214,6 +215,9 @@ class ExpandedCPPN(nn.Module):
         elements.append((f"nonlinearity{layers-1}", final_nonlinearity()))
 
         self.func = nn.Sequential(OrderedDict(elements))
+
+        self.delta = output_range[1] - output_range[0]
+        self.base = output_range[0]
 
         self.apply(self.weights_init)
 
@@ -270,7 +274,7 @@ class ExpandedCPPN(nn.Module):
         )  # n_images x h x w x (fixed_dim + aux_dim)
         y = self.func(x).permute(0, -1, *tuple(range(1, self.ndim + 1)))
 
-        return y
+        return y * self.delta + self.base
 
 
 class ExpandedCPPNGenerator(nn.Module):
@@ -281,6 +285,7 @@ class ExpandedCPPNGenerator(nn.Module):
         n_neurons=None,
         out_channels=None,
         # cppn-specific arguments
+        output_range=(0, 255),
         layers=8,
         width=15,
         expand_sinusoids=True,
@@ -304,6 +309,7 @@ class ExpandedCPPNGenerator(nn.Module):
             aux_dim=aux_dim,
             layers=layers,
             width=width,
+            output_range=output_range,
             expand_sinusoids=expand_sinusoids,
             out_channels=out_channels,
             nonlinearity=nonlinearity,
