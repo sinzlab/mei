@@ -16,10 +16,11 @@ class Tracker:
             list of objects representing the corresponding results.
     """
 
-    def __init__(self, **objectives: Callable):
+    def __init__(self, verbose=False, **objectives: Callable):
         """Initializes Tracker."""
         self.objectives = objectives
         self.log = {n: dict(times=list(), values=list()) for n in objectives}
+        self.verbose = verbose
 
     def track(self, current_state: State) -> None:
         """Passes the current state of the MEI optimization process to each objective and logs the result."""
@@ -27,6 +28,8 @@ class Tracker:
             if (result := objective(current_state)) is not None:
                 self.log[name]["times"].append(current_state.i_iter)
                 self.log[name]["values"].append(result)
+                if self.verbose:
+                    print("{}: {}={}".format(current_state.i_iter, name, result))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}({', '.join(self.objectives)})"
