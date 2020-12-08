@@ -14,8 +14,11 @@ class FixedInputGenerator(nn.Module):
 
 
 class FactorizedInputGenerator(nn.Module):
-    def __init__(self, input_shape, n_factors=3, split=3, mu=0, sigma=1, n_inputs=1):
+    def __init__(
+        self, input_shape, n_factors=3, split=3, mu=0, sigma=1, n_inputs=1, t_gamma=1.0
+    ):
         super().__init__()
+        self.t_gamma = t_gamma
         target_shape = tuple(input_shape[1:])
         split -= 1
         factor_one_shape = target_shape[:split] + (1,) * (len(target_shape) - split)
@@ -41,6 +44,13 @@ class FactorizedInputGenerator(nn.Module):
         return (self.factor_weights @ bases.view(orig_shape[0], -1)).view(
             -1, *orig_shape[1:]
         ) + self.mu
+
+    def regularization(self):
+        temp_variation = 0.0
+        for temp_part, spatial_part in self.base_factors:
+            temp_variation += torch.abs(temp_part[:, 1:] - temp_part[:, :-1]).sum()
+
+        return temp_variation * self.t_gamma
 
 
 class BankFactorGenerator(nn.Module):
@@ -83,7 +93,7 @@ class CPPN(nn.Module):
         hiddens=(10, 10, 10),
         output_range=(0, 255),
         activation=None,
-        bias=1.0,
+        bias=0.0,
         std=1.0,
     ):
         super().__init__()
@@ -322,6 +332,11 @@ class ExpandedCPPNGenerator(nn.Module):
         #         return torch.sigmoid(self._neuron_embeddings)
         return self._neuron_embeddings
 
-    def forward(self, out_shape=None):
+    def forward(self, out_shape=None, neuron_embeddings=None):
         out_shape = out_shape if out_shape is not None else self.out_shape
-        return self.cppn(self.neuron_embeddings, out_shape)
+        neuron_embeddings = (
+            neuron_embeddings
+            if neuron_embeddings is not None
+            else self.neuron_embeddings
+        )
+        return self.cppn(neuron_embeddings, out_shape)

@@ -99,9 +99,11 @@ class MEI:
         transformed_input = self.transform(current_input, iteration=self.i_iteration)
         state["transformed_input"] = transformed_input.data.cpu().clone()
         evaluation = self.func(transformed_input)
-        state["evaluation"] = evaluation.item()  # extract scaler value
+        state["evaluation"] = float(evaluation)  # extract scaler value
         reg_term = self.regularization(transformed_input, iteration=self.i_iteration)
-        state["reg_term"] = reg_term.item()
+        if hasattr(self.generator, "regularization"):
+            reg_term += self.generator.regularization()
+        state["reg_term"] = float(reg_term)
         (-evaluation + reg_term).backward()
         state["grad"] = 0
         self.precondition(self.generator, self.i_iteration)
