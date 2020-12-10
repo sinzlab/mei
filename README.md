@@ -1,6 +1,6 @@
 # MEI
-![Test](https://github.com/cblessing24/mei/workflows/Test/badge.svg)
-![Black](https://github.com/cblessing24/mei/workflows/Black/badge.svg)
+![Test](https://github.com/sinzlab/mei/workflows/Test/badge.svg)
+![Black](https://github.com/sinzlab/mei/workflows/Black/badge.svg)
 
 Generate most exciting inputs (MEIs).
 
