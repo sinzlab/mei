@@ -20,7 +20,7 @@ def gradient_ascent(
     save_iters=None,
     print_iters=100,
 ):
-    """ Maximize f(x) via gradient ascent.
+    """Maximize f(x) via gradient ascent.
 
     Objective: f(transform(x)) - regularization(transform(x))
     Update: x_{t+1} = post_update(x_{t} + step_size * gradient_f(x_{t}.grad))

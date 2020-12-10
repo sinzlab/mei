@@ -12,7 +12,14 @@ from mei.tracking import Tracker
 class TestGradientAscent:
     @pytest.fixture
     def gradient_ascent(
-        self, dataloaders, model, get_dims, mei_class, import_func, optimize_func, tracker_cls,
+        self,
+        dataloaders,
+        model,
+        get_dims,
+        mei_class,
+        import_func,
+        optimize_func,
+        tracker_cls,
     ):
         return partial(
             methods.gradient_ascent,
