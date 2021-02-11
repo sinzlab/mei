@@ -3,7 +3,7 @@ import warnings
 import torch
 import torch.nn.functional as F
 from scipy import signal
-from mlutils.regularizers import LaplaceL2
+from neuralpredictors.regularizers import LaplaceL2
 
 from mei.legacy.utils import varargin
 
