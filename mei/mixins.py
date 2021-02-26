@@ -57,18 +57,37 @@ class TrainedEnsembleModelTemplateMixin:
         self.insert1(dict(primary_key, ensemble_comment=comment))
         self.Member().insert([{**primary_key, **m} for m in models])
 
-    def load_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, EnsembleModel]:
+    def load_model(self, key: Optional[Key] = None,
+                   include_dataloader: Optional[bool] = True,
+                   include_state_dict: Optional[bool] = True,) -> Tuple[Dataloaders, EnsembleModel]:
         if key is None:
             key = self.fetch1("KEY")
-        return self._load_ensemble_model(key=key)
+        return self._load_ensemble_model(key=key,
+                                         include_dataloader=include_dataloader,
+                                         include_state_dict=include_state_dict)
 
-    def _load_ensemble_model(self, key: Optional[Key] = None) -> Tuple[Dataloaders, EnsembleModel]:
+    def _load_ensemble_model(self, key: Optional[Key] = None,
+                             include_dataloader: Optional[bool] = True,
+                             include_state_dict: Optional[bool] = True,
+                             ) -> Tuple[Dataloaders, EnsembleModel]:
+
         ensemble_key = (self & key).fetch1()
         model_keys = (self.Member() & ensemble_key).fetch(as_dict=True)
-        dataloaders, models = tuple(
-            list(x) for x in zip(*[self.trained_model_table().load_model(key=k) for k in model_keys])
-        )
-        return dataloaders[0], self.ensemble_model_class(*models)
+
+        if include_dataloader:
+            dataloaders, models = tuple(
+                list(x) for x in zip(*[self.trained_model_table().load_model(key=k,
+                                                                             include_dataloader=include_dataloader,
+                                                                             include_state_dict=include_state_dict)
+                                       for k in model_keys])
+            )
+        else:
+            models = [self.trained_model_table().load_model(key=k,
+                                                       include_dataloader=include_dataloader,
+                                                       include_state_dict=include_state_dict)
+                      for k in model_keys]
+
+        return (dataloaders[0], self.ensemble_model_class(*models)) if include_dataloader else self.ensemble_model_class(*models)
 
 
 class CSRFV1SelectorTemplateMixin:
@@ -185,7 +204,7 @@ class MEITemplateMixin:
         with self.get_temp_dir() as temp_dir:
             for name in ("mei", "output"):
                 self._save_to_disk(mei_entity, temp_dir, name)
-            self.insert1(mei_entity)
+            self.insert1(mei_entity, ignore_extra_fields=True)
 
     def _save_to_disk(self, mei_entity: Dict[str, Any], temp_dir: str, name: str) -> None:
         data = mei_entity.pop(name)
