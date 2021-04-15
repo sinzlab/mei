@@ -113,7 +113,7 @@ def gradient_ascent(
     model_forward_kwargs = config.get("model_forward_kwargs", dict())
     model.forward_kwargs.update(model_forward_kwargs)
 
-    data_key = model.forward_kwargs["data_key"]
+    data_key = model.forward_kwargs.get("data_key", None)
     shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
 
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
