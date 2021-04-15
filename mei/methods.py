@@ -13,8 +13,8 @@ from .tracking import Tracker
 
 
 def get_input_dimensions(dataloaders, get_dims, data_key=None):
-    if "img_classification" in dataloaders:
-        b = next(iter(dataloaders["train"]))
+    if "img_classification" in dataloaders["train"]:
+        b = next(iter(dataloaders["train"]["img_classification"]))
         return b[0].shape
     if data_key is None or data_key not in dataloaders["train"]:
         dataloaders_dimensions = list(get_dims(dataloaders["train"]).values())
