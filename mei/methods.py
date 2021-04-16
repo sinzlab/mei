@@ -25,7 +25,6 @@ def get_input_dimensions(dataloaders, get_dims, data_key=None):
         return dimensions_dict[in_key]
 
 
-
 def gradient_ascent(
     dataloaders: Dict,
     model: Module,
@@ -97,7 +96,13 @@ def gradient_ascent(
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
     for component_name, component_config in config.items():
-        if component_name in ("device", "objectives", "n_meis", "mei_shape", "model_forward_kwargs"):
+        if component_name in (
+            "device",
+            "objectives",
+            "n_meis",
+            "mei_shape",
+            "model_forward_kwargs",
+        ):
             continue
         if "kwargs" not in component_config:
             component_config["kwargs"] = dict()
@@ -117,19 +122,32 @@ def gradient_ascent(
     model.forward_kwargs.update(model_forward_kwargs)
 
     data_key = model.forward_kwargs.get("data_key", None)
-    shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
+    shape = config.get(
+        "mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key)
+    )
 
-    create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
+    create_initial_guess = import_func(
+        config["initial"]["path"], config["initial"]["kwargs"]
+    )
     initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"])
 
-    optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
+    optimizer = import_func(
+        config["optimizer"]["path"],
+        dict(params=[initial_guess], **config["optimizer"]["kwargs"]),
+    )
     stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])
 
-    objectives = {o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]}
+    objectives = {
+        o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]
+    }
     tracker = tracker_cls(**objectives)
 
     optional_names = ("transform", "regularization", "precondition", "postprocessing")
-    optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if n in config}
+    optional = {
+        n: import_func(config[n]["path"], config[n]["kwargs"])
+        for n in optional_names
+        if n in config
+    }
 
     mei = mei_class(model, initial_guess, optimizer, **optional)
 
