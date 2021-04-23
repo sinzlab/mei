@@ -1,6 +1,6 @@
 """This module contains PyTorch modules used in the MEI optimization process."""
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import torch
 from torch import Tensor
@@ -54,7 +54,13 @@ class ConstrainedOutputModel(Module):
             called. Optional.
     """
 
-    def __init__(self, model: Module, constraint: int, target_fn=None, forward_kwargs: Dict[str, Any] = None):
+    def __init__(
+        self,
+        model: Module,
+        constraint: (int, List),
+        target_fn=None,
+        forward_kwargs: Dict[str, Any] = None,
+    ):
         """Initializes ConstrainedOutputModel."""
         super().__init__()
         if target_fn is None:
@@ -76,7 +82,11 @@ class ConstrainedOutputModel(Module):
             A tensor representing the constrained output of the model.
         """
         output = self.model(x, *args, **self.forward_kwargs, **kwargs)
-        return self.target_fn(output[:, self.constraint])
+        return (
+            self.target_fn(output)
+            if (not self.constraint and self.constraint != 0)
+            else self.target_fn(output[:, self.constraint])
+        )
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self.model}, {self.constraint}, forward_kwargs={self.forward_kwargs})"
