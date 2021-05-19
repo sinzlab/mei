@@ -75,7 +75,11 @@ class ConstrainedOutputModel(Module):
         Returns:
             A tensor representing the constrained output of the model.
         """
-        output = self.model(x, *args, **self.forward_kwargs, **kwargs)
+        duplicate_keys = self.forward_kwargs.keys() & kwargs.keys()
+        reduced_forward_kwargs = self.forward_kwargs
+        for key in duplicate_keys:
+            reduced_forward_kwargs.pop(key)
+        output = self.model(x, *args, **reduced_forward_kwargs, **kwargs)
         return self.target_fn(output[:, self.constraint])
 
     def __repr__(self):
