@@ -21,13 +21,14 @@ class EnsembleModel(Module):
         super().__init__()
         self.members = self._module_container_cls(members)
 
-    def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
+    def __call__(self, x: Tensor, avg=True, *args, **kwargs) -> Tensor:
         """Calculates the forward pass through the ensemble.
 
         The input is passed through all individual members of the ensemble and their outputs are averaged.
 
         Args:
             x: A tensor representing the input to the ensemble.
+            avg: if true, the output is averaged by all ensemble members
             *args: Additional arguments will be passed to all ensemble members.
             **kwargs: Additional keyword arguments will be passed to all ensemble members.
 
@@ -35,8 +36,12 @@ class EnsembleModel(Module):
             A tensor representing the ensemble's output.
         """
         outputs = [m(x, *args, **kwargs) for m in self.members]
-        mean_output = torch.stack(outputs, dim=0).mean(dim=0)
-        return mean_output
+        if avg==True:
+            mean_output = torch.stack(outputs, dim=0).mean(dim=0)
+            return mean_output
+        else: 
+            stack_output = torch.stack(outputs, dim=0)
+            return stack_output
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}({', '.join(m.__repr__() for m in self.members)})"
