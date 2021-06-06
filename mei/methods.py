@@ -117,7 +117,12 @@ def gradient_ascent(
     shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
 
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
-    initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"])
+    initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"]) # (1*1*h*w)
+    
+    initial_guess =torch.cat((initial_guess,initial_guess),dim=1) # (1*2*h*w) can directly cat for grey scale
+    # print("initial_guess.shape is ",initial_guess.shape) --> # (1*1*h*w)
+    # add transparency by concatnate alpha channel
+    #transp_guess=torch.cat((initial_guess,initial_guess),dim=1)
 
     optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
     stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])
@@ -125,10 +130,11 @@ def gradient_ascent(
     objectives = {o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]}
     tracker = tracker_cls(**objectives)
 
-    optional_names = ("transform", "regularization", "precondition", "postprocessing")
+    optional_names = ("transform", "regularization", "precondition", "postprocessing","transparency")
     optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if n in config}
 
     mei = mei_class(model, initial_guess, optimizer, **optional)
+    #mei = mei_class(model, transp_guess, optimizer, **optional)
 
     final_evaluation, mei = optimize_func(mei, stopper, tracker)
     return mei, final_evaluation, tracker.log

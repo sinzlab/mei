@@ -79,6 +79,8 @@ class State:
         reg_term: float,
         input_: Tensor,
         transformed_input: Tensor,
+        #transparent_input: Tensor,
+        mean_alpha_value: Tensor,
         post_processed_input: Tensor,
         grad: Tensor,
         preconditioned_grad: Tensor,
@@ -89,6 +91,8 @@ class State:
         self.reg_term = reg_term
         self.input = input_
         self.transformed_input = transformed_input
+        #self.transparent_input = transparent_input
+        self.mean_alpha_value = mean_alpha_value
         self.post_processed_input = post_processed_input
         self.grad = grad
         self.preconditioned_grad = preconditioned_grad
@@ -105,6 +109,8 @@ class State:
             reg_term=self.reg_term,
             input_=self.input,
             transformed_input=self.transformed_input,
+            #transparent_input=self.transparent_input,
+            mean_alpha_value=self.mean_alpha_value,
             post_processed_input=self.post_processed_input,
             grad=self.grad,
             preconditioned_grad=self.preconditioned_grad,

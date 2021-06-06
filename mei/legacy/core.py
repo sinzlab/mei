@@ -66,12 +66,17 @@ def gradient_ascent(
     if x.dtype != torch.float32:
         raise ValueError("x must be of torch.float32 dtype")
     x = x.detach().clone()  # to avoid changing original
+
+    print(x.shape)
+    #if transparency is not None:
+    #    x = x.expand(-1, x.shape[1]+1, -1, -1) # x.shape[1] is original color channel, 1 is for alpha channel of transparency
+    
     x.requires_grad_()
 
     # Declare optimizer
     if optim_name == "SGD":
         optimizer = optim.SGD([x], lr=step_size, **optim_kwargs)
-    elif optim_name == "Adam":
+    elif optim_name == "Adam":    
         optimizer = optim.Adam([x], lr=step_size, **optim_kwargs)
     else:
         raise ValueError("Expected optim_name to be 'SGD' or 'Adam'")
@@ -80,6 +85,8 @@ def gradient_ascent(
     fevals = []  # to store function evaluations
     reg_terms = []  # to store regularization function evaluations
     saved_xs = []  # to store xs (ignored if save_iters is None)
+
+
     for i in range(1, num_iterations + 1):
         # Zero gradients
         if x.grad is not None:
@@ -100,7 +107,7 @@ def gradient_ascent(
             reg_term = 0
 
         # Compute gradient
-        (-feval + reg_term).backward()
+        (-feval + reg_term).backward() # add -transparency here???
         if x.grad is None:
             raise FeatureVisException("Gradient did not reach x.")
 

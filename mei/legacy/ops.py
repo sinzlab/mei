@@ -6,7 +6,7 @@ from scipy import signal
 from neuralpredictors.regularizers import LaplaceL2
 
 from mei.legacy.utils import varargin
-
+from torch import Tensor
 
 ################################## REGULARIZERS ##########################################
 class TotalVariation:
@@ -337,6 +337,7 @@ class Identity:
         return x
 
 
+
 ############################## GRADIENT OPERATIONS #######################################
 class ChangeNorm:
     """ Change the norm of the input.
@@ -517,3 +518,28 @@ class ChangeStd:
         rescaled_x = fixed_std + (x_mean - x_mean_rescaled).view(len(x), *[1] * (x.dim() - 1))
 
         return fixed_std if self.zero_mean else rescaled_x
+
+
+########################### Transparency OPERATIONS #######################################
+class Transparency: 
+    """ Take a random crop of the input image.
+
+    Arguments:
+        the background want to use to generate MEI
+    """
+
+    def __init__(self, background):
+        self.background = background ### note1 background need to be randomize in every iteration!!!
+
+
+
+    @varargin
+    def __call__(self, x, iteration=None):
+
+        ch_img, ch_alpha = x[:,:-1,...], x[:,-1,...]
+        ch_bg=torch.from_numpy(self.background).cuda()
+
+        x_transparent = ch_bg*(1.0-ch_alpha) + ch_img*ch_alpha #alpha smaller-->more transparent
+
+        x_concat=torch.cat((x_transparent,ch_alpha.view(1,1,72,128)),dim=1)
+        return x_concat, torch.mean(x_concat[:,-1,...])
