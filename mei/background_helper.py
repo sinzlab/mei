@@ -33,7 +33,7 @@ def bg_gen(sd=1,decay_power=1,norm_method=0):
     ## method1 (relative linearly)
     if norm_method==1:
         x=2*img-1
-        norm_img=x / max(1.0, max(abs(x).flatten()))
+        norm_img=x / max(1, max(abs(x).flatten()))
         norm_img=norm_img/2+0.5 #constrain_L_inf(2*t-1)/2 + 0.5
   
     ## method2 (sigmoid, non-linear)
@@ -41,3 +41,12 @@ def bg_gen(sd=1,decay_power=1,norm_method=0):
         norm_img=expit(img) 
     
     return norm_img 
+
+
+def bg_wn(mean,std,shape=(72,128)):
+    bg_img=np.random.normal(mean, std, shape)
+    #print(bg_img)
+    #bg_img = np.clip(bg_img, -1.96, 2.12)
+    rang=max(max(bg_img.flatten()),abs(min(bg_img.flatten())))
+    bg_img=bg_img/rang*2.12 # such that each pixel range in (-2.12,2.12)
+    return bg_img

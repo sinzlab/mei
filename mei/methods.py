@@ -119,7 +119,9 @@ def gradient_ascent(
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
     initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"]) # (1*1*h*w)
     
-    initial_guess =torch.cat((initial_guess,initial_guess),dim=1) # (1*2*h*w) can directly cat for grey scale
+    initial_alpha=(torch.ones(*initial_guess.shape)*0.5).to(config["device"])
+    initial_guess =torch.cat((initial_guess,initial_alpha),dim=1)
+    #initial_guess =torch.cat((initial_guess,initial_guess),dim=1) # (1*2*h*w) can directly cat for grey scale
     # print("initial_guess.shape is ",initial_guess.shape) --> # (1*1*h*w)
     # add transparency by concatnate alpha channel
     #transp_guess=torch.cat((initial_guess,initial_guess),dim=1)

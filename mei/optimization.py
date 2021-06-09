@@ -11,7 +11,7 @@ from .domain import Input, State
 from .stoppers import OptimizationStopper
 from .tracking import Tracker
 
-from .background_helper import bg_gen
+from .background_helper import bg_gen,bg_wn
 
 # noinspection PyUnusedLocal
 def default_transform(mei: Tensor, i_iteration: int) -> Tensor:
@@ -105,7 +105,8 @@ class MEI:
 
     def transparentize(self) -> Tensor:
         ch_img, ch_alpha = self._current_input.tensor[:,:-1,...], self._current_input.tensor[:,-1,...]
-        ch_bg=torch.from_numpy(bg_gen(1,1,1)).cuda()
+        #ch_bg=torch.from_numpy(bg_gen(1,1,2)).cuda()
+        ch_bg=torch.from_numpy(bg_wn(0,1)).cuda()
         transparentized_mei = ch_bg*(1.0-ch_alpha) + ch_img*ch_alpha
         # print("min and max alpha channel ",torch.min(ch_alpha).item(),torch.max(ch_alpha).item()) # (0,1)
         return transparentized_mei
