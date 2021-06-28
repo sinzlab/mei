@@ -9,6 +9,7 @@ from mei.legacy.utils import varargin
 from torch import Tensor
 from nnfabrik import builder
 import random
+import numpy as np
 ################################## REGULARIZERS ##########################################
 class TotalVariation:
     """ Total variation regularization.
@@ -208,6 +209,22 @@ class NatImgBackground():
 
         return random.choice(self.images)
     
+class WhiteNoiseBackground():
+    def __init__(self, mean, std,shape=(72,128),strength=1):
+        self.mean = mean
+        self.std = std
+        self.shape = shape
+        self.strength = strength
+
+    @varargin
+    def __call__(self, x, iteration=None):
+        bg_img=np.random.normal(self.mean, self.std, self.shape).astype('f')
+        #print(bg_img)
+        #bg_img = np.clip(bg_img, -1.96, 2.12)
+        rang=max(max(bg_img.flatten()),abs(min(bg_img.flatten())))
+        bg_img=bg_img/rang*2.12*self.strength # such that each pixel range in (-2.12,2.12)
+        return torch.as_tensor(bg_img)
+
 ################################ TRANSFORMS ##############################################
 class Jitter:
     """ Jitter the image at random by some certain amount.
@@ -498,17 +515,19 @@ class GaussianBlur:
             deviations to each side. Size of kernel = 8 * sigma + 1
         pad_mode (string): Mode for the padding used for the blurring. Valid values are:
             'constant', 'reflect' and 'replicate'
+        mei_only (True/False): for transparent mei, if True, no Gaussian blur for transparent channel
     """
 
-    def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode="reflect"):
+    def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode="reflect",mei_only=True):
         self.sigma = sigma if isinstance(sigma, tuple) else (sigma,) * 2
         self.decay_factor = decay_factor
         self.truncate = truncate
         self.pad_mode = pad_mode
+        self.mei_only = mei_only
 
     @varargin
     def __call__(self, x, iteration=None):
-        num_channels = x.shape[1]
+        
 
         # Update sigma if needed
         if self.decay_factor is None:
@@ -525,12 +544,20 @@ class GaussianBlur:
         x_gaussian = torch.as_tensor(x_gaussian, device=x.device, dtype=x.dtype)
 
         # Blur
-        padded_x = F.pad(x, pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
+        if self.mei_only == True:
+            num_channels = x.shape[1]-1
+            padded_x = F.pad(x[:,:-1,...], pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
+        else: # also blur transparent channel
+            num_channels = x.shape[1]
+            padded_x = F.pad(x, pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
         blurred_x = F.conv2d(padded_x, y_gaussian.repeat(num_channels, 1, 1)[..., None], groups=num_channels)
         blurred_x = F.conv2d(blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1), groups=num_channels)
         final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
-
-        return final_x
+        # print(final_x.shape)
+        if self.mei_only==True:
+            return torch.cat((final_x,x[:,-1,...].view(x.shape[0],1,x.shape[2],x.shape[3])),dim=1)
+        else:
+            return final_x
 
 
 class ChangeStd:
