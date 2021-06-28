@@ -1,5 +1,6 @@
 from scipy.special import expit
 import numpy as np
+from nnfabrik import builder
 
 def rfft2d_freqs(h, w):
     """Computes 2D spectrum frequencies."""
@@ -50,3 +51,17 @@ def bg_wn(mean,std,shape=(72,128)):
     rang=max(max(bg_img.flatten()),abs(min(bg_img.flatten())))
     bg_img=bg_img/rang*2.12 # such that each pixel range in (-2.12,2.12)
     return bg_img
+
+def bg_nat_img():
+
+
+    images = []
+    for tier in ['train','test','validation']:
+        for x,y in dataloaders['tier'][dataset_name]:
+            images.append(x.squeeze().cpu().data.numpy())
+            #responses.append(y.squeeze().cpu().data.numpy())
+    images = np.vstack(images)
+    return images
+
+### ideally
+# def bg_nat_img(dataloaders=dataloaders):

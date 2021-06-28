@@ -132,7 +132,7 @@ def gradient_ascent(
     objectives = {o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]}
     tracker = tracker_cls(**objectives)
 
-    optional_names = ("transform", "regularization", "precondition", "postprocessing","transparency")
+    optional_names = ("transform", "regularization", "precondition", "postprocessing","transparency","background")
     optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if n in config}
 
     mei = mei_class(model, initial_guess, optimizer, **optional)
@@ -140,3 +140,5 @@ def gradient_ascent(
 
     final_evaluation, mei = optimize_func(mei, stopper, tracker)
     return mei, final_evaluation, tracker.log
+
+

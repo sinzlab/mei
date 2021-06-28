@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from typing import Callable, Tuple
-
+import random
 import torch
 from torch import Tensor
 from torch.optim.optimizer import Optimizer
@@ -40,6 +40,11 @@ def default_postprocessing(mei: Tensor, i_iteration: int) -> Tensor:
     """Default postprocessing function used when not postprocessing function is provided to MEI."""
     return mei
 
+# noinspection PyUnusedLocal
+def default_background(mei: Tensor, i_iteration: int) -> Tensor:
+    """Default postprocessing function used when not postprocessing function is provided to MEI."""
+    return mei
+
 
 import numpy as np
 class MEI:
@@ -58,6 +63,7 @@ class MEI:
         regularization: Callable[[Tensor, int], Tensor] = default_regularization,
         precondition: Callable[[Tensor, int], Tensor] = default_precondition,
         postprocessing: Callable[[Tensor, int], Tensor] = default_postprocessing,
+        background:  Callable[[Tensor, int], Tensor] = default_regularization,
     ):
         """Initializes MEI.
 
@@ -90,6 +96,8 @@ class MEI:
         self._transformed = None
         self._transparency=None
         self._mean_alpha_value=0
+        self.background=background
+
     @property
     def _transformed_input(self) -> Tensor:
         if self._transformed is None:
@@ -103,11 +111,17 @@ class MEI:
             self._transparency,self._mean_alpha_value=self.transparency(self._current_input.tensor, self.i_iteration)
         return self._transparency,self._mean_alpha_value
 
+    #def load_background(self) -> Tesnsor:
+    #    if self.background is None:
+    #        self.background=bg_nat_img()
+
     def transparentize(self) -> Tensor:
         ch_img, ch_alpha = self._current_input.tensor[:,:-1,...], self._current_input.tensor[:,-1,...]
         #ch_bg=torch.from_numpy(bg_gen(1,1,2)).cuda()
-        ch_bg=torch.from_numpy(bg_wn(0,1)).cuda()
+        # ch_bg=torch.from_numpy(bg_wn(0,1)).cuda() # white noise background
+        ch_bg=self.background(self._current_input.tensor,self.i_iteration)
         transparentized_mei = ch_bg*(1.0-ch_alpha) + ch_img*ch_alpha
+        # print(torch.mean(ch_bg).item(),torch.std(ch_bg).item())
         # print("min and max alpha channel ",torch.min(ch_alpha).item(),torch.max(ch_alpha).item()) # (0,1)
         return transparentized_mei
 
@@ -127,7 +141,7 @@ class MEI:
     
         evaluation = self.evaluate()
         state["evaluation"] = evaluation.item()
-        print("evaluation score ",evaluation.item())
+        #print("evaluation score ",evaluation.item())
         reg_term = self.regularization(self._transformed_input, self.i_iteration) ### need also include transparency
         state["reg_term"] = reg_term.item()
 
@@ -136,7 +150,7 @@ class MEI:
         mean_alpha_value=self.mean_alpha_value()
         state["mean_alpha_value"]=mean_alpha_value.item()
 
-        ( (-evaluation + reg_term)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?
+        ( (-evaluation + reg_term + 0.5*mean_alpha_value)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?
         
         if self._current_input.grad is None:
             raise RuntimeError("Gradient did not reach MEI")

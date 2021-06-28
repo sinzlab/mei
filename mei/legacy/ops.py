@@ -7,7 +7,8 @@ from neuralpredictors.regularizers import LaplaceL2
 
 from mei.legacy.utils import varargin
 from torch import Tensor
-
+from nnfabrik import builder
+import random
 ################################## REGULARIZERS ##########################################
 class TotalVariation:
     """ Total variation regularization.
@@ -135,7 +136,6 @@ class BoxContrast():
         l1_loss = self.l1_regularizer(x)
         return box_loss + l1_loss
 
-
 class BoxContrastPixelL2():
     def __init__(self, weight=0.1, upper=2.0, lower=-1.5, p=2, l2_weight=1, l1_weight=0, filter_size=3):
         self.weight = weight
@@ -169,7 +169,45 @@ class BoxContrastPixelL2():
 #         prior = self.pixel_cnn(x)
 #         loss = self.weight * prior
 
+class Transparency():
+    # to encourage transparency
+    # weight means the encouraging factor
+    def __init__(self,weight=0.5):
+        self.weight = weight
 
+    @varargin
+    def __call__(self, x, iteration=None):
+        opacity = torch.mean( x[:,-1,...])
+        return self.weight*opacity
+
+class NatImgBackground():
+    def __init__(self,dataset_fn,dataset_path,dataset_name='22564-3-12'):
+        self.dataset_fn = dataset_fn
+        self.dataset_path = dataset_path
+        self.dataset_config = {'paths': dataset_path,
+                 'normalize': True,
+                 'include_behavior': False,
+                 'batch_size': 128,
+                 'exclude': None,
+                 'file_tree': True,
+                  'scale':1
+                 }
+        self.dataset_name = dataset_name
+        self.images=None
+
+    @varargin
+    def __call__(self, x,iteration=None):
+        if iteration==0:
+            dataloaders = builder.get_data(self.dataset_fn, self.dataset_config)
+            images = []
+            for tier in ['train','test','validation']:
+                for i,j in dataloaders[tier][self.dataset_name]:
+                    images.append(i.squeeze().data)
+                #responses.append(j.squeeze().cpu().data.numpy())
+            self.images = torch.vstack(images)
+
+        return random.choice(self.images)
+    
 ################################ TRANSFORMS ##############################################
 class Jitter:
     """ Jitter the image at random by some certain amount.
@@ -519,27 +557,3 @@ class ChangeStd:
 
         return fixed_std if self.zero_mean else rescaled_x
 
-
-########################### Transparency OPERATIONS #######################################
-class Transparency: 
-    """ Take a random crop of the input image.
-
-    Arguments:
-        the background want to use to generate MEI
-    """
-
-    def __init__(self, background):
-        self.background = background ### note1 background need to be randomize in every iteration!!!
-
-
-
-    @varargin
-    def __call__(self, x, iteration=None):
-
-        ch_img, ch_alpha = x[:,:-1,...], x[:,-1,...]
-        ch_bg=torch.from_numpy(self.background).cuda()
-
-        x_transparent = ch_bg*(1.0-ch_alpha) + ch_img*ch_alpha #alpha smaller-->more transparent
-
-        x_concat=torch.cat((x_transparent,ch_alpha.view(1,1,72,128)),dim=1)
-        return x_concat, torch.mean(x_concat[:,-1,...])
