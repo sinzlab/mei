@@ -150,12 +150,13 @@ class MEI:
         mean_alpha_value=self.mean_alpha_value()
         state["mean_alpha_value"]=mean_alpha_value.item()
 
-        ( (-evaluation + reg_term + 0.5*mean_alpha_value)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?
+        ( (-evaluation + reg_term)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?
         
         if self._current_input.grad is None:
             raise RuntimeError("Gradient did not reach MEI")
         
         state["grad"] = self._current_input.cloned_grad
+        #print(torch.norm(state["grad"]))
         self._current_input.grad = self.precondition(self._current_input.grad, self.i_iteration)
         # update gradient use transparency gradient
         ### self._current_input.grad = self.transparency(self._current_input.grad, self.i_iteration)[0]
