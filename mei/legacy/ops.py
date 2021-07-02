@@ -182,7 +182,7 @@ class Transparency():
         return self.weight*opacity
 
 class NatImgBackground():
-    def __init__(self,dataset_fn,dataset_path,dataset_name='22564-3-12'):
+    def __init__(self,dataset_fn,dataset_path,norm=None,dataset_name='22564-3-12'):
         self.dataset_fn = dataset_fn
         self.dataset_path = dataset_path
         self.dataset_config = {'paths': dataset_path,
@@ -195,6 +195,7 @@ class NatImgBackground():
                  }
         self.dataset_name = dataset_name
         self.images=None
+        self.norm=norm
 
     @varargin
     def __call__(self, x,iteration=None):
@@ -207,7 +208,10 @@ class NatImgBackground():
                 #responses.append(j.squeeze().cpu().data.numpy())
             self.images = torch.vstack(images)
 
-        return random.choice(self.images)
+        bg=random.choice(self.images)
+        norm_bg = bg * (self.norm / torch.norm(bg))
+        norm_bg = torch.clamp(norm_bg,-1.96, 2.12) 
+        return norm_bg
     
 class WhiteNoiseBackground():
     def __init__(self, mean, std,shape=(72,128),strength=1):
