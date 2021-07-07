@@ -522,7 +522,7 @@ class GaussianBlur:
         mei_only (True/False): for transparent mei, if True, no Gaussian blur for transparent channel
     """
 
-    def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode="reflect",mei_only=True):
+    def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode="reflect",mei_only=False):
         self.sigma = sigma if isinstance(sigma, tuple) else (sigma,) * 2
         self.decay_factor = decay_factor
         self.truncate = truncate
