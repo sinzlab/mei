@@ -94,10 +94,12 @@ def gradient_ascent(
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
     for component_name, component_config in config.items():
-        if component_name in ("device", "objectives", "n_meis", "mei_shape", "model_forward_kwargs"):
+        if component_name in ("device", "objectives", "n_meis", "mei_shape", "model_forward_kwargs","transparency"):
             continue
         if "kwargs" not in component_config:
             component_config["kwargs"] = dict()
+    if "transparency" not in config:
+        config["transparency"]=False
     if "objectives" not in config:
         config["objectives"] = []
     else:
@@ -118,13 +120,12 @@ def gradient_ascent(
 
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
     initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"]) # (1*1*h*w)
-    
-    initial_alpha=(torch.ones(*initial_guess.shape)*0.5).to(config["device"])
-    initial_guess =torch.cat((initial_guess,initial_alpha),dim=1)
-    #initial_guess =torch.cat((initial_guess,initial_guess),dim=1) # (1*2*h*w) can directly cat for grey scale
-    # print("initial_guess.shape is ",initial_guess.shape) --> # (1*1*h*w)
-    # add transparency by concatnate alpha channel
-    #transp_guess=torch.cat((initial_guess,initial_guess),dim=1)
+
+    transparency=config["transparency"]
+    if config["transparency"]==True:
+        initial_alpha=(torch.ones(*initial_guess.shape)*0.5).to(config["device"])
+        # add transparency by concatnate alpha channel
+        initial_guess=torch.cat((initial_guess,initial_alpha),dim=1)
 
     optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
     stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])
@@ -132,11 +133,12 @@ def gradient_ascent(
     objectives = {o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]}
     tracker = tracker_cls(**objectives)
 
-    optional_names = ("transform", "regularization", "precondition", "postprocessing","transparency","background")
+    optional_names = ("transform", "regularization", "precondition", "postprocessing","background") #,"transparency")
     optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if n in config}
-
-    mei = mei_class(model, initial_guess, optimizer, **optional)
-    #mei = mei_class(model, transp_guess, optimizer, **optional)
+    # and n is not "transparency", n: config["transparency"] if n in config and n is "transparency"}
+    #print(optional)
+    #print(optimizer)
+    mei = mei_class(model, initial_guess, optimizer, transparency, **optional)
 
     final_evaluation, mei = optimize_func(mei, stopper, tracker)
     return mei, final_evaluation, tracker.log

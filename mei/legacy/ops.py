@@ -209,9 +209,10 @@ class NatImgBackground():
             self.images = torch.vstack(images)
 
         bg=random.choice(self.images)
-        norm_bg = bg * (self.norm / torch.norm(bg))
-        norm_bg = torch.clamp(norm_bg,-1.96, 2.12) 
-        return norm_bg
+        if self.norm is not None:
+            normed_bg = bg * (self.norm / torch.norm(bg))
+            bg = torch.clamp(normed_bg,-1.96, 2.12) 
+        return bg
     
 class WhiteNoiseBackground():
     def __init__(self, mean, std,shape=(72,128),strength=1):
@@ -519,7 +520,8 @@ class GaussianBlur:
             deviations to each side. Size of kernel = 8 * sigma + 1
         pad_mode (string): Mode for the padding used for the blurring. Valid values are:
             'constant', 'reflect' and 'replicate'
-        mei_only (True/False): for transparent mei, if True, no Gaussian blur for transparent channel
+        mei_only (True/False): for transparent mei, if True, no Gaussian blur for transparent channel:
+            default should be False (also for non transparent case)
     """
 
     def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode="reflect",mei_only=False):
