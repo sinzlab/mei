@@ -157,6 +157,12 @@ class MEIMethodMixin:
         mei, score, output = method_fn(dataloaders, model, method_config, seed)
         return dict(key, mei=mei, score=score, output=output)
 
+    def generate_ringmei(self, dataloaders: Dataloaders, model: Module, key: Key, seed: int, ring_mask: Tensor
+    ) -> Dict[str, Any]:
+        method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
+        method_fn = self.import_func(method_fn)
+        mei, score, output = method_fn(dataloaders, model, method_config, seed,ring_mask)
+        return dict(key, mei=mei, score=score, output=output)
 
 class MEISeedMixin:
     definition = """
