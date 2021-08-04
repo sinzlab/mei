@@ -70,7 +70,7 @@ class RingMEITemplateMixin:
 
     @property
     def key_source(self):
-        return super().key_source & RingMEIRelateHash & 'method_fn like "%ring%"'
+        return super().key_source & RingMEIRelateHash #& 'method_fn like "%ring%"'
 
     method_table = None
     trained_model_table = None
@@ -92,7 +92,7 @@ class RingMEITemplateMixin:
         dataloaders, model = self.model_loader.load(key=key)
         seed = (self.seed_table() & key).fetch1("mei_seed")
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
-
+        '''
         inner_ensemble_hash, outer_ensemble_hash = (self.ring_mei_relate_hash_table() & key).fetch1('inner_ensemble_hash', 'outer_ensemble_hash')
         src_method_hash = (self.ring_mei_relate_hash_table() & key).fetch1('src_method_hash')
         unit_id = (self.selector_table & key).fetch1('unit_id')
@@ -104,8 +104,8 @@ class RingMEITemplateMixin:
         inner_mei=torch.load(inner_mei_path)
               
         ring_mask=(outer_mei[0][1] - inner_mei[0][1] > 0.3) * 1
-        #print(ring_mask)
-        mei_entity = self.method_table().generate_ringmei(dataloaders, output_selected_model, key, seed,ring_mask)
+        #print(ring_mask)'''
+        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
         print(mei_entity)
         self._insert_mei(mei_entity)
 

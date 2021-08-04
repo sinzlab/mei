@@ -10,6 +10,10 @@ from torch import Tensor
 from nnfabrik import builder
 import random
 import numpy as np
+
+from nndichromacy.tables.from_mei import MEI
+import os
+fetch_download_path = os.environ.get('FETCH_DOWNLOAD_PATH', '/data/fetched_from_attach')
 ################################## REGULARIZERS ##########################################
 class TotalVariation:
     """ Total variation regularization.
@@ -509,6 +513,68 @@ class MultiplyBy:
 
 
 ########################### POST UPDATE OPERATIONS #######################################
+class GaussianBlurforRing:
+    """ Blur an image with a Gaussian window.
+
+    Arguments:
+        sigma (float or tuple): Standard deviation in y, x used for the gaussian blurring.
+        decay_factor (float): Compute sigma every iteration as `sigma + decay_factor *
+            (iteration - 1)`. Ignored if None.
+        truncate (float): Gaussian window is truncated after this number of standard
+            deviations to each side. Size of kernel = 8 * sigma + 1
+        pad_mode (string): Mode for the padding used for the blurring. Valid values are:
+            'constant', 'reflect' and 'replicate'
+    """
+
+    def __init__(self, sigma, key, decay_factor=None, truncate=4, mask_thres_for_ring=0.3, pad_mode="reflect"):
+        
+        self.sigma = sigma if isinstance(sigma, tuple) else (sigma,) * 2
+        self.decay_factor = decay_factor
+        self.truncate = truncate
+        self.pad_mode = pad_mode
+ 
+        # To get ring mask from key and MEI table
+
+        inner_ensemble_hash = key["inner_ensemble_hash"]
+        outer_ensemble_hash = key["outer_ensemble_hash"]
+        src_method_hash = key["src_method_hash"]
+        unit_id = key["unit_id"]
+
+        outer_mei_path = (MEI & dict(ensemble_hash=outer_ensemble_hash) & dict(method_hash=src_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
+        inner_mei_path = (MEI & dict(ensemble_hash=inner_ensemble_hash) & dict(method_hash=src_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
+        
+        outer_mei=torch.load(outer_mei_path)
+        inner_mei=torch.load(inner_mei_path)
+
+        self.ring_mask=(outer_mei[0][1] - inner_mei[0][1] > mask_thres) * 1
+
+    @varargin
+    def __call__(self, x, iteration=None):
+        
+
+        # Update sigma if needed
+        if self.decay_factor is None:
+            sigma = self.sigma
+        else:
+            sigma = tuple(s + self.decay_factor * (iteration - 1) for s in self.sigma)
+
+        # Define 1-d kernels to use for blurring
+        y_halfsize = max(int(round(sigma[0] * self.truncate)), 1)
+        y_gaussian = signal.gaussian(2 * y_halfsize + 1, std=sigma[0])
+        x_halfsize = max(int(round(sigma[1] * self.truncate)), 1)
+        x_gaussian = signal.gaussian(2 * x_halfsize + 1, std=sigma[1])
+        y_gaussian = torch.as_tensor(y_gaussian, device=x.device, dtype=x.dtype)
+        x_gaussian = torch.as_tensor(x_gaussian, device=x.device, dtype=x.dtype)
+
+        # Blur
+        padded_x = F.pad(x, pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
+        blurred_x = F.conv2d(padded_x, y_gaussian.repeat(num_channels, 1, 1)[..., None], groups=num_channels)
+        blurred_x = F.conv2d(blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1), groups=num_channels)
+        final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
+
+        return final_x * self.ring_mask
+
+
 class GaussianBlur:
     """ Blur an image with a Gaussian window.
 
@@ -550,7 +616,7 @@ class GaussianBlur:
         x_gaussian = torch.as_tensor(x_gaussian, device=x.device, dtype=x.dtype)
 
         # Blur
-        if self.mei_only == True:
+        if self.mei_only:
             num_channels = x.shape[1]-1
             padded_x = F.pad(x[:,:-1,...], pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
         else: # also blur transparent channel
@@ -560,7 +626,7 @@ class GaussianBlur:
         blurred_x = F.conv2d(blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1), groups=num_channels)
         final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
         # print(final_x.shape)
-        if self.mei_only==True:
+        if self.mei_only:
             return torch.cat((final_x,x[:,-1,...].view(x.shape[0],1,x.shape[2],x.shape[3])),dim=1)
         else:
             return final_x

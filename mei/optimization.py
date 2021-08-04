@@ -285,13 +285,13 @@ class RingMEI:
         
         state["grad"] = self._current_input.cloned_grad
         #print(torch.norm(state["grad"]))
-        self._current_input.grad = self.precondition(self._current_input.grad, self.i_iteration)
+        self._current_input.grad = self.precondition(self._current_input.grad, self.i_iteration) * self.ring_mask
         # update gradient use transparency gradient
         state["preconditioned_grad"] = self._current_input.cloned_grad
         self.optimizer.step() # current_input already changed here
 
         # post process new mei after optimization
-        self._current_input.data = self.postprocessing(self._current_input.data * self.ring_mask, self.i_iteration)
+        self._current_input.data = self.postprocessing(self._current_input.data, self.i_iteration)
         state["post_processed_input"] = self._current_input.cloned_data
 
         self._transformed = None
