@@ -245,13 +245,6 @@ class RingMEI:
             self._transformed = self.transform(self._current_input.tensor, self.i_iteration)
         return self._transformed
 
-    '''@property
-    def _transparent_input(self) -> Tensor:
-        if self._transparency is None:
-        # if happens after transform:
-            self._transparency,self._mean_alpha_value=self.transparency(self._current_input.tensor, self.i_iteration)
-        return self._transparency,self._mean_alpha_value'''
-
     def transparentize(self) -> Tensor:
         ch_img, ch_alpha = self._current_input.tensor[:,:-1,...], self._current_input.tensor[:,-1,...]
         ch_bg=self.background(self._current_input.tensor,self.i_iteration).cuda()
@@ -263,8 +256,6 @@ class RingMEI:
 
     def evaluate(self) -> Tensor:
         """Evaluates the function on the current MEI."""
-        #return self.func(self._transparent_input)# no need to evaluate alpha channel
-        
         if self.transparency:
             return self.func(self.transparentize().float())
         else:
@@ -276,7 +267,7 @@ class RingMEI:
         self.optimizer.zero_grad()
         
         evaluation = self.evaluate()
-        print(evaluation)
+        #print(evaluation)
         state["evaluation"] = evaluation.item()
         reg_term = self.regularization(self._transformed_input, self.i_iteration) ### need also include transparency
         state["reg_term"] = reg_term.item()
