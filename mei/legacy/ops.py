@@ -546,12 +546,11 @@ class GaussianBlurforRing:
         outer_mei=torch.load(outer_mei_path)
         inner_mei=torch.load(inner_mei_path)
 
-        self.ring_mask=(outer_mei[0][1] - inner_mei[0][1] > mask_thres) * 1
+        self.ring_mask=(outer_mei[0][1] - inner_mei[0][1] > mask_thres_for_ring) * 1
+    
 
     @varargin
     def __call__(self, x, iteration=None):
-        
-
         # Update sigma if needed
         if self.decay_factor is None:
             sigma = self.sigma
@@ -567,12 +566,13 @@ class GaussianBlurforRing:
         x_gaussian = torch.as_tensor(x_gaussian, device=x.device, dtype=x.dtype)
 
         # Blur
+        num_channels = x.shape[1]
         padded_x = F.pad(x, pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
         blurred_x = F.conv2d(padded_x, y_gaussian.repeat(num_channels, 1, 1)[..., None], groups=num_channels)
         blurred_x = F.conv2d(blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1), groups=num_channels)
         final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
 
-        return final_x * self.ring_mask
+        return final_x * self.ring_mask.to(x.device)
 
 
 class GaussianBlur:

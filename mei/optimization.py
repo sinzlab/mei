@@ -52,7 +52,7 @@ class MEI:
 
     input_cls = Input
     state_cls = State
-
+ 
     def __init__(
         self,
         func: Callable[[Tensor], Tensor],
@@ -126,6 +126,7 @@ class MEI:
         self.optimizer.zero_grad()        
     
         evaluation = self.evaluate()
+        #print('eval 1 ',evaluation.item())
         state["evaluation"] = evaluation.item()
         reg_term = self.regularization(self._transformed_input, self.i_iteration) ### need also include transparency
         state["reg_term"] = reg_term.item()
@@ -133,24 +134,25 @@ class MEI:
 
         if self.transparency:
             mean_alpha_value=self.mean_alpha_value()
-            # state["mean_alpha_value"]=mean_alpha_value.item()
             ( (-evaluation + reg_term)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?        
-        else: 
+        else:
             (-evaluation + reg_term).backward()
         
         if self._current_input.grad is None:
             raise RuntimeError("Gradient did not reach MEI")
-        
+
         state["grad"] = self._current_input.cloned_grad
-        #print(torch.norm(state["grad"]))
         self._current_input.grad = self.precondition(self._current_input.grad, self.i_iteration)
         # update gradient use transparency gradient
         state["preconditioned_grad"] = self._current_input.cloned_grad
-        self.optimizer.step() # current_input already changed here
+        self.optimizer.step() # current_input already changed here??
+        
+        #print('eval 3 ',self.evaluate().item())
 
         # post process new mei after optimization
         self._current_input.data = self.postprocessing(self._current_input.data, self.i_iteration)
         state["post_processed_input"] = self._current_input.cloned_data
+        #print('eval 4 ',self.evaluate().item())
 
         self._transformed = None
         self.i_iteration += 1

@@ -92,21 +92,7 @@ class RingMEITemplateMixin:
         dataloaders, model = self.model_loader.load(key=key)
         seed = (self.seed_table() & key).fetch1("mei_seed")
         output_selected_model = self.selector_table().get_output_selected_model(model, key)
-        '''
-        inner_ensemble_hash, outer_ensemble_hash = (self.ring_mei_relate_hash_table() & key).fetch1('inner_ensemble_hash', 'outer_ensemble_hash')
-        src_method_hash = (self.ring_mei_relate_hash_table() & key).fetch1('src_method_hash')
-        unit_id = (self.selector_table & key).fetch1('unit_id')
-
-        outer_mei_path = (self.mei_table & dict(ensemble_hash=outer_ensemble_hash) & dict(method_hash=src_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
-        inner_mei_path = (self.mei_table & dict(ensemble_hash=inner_ensemble_hash) & dict(method_hash=src_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
-        
-        outer_mei=torch.load(outer_mei_path)
-        inner_mei=torch.load(inner_mei_path)
-              
-        ring_mask=(outer_mei[0][1] - inner_mei[0][1] > 0.3) * 1
-        #print(ring_mask)'''
         mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
-        print(mei_entity)
         self._insert_mei(mei_entity)
 
     def _insert_mei(self, mei_entity: Dict[str, Any]) -> None:
