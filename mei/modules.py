@@ -5,6 +5,7 @@ from typing import Dict, Any, List
 import torch
 from torch import Tensor
 from torch.nn import Module, ModuleList
+from collections.abc import Iterable
 
 
 class EnsembleModel(Module):
@@ -66,7 +67,7 @@ class ConstrainedOutputModel(Module):
         if target_fn is None:
             target_fn = lambda x: x
         self.model = model
-        self.constraint = constraint
+        self.constraint = constraint if (isinstance(constraint, Iterable) or constraint is None) else [constraint]
         self.forward_kwargs = forward_kwargs if forward_kwargs else dict()
         self.target_fn = target_fn
 
@@ -84,7 +85,7 @@ class ConstrainedOutputModel(Module):
         output = self.model(x, *args, **self.forward_kwargs, **kwargs)
         return (
             self.target_fn(output)
-            if (not self.constraint and self.constraint != 0)
+            if self.constraint is None or len(self.constraint) == 0
             else self.target_fn(output[:, self.constraint])
         )
 
