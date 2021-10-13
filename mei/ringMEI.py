@@ -45,9 +45,10 @@ class RingMEIRelateHash(dj.Manual):
     # contains ensemble ids
     combine_index                         : int           # combination index for below ensemble and method
     outer_ensemble_hash                   : char(32)      # the ensemble hash for linear model
+    outer_method_hash                       : char(32)
     inner_ensemble_hash                   : char(32)      # the ensemble hash for linear model
+    inner_method_hash                       : char(32)
     src_method_fn                         : char(32)      
-    src_method_hash                       : char(32)
     ---
     hash_comment        = ''    : varchar(256)  # a short comment describing the MEI version
     """
@@ -55,8 +56,8 @@ class RingMEIRelateHash(dj.Manual):
 class RingMEITemplateMixin:
     definition = """
     # contains maximally exciting images (MEIs)
-    -> self.mei_table.proj(src_method_fn='method_fn', src_method_hash='method_hash', outer_mei_seed='mei_seed', outer_ensemble_hash='ensemble_hash')
-    -> self.mei_table.proj(src_method_fn='method_fn', src_method_hash='method_hash', inner_mei_seed='mei_seed', inner_ensemble_hash='ensemble_hash')
+    -> self.mei_table.proj(src_method_fn='method_fn', outer_ensemble_hash='ensemble_hash', outer_method_hash='method_hash', outer_mei_seed='mei_seed')
+    -> self.mei_table.proj(src_method_fn='method_fn', inner_ensemble_hash='ensemble_hash', inner_method_hash='method_hash', inner_mei_seed='mei_seed')
     -> self.method_table
     -> self.selector_table
     -> self.trained_model_table
