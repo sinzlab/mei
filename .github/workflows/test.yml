@@ -1,0 +1,24 @@
+name: Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: azure/docker-login@v1
+      with:
+        login-server: index.docker.io
+        username: ${{ secrets.DOCKERIO_USERNAME }}
+        password: ${{ secrets.DOCKERIO_PASSWORD }}
+    - name: Add SSH key to enable cloning of private repos
+      run: mkdir .ssh && echo "${{ secrets.SSH_KEY }}" >> ".ssh/id_rsa"
+    - name: Build Docker image
+      run: docker build -t mei .
+    - name: Run tests
+      run: docker run --entrypoint pytest mei

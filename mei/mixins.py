@@ -116,7 +116,7 @@ class TrainedEnsembleModelTemplateMixin:
         )
 
 
-class CSRFV1SelectorTemplateMixin:
+class CSRFV1ObjectiveTemplateMixin:
     definition = """
     # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
     # the model. 
