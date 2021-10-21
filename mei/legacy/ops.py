@@ -3,13 +3,14 @@ import warnings
 import torch
 import torch.nn.functional as F
 from scipy import signal
+from neuralpredictors.regularizers import LaplaceL2
 
 from mei.legacy.utils import varargin
 
 
 ################################## REGULARIZERS ##########################################
 class TotalVariation:
-    """ Total variation regularization.
+    """Total variation regularization.
 
     Arguments:
         weight (float): Weight of the regularization.
@@ -22,16 +23,20 @@ class TotalVariation:
         self.isotropic = isotropic
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         # Using the definitions from Wikipedia.
         diffs_y = torch.abs(x[:, :, 1:] - x[:, :, -1:])
         diffs_x = torch.abs(x[:, :, :, 1:] - x[:, :, :, :-1])
         if self.isotropic:
             tv = (
-                torch.sqrt(diffs_y[:, :, :, :-1] ** 2 + diffs_x[:, :, :-1, :] ** 2).reshape(len(x), -1).sum(-1)
+                torch.sqrt(diffs_y[:, :, :, :-1] ** 2 + diffs_x[:, :, :-1, :] ** 2)
+                .reshape(len(x), -1)
+                .sum(-1)
             )  # per image
         else:
-            tv = diffs_y.reshape(len(x), -1).sum(-1) + diffs_x.reshape(len(x), -1).sum(-1)  # per image
+            tv = diffs_y.reshape(len(x), -1).sum(-1) + diffs_x.reshape(len(x), -1).sum(
+                -1
+            )  # per image
         loss = self.weight * torch.mean(tv)
 
         return loss
@@ -50,14 +55,14 @@ class LpNorm:
         self.p = p
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         lpnorm = (torch.abs(x) ** self.p).reshape(len(x), -1).sum(-1) ** (1 / self.p)
         loss = self.weight * torch.mean(lpnorm)
         return loss
 
 
 class Similarity:
-    """ Compute similarity metrics across all examples in one batch.
+    """Compute similarity metrics across all examples in one batch.
 
     Arguments:
         weight (float): Weight of the regularization.
@@ -77,9 +82,11 @@ class Similarity:
         self.mask = mask
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         if len(x) < 2:
-            warnings.warn("Only one image in the batch. Similarity regularization will" "return 0")
+            warnings.warn(
+                "Only one image in the batch. Similarity regularization will" "return 0"
+            )
             return 0
 
         # Mask x
@@ -93,10 +100,16 @@ class Similarity:
                 numer = torch.mm(residuals, residuals.t())
                 ssr = (residuals ** 2).sum(-1)
             else:
-                mask_sum = self.mask.sum() * (flat_x.shape[-1] / len(self.mask.view(-1)))
+                mask_sum = self.mask.sum() * (
+                    flat_x.shape[-1] / len(self.mask.view(-1))
+                )
                 mean = flat_x.sum(-1) / mask_sum
                 residuals = x - mean.view(len(x), *[1] * (x.dim() - 1))  # N x 1 x 1 x 1
-                numer = (residuals[None, :] * residuals[:, None] * self.mask).view(len(x), len(x), -1).sum(-1)
+                numer = (
+                    (residuals[None, :] * residuals[:, None] * self.mask)
+                    .view(len(x), len(x), -1)
+                    .sum(-1)
+                )
                 ssr = ((residuals ** 2) * self.mask).view(len(x), -1).sum(-1)
             sim_matrix = numer / (torch.sqrt(torch.ger(ssr, ssr)) + 1e-9)
         elif self.metric == "cosine":
@@ -116,6 +129,70 @@ class Similarity:
         return loss
 
 
+class BoxContrast:
+    def __init__(
+        self,
+        weight=0.1,
+        filter_size=7,
+        box_constraint=10,
+        p=2,
+        padding=0,
+        l1_weight=1e-3,
+    ):
+        self.weight = weight
+        self.filter_size = filter_size
+        self.box_constraint = box_constraint
+        self.p = p
+        self.box_filter = torch.ones([1, 1, filter_size, filter_size])
+        self.ReLU = torch.nn.ReLU()
+        self.padding = padding
+        self.l1_regularizer = LpNorm(weight=l1_weight, p=1)
+
+    @varargin
+    def __call__(self, x, iteration=None):
+        box_loss = self.weight * torch.mean(
+            self.ReLU(
+                F.conv2d(x ** 2, self.box_filter.to(x.device), padding=self.padding)
+                - self.box_constraint
+            )
+            ** self.p
+        )
+        l1_loss = self.l1_regularizer(x)
+        return box_loss + l1_loss
+
+
+class BoxContrastPixelL2:
+    def __init__(
+        self,
+        weight=0.1,
+        upper=2.0,
+        lower=-1.5,
+        p=2,
+        l2_weight=1,
+        l1_weight=0,
+        filter_size=3,
+    ):
+        self.weight = weight
+        self.upper = upper
+        self.lower = lower
+        self.p = p
+        self.ReLU = torch.nn.ReLU()
+        self.l2_regularizer = LaplaceL2(filter_size=filter_size)
+        self.l2_weight = l2_weight
+        self.l1_regularizer = LpNorm(weight=l1_weight, p=1)
+
+    @varargin
+    def __call__(self, x, iteration=None):
+        pixel_loss = self.weight * torch.sum(
+            (self.ReLU(x - self.upper) ** self.p)
+            + self.ReLU(-((x - self.lower) ** self.p))
+        )
+
+        l2_loss = self.l2_weight * self.l2_regularizer.to(x.device)(x, avg=True)
+        l1_loss = self.l1_regularizer(x)
+        return pixel_loss + l2_loss + l1_loss
+
+
 # class PixelCNN():
 #     def __init__(self, weight=1):
 #         self.weight = weight
@@ -131,20 +208,26 @@ class Similarity:
 
 ################################ TRANSFORMS ##############################################
 class Jitter:
-    """ Jitter the image at random by some certain amount.
+    """Jitter the image at random by some certain amount.
 
     Arguments:
         max_jitter(tuple of ints): Maximum amount of jitter in y, x.
     """
 
     def __init__(self, max_jitter):
-        self.max_jitter = max_jitter if isinstance(max_jitter, tuple) else (max_jitter, max_jitter)
+        self.max_jitter = (
+            max_jitter if isinstance(max_jitter, tuple) else (max_jitter, max_jitter)
+        )
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         # Sample how much to jitter
-        jitter_y = torch.randint(-self.max_jitter[0], self.max_jitter[0] + 1, (1,), dtype=torch.int32).item()
-        jitter_x = torch.randint(-self.max_jitter[1], self.max_jitter[1] + 1, (1,), dtype=torch.int32).item()
+        jitter_y = torch.randint(
+            -self.max_jitter[0], self.max_jitter[0] + 1, (1,), dtype=torch.int32
+        ).item()
+        jitter_x = torch.randint(
+            -self.max_jitter[1], self.max_jitter[1] + 1, (1,), dtype=torch.int32
+        ).item()
 
         # Pad and crop the rest
         pad_y = (jitter_y, 0) if jitter_y >= 0 else (0, -jitter_y)
@@ -163,7 +246,7 @@ class Jitter:
 
 
 class RandomCrop:
-    """ Take a random crop of the input image.
+    """Take a random crop of the input image.
 
     Arguments:
         height (int): Height of the crop.
@@ -175,16 +258,20 @@ class RandomCrop:
         self.width = width
 
     @varargin
-    def __call__(self, x):
-        crop_y = torch.randint(0, max(0, x.shape[-2] - self.height) + 1, (1,), dtype=torch.int32).item()
-        crop_x = torch.randint(0, max(0, x.shape[-1] - self.width) + 1, (1,), dtype=torch.int32).item()
+    def __call__(self, x, iteration=None):
+        crop_y = torch.randint(
+            0, max(0, x.shape[-2] - self.height) + 1, (1,), dtype=torch.int32
+        ).item()
+        crop_x = torch.randint(
+            0, max(0, x.shape[-1] - self.width) + 1, (1,), dtype=torch.int32
+        ).item()
         cropped_x = x[..., crop_y : crop_y + self.height, crop_x : crop_x + self.width]
 
         return cropped_x
 
 
 class BatchedCrops:
-    """ Create a batch of crops of the original image.
+    """Create a batch of crops of the original image.
 
     Arguments:
         height (int): Height of the crop
@@ -203,7 +290,9 @@ class BatchedCrops:
         self.height = height
         self.width = width
         self.step_size = step_size if isinstance(step_size, tuple) else (step_size,) * 2
-        self.sigma = sigma if sigma is None or isinstance(sigma, tuple) else (sigma,) * 2
+        self.sigma = (
+            sigma if sigma is None or isinstance(sigma, tuple) else (sigma,) * 2
+        )
 
         # If needed, create gaussian mask
         if sigma is not None:
@@ -212,7 +301,7 @@ class BatchedCrops:
             self.mask = y_gaussian[:, None] * x_gaussian
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         if len(x) > 1:
             raise ValueError("x can only have one example.")
         if x.shape[-2] < self.height or x.shape[-1] < self.width:
@@ -234,7 +323,7 @@ class BatchedCrops:
 
 
 class ChangeRange:
-    """ This changes the range of x as follows:
+    """This changes the range of x as follows:
         new_x = sigmoid(x) * (desired_max - desired_min) + desired_min
 
     Arguments:
@@ -249,13 +338,13 @@ class ChangeRange:
         self.x_max = x_max
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         new_x = torch.sigmoid(x) * (self.x_max - self.x_min) + self.x_min
         return new_x
 
 
 class Resize:
-    """ Resize images.
+    """Resize images.
 
     Arguments:
         scale_factor (float): Factor to rescale the images:
@@ -271,7 +360,7 @@ class Resize:
         self.resample_method = resize_method
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         new_height = int(round(x.shape[-2] * self.scale_factor))
         new_width = int(round(x.shape[-1] * self.scale_factor))
         return F.upsample(x, (new_height, new_width), mode=self.resize_method)
@@ -281,7 +370,7 @@ class GrayscaleToRGB:
     """ Transforms a single channel image into three channels (by copying the channel)."""
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         if x.dim() != 4 or x.shape[1] != 1:
             raise ValueError("Image is not grayscale!")
 
@@ -292,13 +381,13 @@ class Identity:
     """ Transform that returns the input as is."""
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         return x
 
 
 ############################## GRADIENT OPERATIONS #######################################
 class ChangeNorm:
-    """ Change the norm of the input.
+    """Change the norm of the input.
 
     Arguments:
         norm (float or tensor): Desired norm. If tensor, it should be the same length as
@@ -309,7 +398,7 @@ class ChangeNorm:
         self.norm = norm
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         x_norm = torch.norm(x.view(len(x), -1), dim=-1)
         renorm = x * (self.norm / x_norm).view(len(x), *[1] * (x.dim() - 1))
         return renorm
@@ -328,12 +417,12 @@ class ClipRange:
         self.x_max = x_max
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         return torch.clamp(x, self.x_min, self.x_max)
 
 
 class FourierSmoothing:
-    """ Smooth the input in the frequency domain.
+    """Smooth the input in the frequency domain.
 
     Image is transformed to fourier domain, power densities at i, j are multiplied by
     (1 - ||f||)**freq_exp where ||f|| = sqrt(f_i**2 + f_j**2) and the image is brought
@@ -352,12 +441,15 @@ class FourierSmoothing:
         self.freq_exp = freq_exp
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         # Create mask of frequencies (following np.fft.rfftfreq and np.fft.fftfreq docs)
         h, w = x.shape[-2:]
         freq_y = (
             torch.cat(
-                [torch.arange((h - 1) // 2 + 1, dtype=torch.float32), -torch.arange(h // 2, 0, -1, dtype=torch.float32)]
+                [
+                    torch.arange((h - 1) // 2 + 1, dtype=torch.float32),
+                    -torch.arange(h // 2, 0, -1, dtype=torch.float32),
+                ]
             )
             / h
         )  # fftfreq
@@ -379,7 +471,7 @@ class DivideByMeanOfAbsolute:
     """ Divides x by the mean of absolute x. """
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         return x / torch.abs(x).view(len(x), -1).mean(-1)
 
 
@@ -408,7 +500,7 @@ class MultiplyBy:
 
 ########################### POST UPDATE OPERATIONS #######################################
 class GaussianBlur:
-    """ Blur an image with a Gaussian window.
+    """Blur an image with a Gaussian window.
 
     Arguments:
         sigma (float or tuple): Standard deviation in y, x used for the gaussian blurring.
@@ -445,26 +537,44 @@ class GaussianBlur:
         x_gaussian = torch.as_tensor(x_gaussian, device=x.device, dtype=x.dtype)
 
         # Blur
-        padded_x = F.pad(x, pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
-        blurred_x = F.conv2d(padded_x, y_gaussian.repeat(num_channels, 1, 1)[..., None], groups=num_channels)
-        blurred_x = F.conv2d(blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1), groups=num_channels)
+        padded_x = F.pad(
+            x, pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode
+        )
+        blurred_x = F.conv2d(
+            padded_x,
+            y_gaussian.repeat(num_channels, 1, 1)[..., None],
+            groups=num_channels,
+        )
+        blurred_x = F.conv2d(
+            blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1), groups=num_channels
+        )
         final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
 
         return final_x
 
 
 class ChangeStd:
-    """ Change the standard deviation of input.
+    """Change the standard deviation of input.
 
-        Arguments:
-        std (float or tensor): Desired std. If tensor, it should be the same length as x.
+    Arguments:
+    std (float or tensor): Desired std. If tensor, it should be the same length as x.
+    zero_mean (boolean):   If False, the mean of x will be preserved after the std is changed. Defaults to False,
+                               such that the mean will is preserved by default.
     """
 
-    def __init__(self, std):
+    def __init__(self, std, zero_mean=True):
         self.std = std
+        self.zero_mean = zero_mean
 
     @varargin
-    def __call__(self, x):
+    def __call__(self, x, iteration=None):
         x_std = torch.std(x.view(len(x), -1), dim=-1)
+        x_mean = torch.mean(x.view(len(x), -1), dim=-1)
         fixed_std = x * (self.std / (x_std + 1e-9)).view(len(x), *[1] * (x.dim() - 1))
-        return fixed_std
+
+        x_mean_rescaled = torch.mean(fixed_std.view(len(fixed_std), -1), dim=-1)
+        rescaled_x = fixed_std + (x_mean - x_mean_rescaled).view(
+            len(x), *[1] * (x.dim() - 1)
+        )
+
+        return fixed_std if self.zero_mean else rescaled_x

@@ -84,7 +84,9 @@ class MEI:
     @property
     def _transformed_input(self) -> Tensor:
         if self._transformed is None:
-            self._transformed = self.transform(self._current_input.tensor, self.i_iteration)
+            self._transformed = self.transform(
+                self._current_input.tensor, self.i_iteration
+            )
         return self._transformed
 
     def evaluate(self) -> Tensor:
@@ -104,10 +106,14 @@ class MEI:
         if self._current_input.grad is None:
             raise RuntimeError("Gradient did not reach MEI")
         state["grad"] = self._current_input.cloned_grad
-        self._current_input.grad = self.precondition(self._current_input.grad, self.i_iteration)
+        self._current_input.grad = self.precondition(
+            self._current_input.grad, self.i_iteration
+        )
         state["preconditioned_grad"] = self._current_input.cloned_grad
         self.optimizer.step()
-        self._current_input.data = self.postprocessing(self._current_input.data, self.i_iteration)
+        self._current_input.data = self.postprocessing(
+            self._current_input.data, self.i_iteration
+        )
         state["post_processed_input"] = self._current_input.cloned_data
         self._transformed = None
         self.i_iteration += 1
@@ -121,7 +127,9 @@ class MEI:
         )
 
 
-def optimize(mei: MEI, stopper: OptimizationStopper, tracker: Tracker) -> Tuple[float, Tensor]:
+def optimize(
+    mei: MEI, stopper: OptimizationStopper, tracker: Tracker
+) -> Tuple[float, Tensor]:
     """Optimizes the input to a given function such that it maximizes said function using gradient ascent.
 
     Args:

@@ -1,10 +1,11 @@
 """This module contains PyTorch modules used in the MEI optimization process."""
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import torch
 from torch import Tensor
 from torch.nn import Module, ModuleList
+from collections.abc import Iterable
 
 
 class EnsembleModel(Module):
@@ -49,16 +50,26 @@ class ConstrainedOutputModel(Module):
         model: A PyTorch module.
         constraint: An integer representing the index of a neuron in the model's output. Only the value corresponding
             to that index will be returned.
+        target_fn: Callable, that gets as an input the constrained output of the model.
         forward_kwargs: A dictionary containing keyword arguments that will be passed to the model every time it is
             called. Optional.
     """
 
-    def __init__(self, model: Module, constraint: int, forward_kwargs: Dict[str, Any] = None):
+    def __init__(
+        self,
+        model: Module,
+        constraint: (int, List),
+        target_fn=None,
+        forward_kwargs: Dict[str, Any] = None,
+    ):
         """Initializes ConstrainedOutputModel."""
         super().__init__()
+        if target_fn is None:
+            target_fn = lambda x: x
         self.model = model
-        self.constraint = constraint
+        self.constraint = constraint if (isinstance(constraint, Iterable) or constraint is None) else [constraint]
         self.forward_kwargs = forward_kwargs if forward_kwargs else dict()
+        self.target_fn = target_fn
 
     def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
         """Computes the constrained output of the model.
@@ -72,7 +83,11 @@ class ConstrainedOutputModel(Module):
             A tensor representing the constrained output of the model.
         """
         output = self.model(x, *args, **self.forward_kwargs, **kwargs)
-        return output[:, self.constraint]
+        return (
+            self.target_fn(output)
+            if self.constraint is None or len(self.constraint) == 0
+            else self.target_fn(output[:, self.constraint])
+        )
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self.model}, {self.constraint}, forward_kwargs={self.forward_kwargs})"
