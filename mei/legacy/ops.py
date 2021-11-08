@@ -1,19 +1,23 @@
 import warnings
 
-import torch
-import torch.nn.functional as F
+import os
 from scipy import signal
-from neuralpredictors.regularizers import LaplaceL2
-
-from mei.legacy.utils import varargin
-from torch import Tensor
-from nnfabrik import builder
 import random
 import numpy as np
 
-from nndichromacy.tables.from_mei import MEI
-import os
+import torch
+import torch.nn.functional as F
+
+from nnfabrik import builder
+from neuralpredictors.regularizers import LaplaceL2
+
+from .utils import varargin
+
+#TODO: move helpers to nndichromacy.
+# from nndichromacy.tables.from_mei import MEI
 fetch_download_path = os.environ.get('FETCH_DOWNLOAD_PATH', '/data/fetched_from_attach')
+
+
 ################################## REGULARIZERS ##########################################
 class TotalVariation:
     """ Total variation regularization.

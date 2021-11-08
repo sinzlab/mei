@@ -1,6 +1,6 @@
 from scipy.special import expit
 import numpy as np
-from nnfabrik import builder
+
 
 def rfft2d_freqs(h, w):
     """Computes 2D spectrum frequencies."""

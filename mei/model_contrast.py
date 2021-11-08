@@ -23,9 +23,10 @@ from nnfabrik.utility.dj_helpers import CustomSchema
 from nnfabrik.builder import resolve_fn
 from .main import MEISeed,MEIMethod
 from .modules import EnsembleModel, ConstrainedOutputModel #, ContrastiveOutputModel
-from nndichromacy.tables.from_mei import TrainedEnsembleModel
-from nndichromacy.tables.from_nnfabrik import TrainedModel
-from mei import mixins
+
+#TODO: move these helpers to nndichromacy
+# from nndichromacy.tables.from_mei import TrainedEnsembleModel
+# from nndichromacy.tables.from_nnfabrik import TrainedModel
 
 schema = CustomSchema(dj.config.get("nnfabrik.schema_name", "nnfabrik_core"))
 resolve_target_fn = partial(resolve_fn, default_base="targets")
