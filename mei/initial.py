@@ -20,7 +20,6 @@ class RandomNormal(InitialGuessCreator):
         """Creates a random initial guess from which to start the MEI optimization process given a shape."""
         return self._create_random_tensor(*shape)
 
-
     def __repr__(self):
         return f"{self.__class__.__qualname__}()"
 
@@ -42,4 +41,3 @@ class RandomNormalNullChannel(InitialGuessCreator):
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}()"
-
