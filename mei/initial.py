@@ -1,12 +1,6 @@
 from abc import ABC, abstractmethod
 import torch
 from torch import Tensor, randn
-from nndichromacy.tables.from_mei import MEI
-from nnfabrik import builder
-
-import os
-
-fetch_download_path = os.environ.get('FETCH_DOWNLOAD_PATH', '/data/fetched_from_attach')
 
 
 class InitialGuessCreator(ABC):
