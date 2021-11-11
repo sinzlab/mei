@@ -48,7 +48,6 @@ class RandomNormalNullChannel(InitialGuessCreator):
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}()"
-
     
 class RandomNormalCenterRing(InitialGuessCreator):
     """Used to create an initial guess tensor filled with values distributed according to a normal distribution."""
@@ -85,23 +84,6 @@ class RandomNormalCenterRing(InitialGuessCreator):
         return f"{self.__class__.__qualname__}()"
 
 
-class RandomNormalNullChannel(InitialGuessCreator):
-    """Used to create an initial guess tensor filled with values distributed according to a normal distribution."""
-
-    _create_random_tensor = randn
-
-    def __init__(self, null_channel, null_value=0):
-        self.null_channel = null_channel
-        self.null_value = null_value
-
-    def __call__(self, *shape):
-        """Creates a random initial guess from which to start the MEI optimization process given a shape."""
-        inital = self._create_random_tensor(*shape)
-        inital[:, self.null_channel, ...] = self.null_value
-        return inital
-
-    def __repr__(self):
-        return f"{self.__class__.__qualname__}()"
 
     
 class RandomNormalNonlinearCenterRing(InitialGuessCreator):
@@ -229,6 +211,36 @@ class RandomNormalSurround(InitialGuessCreator):
         """Creates a random initial guess from which to start the MEI optimization process given a shape."""
         randinitial = self._create_random_tensor(*shape)
         initial = self.centerimg + randinitial * (1-self.center_mask)
+
+        return initial
+
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}()"
+
+class RandomNormalCenter(InitialGuessCreator):
+    """Used to create an initial guess tensor filled with values distributed according to a normal distribution."""
+    """center_type could be 'noise', 'grey','light','null' """
+    _create_random_tensor = randn
+
+    def __init__(self, key, mask_thres=0.3):
+        src_method_fn = key["src_method_fn"]
+        unit_id = key["unit_id"]
+
+        inner_ensemble_hash = key["inner_ensemble_hash"]
+        inner_method_hash = key["inner_method_hash"]
+        unit_id = key["unit_id"]
+
+        inner_mei_path = (MEI & dict(method_fn=src_method_fn) & dict(ensemble_hash=inner_ensemble_hash) & dict(method_hash=inner_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
+        
+        #outer_mei=torch.load(outer_mei_path)
+        inner_mei=torch.load(inner_mei_path)
+
+        self.center_mask= (inner_mei[0][1] > mask_thres) * 1
+
+    def __call__(self, *shape):
+        """Creates a random initial guess from which to start the MEI optimization process given a shape."""
+        randinitial = self._create_random_tensor(*shape)
+        initial = randinitial * (self.center_mask)
 
         return initial
 
