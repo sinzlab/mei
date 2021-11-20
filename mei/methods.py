@@ -92,12 +92,17 @@ def gradient_ascent(
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
     for component_name, component_config in config.items():
-        if component_name in ("device", "objectives", "n_meis", "mei_shape", "model_forward_kwargs","transparency"):
+        if component_name in ("device", "objectives", "n_meis", "mei_shape", "model_forward_kwargs","transparency","inhibitory"):
             continue
         if "kwargs" not in component_config:
             component_config["kwargs"] = dict()
+
     if "transparency" not in config:
         config["transparency"]=False
+
+    if "inhibitory" not in config:
+        config["inhibitory"]=False
+
     if "objectives" not in config:
         config["objectives"] = []
     else:
@@ -118,10 +123,12 @@ def gradient_ascent(
 
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
     initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"]) # (1*1*h*w)
+    
+    inhibitory=config["inhibitory"]
 
     transparency=config["transparency"]
     if config["transparency"]==True:
-        initial_alpha=(torch.ones(*initial_guess.shape)*0.5).to(config["device"])
+        initial_alpha=(torch.ones(n_meis,1,*shape[2:])*0.5).to(config["device"])
         # add transparency by concatnate alpha channel
         initial_guess=torch.cat((initial_guess,initial_alpha),dim=1)
 
@@ -133,8 +140,7 @@ def gradient_ascent(
 
     optional_names = ("transform", "regularization", "precondition", "postprocessing","background")
     optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if n in config}
-
-    mei = mei_class(model, initial_guess, optimizer, transparency, **optional)
+    mei = mei_class(model, initial_guess, optimizer, transparency, inhibitory, **optional)
 
     final_evaluation, mei = optimize_func(mei, stopper, tracker)
     return mei, final_evaluation, tracker.log

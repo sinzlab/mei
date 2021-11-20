@@ -238,7 +238,7 @@ class NatImgBackground():
 class NatImgBackgroundHighNorm():
     # to get a more robust mask, use high norm background; 
     # but to help MEI converge, increasing background norm as the iteration step increase
-    def __init__(self,dataset_fn,dataset_path,start_norm=None,end_norm=None,dataset_name='22564-3-12'):
+    def __init__(self,dataset_fn,dataset_path,start_norm=None,end_norm=None,dataset_name=None):
         #self.dataset_fn = dataset_fn
         #self.dataset_path = dataset_path
         dataset_config = {'paths': dataset_path,
