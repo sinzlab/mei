@@ -103,8 +103,8 @@ class MEI:
         return self._transformed
 
     def transparentize(self) -> Tensor:
-        ch_img, ch_alpha = self._current_input.tensor[:,:-1,...], self._current_input.tensor[:,-1,...]
-        ch_bg=self.background(self._current_input.tensor,self.i_iteration).cuda()
+        ch_img, ch_alpha = self._transformed_input[:,:-1,...], self._transformed_input[:,-1,...]
+        ch_bg=self.background(self._transformed_input, self.i_iteration).cuda()
         transparentized_mei = ch_bg*(1.0-ch_alpha) + ch_img*ch_alpha
         return transparentized_mei
 
@@ -114,7 +114,7 @@ class MEI:
     def evaluate(self) -> Tensor:
         """Evaluates the function on the current MEI."""
         #return self.func(self._transparent_input)# no need to evaluate alpha channel
-        
+
         if self.transparency:
             return self.func(self.transparentize().float())
         else:
@@ -138,7 +138,7 @@ class MEI:
             #print(mean_alpha_value)
             reg_term = self.regularization(mean_alpha_value, self.i_iteration)
             #print(reg_term)
-            ( (-evaluation + reg_term)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?        
+            ( (-evaluation + reg_term)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?
         else:
             reg_term = self.regularization(self._transformed_input, self.i_iteration)
             (-evaluation + reg_term).backward()
