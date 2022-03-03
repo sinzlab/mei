@@ -1,6 +1,7 @@
 """This module contains classes and functions pertaining to the NNFabrik integration."""
 
 import pickle
+from copy import deepcopy
 
 from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
@@ -36,7 +37,7 @@ class ModelLoader:
             return self._load_model(key)
         if not self._is_cached(key):
             self._cache_model(key)
-        return self._get_cached_model(key)
+        return deepcopy(self._get_cached_model(key))
 
     def _load_model(self, key):
         return self.model_table().load_model(key=key)
