@@ -91,13 +91,13 @@ class Similarity:
             if self.mask is None:
                 residuals = flat_x - flat_x.mean(-1, keepdim=True)
                 numer = torch.mm(residuals, residuals.t())
-                ssr = (residuals ** 2).sum(-1)
+                ssr = (residuals**2).sum(-1)
             else:
                 mask_sum = self.mask.sum() * (flat_x.shape[-1] / len(self.mask.view(-1)))
                 mean = flat_x.sum(-1) / mask_sum
                 residuals = x - mean.view(len(x), *[1] * (x.dim() - 1))  # N x 1 x 1 x 1
                 numer = (residuals[None, :] * residuals[:, None] * self.mask).view(len(x), len(x), -1).sum(-1)
-                ssr = ((residuals ** 2) * self.mask).view(len(x), -1).sum(-1)
+                ssr = ((residuals**2) * self.mask).view(len(x), -1).sum(-1)
             sim_matrix = numer / (torch.sqrt(torch.ger(ssr, ssr)) + 1e-9)
         elif self.metric == "cosine":
             norms = torch.norm(flat_x, dim=-1)
@@ -278,7 +278,7 @@ class Resize:
 
 
 class GrayscaleToRGB:
-    """ Transforms a single channel image into three channels (by copying the channel)."""
+    """Transforms a single channel image into three channels (by copying the channel)."""
 
     @varargin
     def __call__(self, x):
@@ -289,7 +289,7 @@ class GrayscaleToRGB:
 
 
 class Identity:
-    """ Transform that returns the input as is."""
+    """Transform that returns the input as is."""
 
     @varargin
     def __call__(self, x):
@@ -362,7 +362,7 @@ class FourierSmoothing:
             / h
         )  # fftfreq
         freq_x = torch.arange(w // 2 + 1, dtype=torch.float32) / w  # rfftfreq
-        yx_freq = torch.sqrt(freq_y[:, None] ** 2 + freq_x ** 2)
+        yx_freq = torch.sqrt(freq_y[:, None] ** 2 + freq_x**2)
 
         # Create smoothing mask
         norm_freq = yx_freq * torch.sqrt(torch.tensor(2.0))  # 0-1
@@ -376,7 +376,7 @@ class FourierSmoothing:
 
 
 class DivideByMeanOfAbsolute:
-    """ Divides x by the mean of absolute x. """
+    """Divides x by the mean of absolute x."""
 
     @varargin
     def __call__(self, x):
