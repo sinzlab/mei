@@ -37,3 +37,4 @@ services:
       - .:/src/mei
     entrypoint: ["isort"]
     command: ["--check-only", "--diff", "."]
+
