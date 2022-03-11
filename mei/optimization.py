@@ -103,11 +103,11 @@ class MEI:
         return self._transformed
 
     def transparentize(self) -> Tensor:
-        ch_img, ch_alpha = self._current_input.tensor[:,:2,...], self._current_input.tensor[:,-1,...]
+        ch_img, ch_alpha = self._current_input.tensor[:,[0],...], self._current_input.tensor[:,-1,...]
         #print(torch.shape(ch_img))
-        ch_bg=self.background(self._current_input.tensor,self.i_iteration).cuda()
-        transparentized_mei = ch_bg*(1.0-ch_alpha) + ch_img*ch_alpha
-        transparentized_mei = torch.cat((transparentized_mei,self._current_input.tensor[:,2:-1,...]),dim=1)
+        ch_bg=self.background(self._current_input.tensor,self.i_iteration).cuda()[[0], ...]
+        transparentized_mei = ch_bg[[0]]*(1.0-ch_alpha) + ch_img*ch_alpha
+        transparentized_mei = torch.cat((transparentized_mei,self._current_input.tensor[:,1:-1,...]),dim=1)
         return transparentized_mei
 
     def mean_alpha_value(self) -> Tensor:
