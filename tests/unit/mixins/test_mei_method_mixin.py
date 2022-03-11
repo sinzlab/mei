@@ -1,5 +1,5 @@
-from unittest.mock import MagicMock
 from functools import partial
+from unittest.mock import MagicMock
 
 import pytest
 

@@ -1,6 +1,6 @@
 """This module contains PyTorch modules used in the MEI optimization process."""
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 import torch
 from torch import Tensor

@@ -1,8 +1,9 @@
 """Contains callable classes used to stop the MEI optimization process once it has reached an acceptable result."""
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Tuple, Optional, Any
+from typing import Any, Optional, Tuple
 
 from .domain import State
 

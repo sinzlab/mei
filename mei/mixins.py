@@ -1,20 +1,20 @@
 """This module contains mix-ins for the main tables and table templates."""
 
 from __future__ import annotations
+
 import os
 import tempfile
-from typing import Callable, Iterable, Mapping, Optional, Tuple, Dict, Any
-from string import ascii_letters
 from random import choice
+from string import ascii_letters
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple
 
 import torch
+from nnfabrik.utility.dj_helpers import make_hash
 from torch.nn import Module
 from torch.utils.data import DataLoader
-from nnfabrik.utility.dj_helpers import make_hash
 
 from . import integration
-from .modules import EnsembleModel, ConstrainedOutputModel
-
+from .modules import ConstrainedOutputModel, EnsembleModel
 
 Key = Dict[str, Any]
 Dataloaders = Dict[str, DataLoader]

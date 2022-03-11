@@ -18,8 +18,8 @@ def varargin(f):
         Using the decorator is recommended because it makes it explicit that my_f won't
         use arguments received in the kwargs dictionary.
     """
-    import inspect
     import functools
+    import inspect
 
     # Find the name of parameters expected by f
     f_params = inspect.signature(f).parameters.values()

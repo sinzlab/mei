@@ -1,6 +1,6 @@
-from unittest.mock import MagicMock, call
 from functools import partial
 from typing import Type
+from unittest.mock import MagicMock, call
 
 import pytest
 from torch import Tensor
