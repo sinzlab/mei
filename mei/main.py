@@ -26,10 +26,10 @@ class TrainedEnsembleModelTemplate(mixins.TrainedEnsembleModelTemplateMixin, dj.
         """Member table template."""
 
 
-class CSRFV1SelectorTemplate(mixins.CSRFV1SelectorTemplateMixin, dj.Computed):
-    """CSRF V1 selector table template.
+class CSRFV1ObjectiveTemplate(mixins.CSRFV1ObjectiveTemplateMixin, dj.Computed):
+    """CSRF V1 objective table template.
 
-    To create a functional "CSRFV1Selector" table, create a new class that inherits from this template and decorate it
+    To create a functional "CSRFV1Objective" table, create a new class that inherits from this template and decorate it
     with your preferred Datajoint schema. By default, the created table will point to the "Dataset" table in the
     Datajoint schema called "nnfabrik.main". This behavior can be changed by overwriting the class attribute called
     "dataset_table".
@@ -52,8 +52,8 @@ class MEITemplate(mixins.MEITemplateMixin, dj.Computed):
     """MEI table template.
 
     To create a functional "MEI" table, create a new class that inherits from this template and decorate it with your
-    preferred Datajoint schema. Next assign your trained model (or trained ensemble model) and your selector table to
-    the class variables called "trained_model_table" and "selector_table". By default, the created table will point to
+    preferred Datajoint schema. Next assign your trained model (or trained ensemble model) and your objective table to
+    the class variables called "trained_model_table" and "objective_table". By default, the created table will point to
     the "MEIMethod" table in the Datajoint schema called "nnfabrik.main". This behavior can be changed by overwriting
     the class attribute called "method_table".
     """
