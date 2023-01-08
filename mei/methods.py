@@ -21,6 +21,7 @@ def get_input_dimensions(dataloaders, get_dims, data_key=None):
         in_key = "inputs" if "inputs" in dimensions_dict else "images"
         return dimensions_dict[in_key]
 
+
 def gradient_ascent(
     dataloaders: Dict,
     model: Module,
@@ -92,16 +93,19 @@ def gradient_ascent(
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
     for component_name, component_config in config.items():
-        if component_name in ("device", "objectives", "n_meis", "mei_shape", "model_forward_kwargs","transparency","inhibitory"):
+        if component_name in (
+            "device",
+            "objectives",
+            "n_meis",
+            "mei_shape",
+            "model_forward_kwargs",
+            "transparency",
+            "transparency_weight",
+            "inhibitory",
+        ):
             continue
         if "kwargs" not in component_config:
             component_config["kwargs"] = dict()
-
-    if "transparency" not in config:
-        config["transparency"]=False
-
-    if "inhibitory" not in config:
-        config["inhibitory"]=False
 
     if "objectives" not in config:
         config["objectives"] = []
@@ -122,15 +126,15 @@ def gradient_ascent(
     shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
 
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
-    initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"]) # (1*1*h*w)
-    
-    inhibitory=config["inhibitory"]
+    initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"])  # (1*1*h*w)
 
-    transparency=config["transparency"]
-    if config["transparency"]==True:
-        initial_alpha=(torch.ones(n_meis,1,*shape[2:])*0.5).to(config["device"])
-        # add transparency by concatnate alpha channel
-        initial_guess=torch.cat((initial_guess,initial_alpha),dim=1)
+    transparency = config.get("transparency", None)
+    if config["transparency"] == True:
+        initial_alpha = (torch.ones(n_meis, 1, *shape[2:]) * 0.5).to(config["device"])
+        # add transparency by concatenate alpha channel
+        initial_guess = torch.cat((initial_guess, initial_alpha), dim=1)
+    transparency_weight = config.get("transparency_weight", 1.0)
+    inhibitory = config.get("inhibitory", None)
 
     optimizer = import_func(config["optimizer"]["path"], dict(params=[initial_guess], **config["optimizer"]["kwargs"]))
     stopper = import_func(config["stopper"]["path"], config["stopper"]["kwargs"])
@@ -138,9 +142,17 @@ def gradient_ascent(
     objectives = {o["path"]: import_func(o["path"], o["kwargs"]) for o in config["objectives"]}
     tracker = tracker_cls(**objectives)
 
-    optional_names = ("transform", "regularization", "precondition", "postprocessing","background")
+    optional_names = ("transform", "regularization", "precondition", "postprocessing", "background")
     optional = {n: import_func(config[n]["path"], config[n]["kwargs"]) for n in optional_names if n in config}
-    mei = mei_class(model, initial_guess, optimizer, transparency, inhibitory, **optional)
+    mei = mei_class(
+        model,
+        initial=initial_guess,
+        optimizer=optimizer,
+        transparency=transparency,
+        inhibitory=inhibitory,
+        transparency_weight=transparency_weight,
+        **optional
+    )
 
     final_evaluation, mei = optimize_func(mei, stopper, tracker)
     return mei, final_evaluation, tracker.log

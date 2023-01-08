@@ -59,6 +59,7 @@ class MEI:
         optimizer: Optimizer,
         transparency,#: False, then normal MEI without transparencytransform: Callable[[Tensor, int], Tensor] = default_transform,
         inhibitory,  # for ring or surround MEI: if False, then excitatory
+        transparency_weight: float = 0.0,
         transform: Callable[[Tensor, int], Tensor] = default_transform,
         regularization: Callable[[Tensor, int], Tensor] = default_regularization,
         precondition: Callable[[Tensor, int], Tensor] = default_precondition,
@@ -88,6 +89,7 @@ class MEI:
         self.optimizer = optimizer
         self.transform = transform
         self.transparency = transparency
+        self.transparency_weight = transparency_weight
         self.regularization = regularization
         self.precondition = precondition
         self.postprocessing = postprocessing
@@ -96,6 +98,9 @@ class MEI:
         self._transformed = None
         self.background = background
         self.inhibitory = inhibitory
+
+        print(f"Using a transparency weight of {self.transparency_weight}")
+
     @property
     def _transformed_input(self) -> Tensor:
         if self._transformed is None:
@@ -103,11 +108,10 @@ class MEI:
         return self._transformed
 
     def transparentize(self) -> Tensor:
-        ch_img, ch_alpha = self._current_input.tensor[:,[0],...], self._current_input.tensor[:,-1,...]
-        #print(torch.shape(ch_img))
-        ch_bg=self.background(self._current_input.tensor,self.i_iteration).cuda()[[0], ...]
+        ch_img, ch_alpha = self._current_input.tensor[:, [0], ...], self._current_input.tensor[:,-1,...]
+        ch_bg=self.background(self._current_input.tensor, self.i_iteration).cuda()[[0], ...] * self.transparency_weight
         transparentized_mei = ch_bg[[0]]*(1.0-ch_alpha) + ch_img*ch_alpha
-        transparentized_mei = torch.cat((transparentized_mei,self._current_input.tensor[:,1:-1,...]),dim=1)
+        transparentized_mei = torch.cat((transparentized_mei, self._current_input.tensor[:,1:-1,...]),dim=1)
         return transparentized_mei
 
     def mean_alpha_value(self) -> Tensor:
@@ -132,10 +136,8 @@ class MEI:
 
         if self.transparency:
             mean_alpha_value=self.mean_alpha_value()
-
             reg_term = self.regularization(mean_alpha_value, self.i_iteration)
-
-            ( (-evaluation + reg_term)*(1-mean_alpha_value) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?        
+            ( (-evaluation + reg_term)*(1-mean_alpha_value*self.transparency_weight) ).backward() ### add transparency to objective; mean_alpha_value here should be a function?
         else:
             reg_term = self.regularization(self._transformed_input, self.i_iteration)
             (-evaluation + reg_term).backward()
