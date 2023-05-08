@@ -129,7 +129,7 @@ def gradient_ascent(
     initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"])  # (1*1*h*w)
 
     transparency = config.get("transparency", None)
-    if config["transparency"] == True:
+    if transparency:
         initial_alpha = (torch.ones(n_meis, 1, *shape[2:]) * 0.5).to(config["device"])
         # add transparency by concatenate alpha channel
         initial_guess = torch.cat((initial_guess, initial_alpha), dim=1)
