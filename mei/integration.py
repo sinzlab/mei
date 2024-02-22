@@ -32,24 +32,24 @@ class ModelLoader:
         self.cache_size_limit = cache_size_limit
         self.cache = dict()
 
-    def load(self, key):
+    def load(self, key, **kwargs):
         if self.cache_size_limit == 0:
-            return self._load_model(key)
+            return self._load_model(key, **kwargs)
         if not self._is_cached(key):
-            self._cache_model(key)
+            self._cache_model(key, **kwargs)
         return deepcopy(self._get_cached_model(key))
 
-    def _load_model(self, key):
-        return self.model_table().load_model(key=key)
+    def _load_model(self, key, **kwargs):
+        return self.model_table().load_model(key=key, **kwargs)
 
     def _is_cached(self, key):
         if self._hash_trained_model_key(key) in self.cache:
             return True
         return False
 
-    def _cache_model(self, key):
+    def _cache_model(self, key, **kwargs):
         """Caches a model and makes sure the cache is not bigger than the specified limit."""
-        self.cache[self._hash_trained_model_key(key)] = self._load_model(key)
+        self.cache[self._hash_trained_model_key(key)] = self._load_model(key, **kwargs)
         if len(self.cache) > self.cache_size_limit:
             del self.cache[list(self.cache)[0]]
 
