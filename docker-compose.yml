@@ -15,3 +15,26 @@ services:
       - "127.0.0.1:8888:8888"
       env_file:
         - .env
+  pytest:
+    build: .
+    volumes:
+      - .:/src/mei
+    entrypoint: ["pytest"]
+  coverage:
+    build: .
+    volumes:
+      - .:/src/mei
+    entrypoint: ["pytest", "--cov", "--cov-report=html:/src/mei/reports/coverage.html", "tests"]
+  black:
+    build: .
+    volumes:
+      - .:/src/mei
+    entrypoint: ["black"]
+    command: ["--check", "--diff", "."]
+  isort:
+    build: .
+    volumes:
+      - .:/src/mei
+    entrypoint: ["isort"]
+    command: ["--check-only", "--diff", "."]
+

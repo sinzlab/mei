@@ -1,12 +1,12 @@
-from unittest.mock import MagicMock, call
 from functools import partial
+from unittest.mock import MagicMock, call
 
 import pytest
 from torch import Tensor
 
 from mei import optimization
-from mei.stoppers import OptimizationStopper
 from mei.domain import State
+from mei.stoppers import OptimizationStopper
 from mei.tracking import Tracker
 
 

@@ -1,5 +1,5 @@
-from unittest.mock import MagicMock
 from typing import Type
+from unittest.mock import MagicMock
 
 import pytest
 import torch
