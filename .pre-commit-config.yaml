@@ -1,0 +1,28 @@
+repos:
+- repo: local
+  hooks:
+    - id: pytest
+      name: pytest
+      language: system
+      entry: docker-compose run --rm pytest
+      files: ^mei/|^tests/
+      types: [python]
+      pass_filenames: false
+- repo: local
+  hooks:
+    - id: black
+      name: black
+      language: system
+      entry: docker-compose run --rm black
+      files: ^mei/|^tests/
+      types: [python]
+      pass_filenames: false
+- repo: local
+  hooks:
+    - id: isort
+      name: isort
+      language: system
+      entry: docker-compose run --rm isort
+      files: ^mei/|^tests/
+      types: [python]
+      pass_filenames: false

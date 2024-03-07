@@ -1,2 +1,10 @@
 [tool.black]
 line-length = 120
+
+[tool.coverage.run]
+branch = true
+source = ["mei"]
+omit = ["mei/legacy/*"]
+
+[tool.isort]
+profile = "black"
