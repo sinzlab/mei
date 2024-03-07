@@ -17,7 +17,14 @@ def get_mappings(dataset_config, key, load_func=load_pickled_data):
     for datafile_path in dataset_config["datafiles"]:
         data = load_func(datafile_path)
         for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
-            entities.append(dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"]))
+            entities.append(
+                dict(
+                    key,
+                    neuron_id=neuron_id,
+                    neuron_position=neuron_pos,
+                    session_id=data["session_id"],
+                )
+            )
     return entities
 
 

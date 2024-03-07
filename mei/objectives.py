@@ -33,7 +33,9 @@ class RegularIntervalObjective(Objective):
 
     def __init__(self, interval: int):
         if interval <= 0:
-            raise ValueError(f"Expected interval to be an integer greater than 0, got {interval}")
+            raise ValueError(
+                f"Expected interval to be an integer greater than 0, got {interval}"
+            )
         self.interval = interval
 
     def __call__(self, current_state: State) -> Any:
