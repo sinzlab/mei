@@ -1,0 +1,2 @@
+datajoint=0.12.4
+nnfabrik @ git+https://github.com/sinzlab/nnfabrik.git
