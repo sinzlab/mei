@@ -18,12 +18,11 @@ def get_input_dimensions(dataloaders, get_dims):
 
 
 def gradient_ascent(
-    dataloaders: Dict,
+    shape: tuple[int],
     model: Module,
     config: Dict,
     seed: int,
     set_seed: Callable = torch.manual_seed,
-    get_dims: Callable = get_dims_for_loader_dict,
     mei_class: Type = optimization.MEI,
     import_func: Callable = import_object,
     optimize_func: Callable = optimization.optimize,
@@ -103,7 +102,6 @@ def gradient_ascent(
     model.eval()
     model.to(config["device"])
 
-    shape = get_input_dimensions(dataloaders, get_dims)
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
     initial_guess = create_initial_guess(1, *shape[1:]).to(config["device"])
 
