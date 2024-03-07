@@ -1,12 +1,12 @@
 """This module contains methods used to generate MEIs."""
 
-from typing import Tuple, Dict, Callable, Type
+from typing import Callable, Dict, Tuple, Type
 
 import torch
+from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from torch import Tensor
 from torch.nn import Module
 
-from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict
 from . import optimization
 from .import_helpers import import_object
 from .tracking import Tracker

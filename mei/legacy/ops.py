@@ -9,7 +9,7 @@ from mei.legacy.utils import varargin
 
 ################################## REGULARIZERS ##########################################
 class TotalVariation:
-    """ Total variation regularization.
+    """Total variation regularization.
 
     Arguments:
         weight (float): Weight of the regularization.
@@ -57,7 +57,7 @@ class LpNorm:
 
 
 class Similarity:
-    """ Compute similarity metrics across all examples in one batch.
+    """Compute similarity metrics across all examples in one batch.
 
     Arguments:
         weight (float): Weight of the regularization.
@@ -91,13 +91,13 @@ class Similarity:
             if self.mask is None:
                 residuals = flat_x - flat_x.mean(-1, keepdim=True)
                 numer = torch.mm(residuals, residuals.t())
-                ssr = (residuals ** 2).sum(-1)
+                ssr = (residuals**2).sum(-1)
             else:
                 mask_sum = self.mask.sum() * (flat_x.shape[-1] / len(self.mask.view(-1)))
                 mean = flat_x.sum(-1) / mask_sum
                 residuals = x - mean.view(len(x), *[1] * (x.dim() - 1))  # N x 1 x 1 x 1
                 numer = (residuals[None, :] * residuals[:, None] * self.mask).view(len(x), len(x), -1).sum(-1)
-                ssr = ((residuals ** 2) * self.mask).view(len(x), -1).sum(-1)
+                ssr = ((residuals**2) * self.mask).view(len(x), -1).sum(-1)
             sim_matrix = numer / (torch.sqrt(torch.ger(ssr, ssr)) + 1e-9)
         elif self.metric == "cosine":
             norms = torch.norm(flat_x, dim=-1)
@@ -131,7 +131,7 @@ class Similarity:
 
 ################################ TRANSFORMS ##############################################
 class Jitter:
-    """ Jitter the image at random by some certain amount.
+    """Jitter the image at random by some certain amount.
 
     Arguments:
         max_jitter(tuple of ints): Maximum amount of jitter in y, x.
@@ -163,7 +163,7 @@ class Jitter:
 
 
 class RandomCrop:
-    """ Take a random crop of the input image.
+    """Take a random crop of the input image.
 
     Arguments:
         height (int): Height of the crop.
@@ -184,7 +184,7 @@ class RandomCrop:
 
 
 class BatchedCrops:
-    """ Create a batch of crops of the original image.
+    """Create a batch of crops of the original image.
 
     Arguments:
         height (int): Height of the crop
@@ -234,7 +234,7 @@ class BatchedCrops:
 
 
 class ChangeRange:
-    """ This changes the range of x as follows:
+    """This changes the range of x as follows:
         new_x = sigmoid(x) * (desired_max - desired_min) + desired_min
 
     Arguments:
@@ -255,7 +255,7 @@ class ChangeRange:
 
 
 class Resize:
-    """ Resize images.
+    """Resize images.
 
     Arguments:
         scale_factor (float): Factor to rescale the images:
@@ -278,7 +278,7 @@ class Resize:
 
 
 class GrayscaleToRGB:
-    """ Transforms a single channel image into three channels (by copying the channel)."""
+    """Transforms a single channel image into three channels (by copying the channel)."""
 
     @varargin
     def __call__(self, x):
@@ -289,7 +289,7 @@ class GrayscaleToRGB:
 
 
 class Identity:
-    """ Transform that returns the input as is."""
+    """Transform that returns the input as is."""
 
     @varargin
     def __call__(self, x):
@@ -298,7 +298,7 @@ class Identity:
 
 ############################## GRADIENT OPERATIONS #######################################
 class ChangeNorm:
-    """ Change the norm of the input.
+    """Change the norm of the input.
 
     Arguments:
         norm (float or tensor): Desired norm. If tensor, it should be the same length as
@@ -333,7 +333,7 @@ class ClipRange:
 
 
 class FourierSmoothing:
-    """ Smooth the input in the frequency domain.
+    """Smooth the input in the frequency domain.
 
     Image is transformed to fourier domain, power densities at i, j are multiplied by
     (1 - ||f||)**freq_exp where ||f|| = sqrt(f_i**2 + f_j**2) and the image is brought
@@ -362,7 +362,7 @@ class FourierSmoothing:
             / h
         )  # fftfreq
         freq_x = torch.arange(w // 2 + 1, dtype=torch.float32) / w  # rfftfreq
-        yx_freq = torch.sqrt(freq_y[:, None] ** 2 + freq_x ** 2)
+        yx_freq = torch.sqrt(freq_y[:, None] ** 2 + freq_x**2)
 
         # Create smoothing mask
         norm_freq = yx_freq * torch.sqrt(torch.tensor(2.0))  # 0-1
@@ -376,7 +376,7 @@ class FourierSmoothing:
 
 
 class DivideByMeanOfAbsolute:
-    """ Divides x by the mean of absolute x. """
+    """Divides x by the mean of absolute x."""
 
     @varargin
     def __call__(self, x):
@@ -408,7 +408,7 @@ class MultiplyBy:
 
 ########################### POST UPDATE OPERATIONS #######################################
 class GaussianBlur:
-    """ Blur an image with a Gaussian window.
+    """Blur an image with a Gaussian window.
 
     Arguments:
         sigma (float or tuple): Standard deviation in y, x used for the gaussian blurring.
@@ -454,10 +454,10 @@ class GaussianBlur:
 
 
 class ChangeStd:
-    """ Change the standard deviation of input.
+    """Change the standard deviation of input.
 
-        Arguments:
-        std (float or tensor): Desired std. If tensor, it should be the same length as x.
+    Arguments:
+    std (float or tensor): Desired std. If tensor, it should be the same length as x.
     """
 
     def __init__(self, std):

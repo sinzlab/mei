@@ -2,8 +2,8 @@
 
 import pickle
 
-from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
+from nnfabrik.utility.nnf_helper import dynamic_import, split_module_name
 
 
 def load_pickled_data(path):

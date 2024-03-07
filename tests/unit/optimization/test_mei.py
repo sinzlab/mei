@@ -1,5 +1,5 @@
-from unittest.mock import MagicMock, PropertyMock, call
 from functools import partial
+from unittest.mock import MagicMock, PropertyMock, call
 
 import pytest
 from torch import Tensor

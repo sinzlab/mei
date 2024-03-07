@@ -1,6 +1,7 @@
 """Contains classes and functions related to optimizing an input to a function such that its value is maximized."""
 
 from __future__ import annotations
+
 from typing import Callable, Tuple
 
 import torch
