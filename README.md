@@ -1,15 +1,27 @@
-# MEI
-![Test](https://github.com/cblessing24/mei/workflows/Test/badge.svg)
-![Black](https://github.com/cblessing24/mei/workflows/Black/badge.svg)
+[![Test](https://github.com/sinzlab/mei/actions/workflows/test.yml/badge.svg)](https://github.com/sinzlab/mei/actions/workflows/test.yml)
+[![Black](https://github.com/sinzlab/mei/actions/workflows/black.yml/badge.svg)](https://github.com/sinzlab/mei/actions/workflows/black.yml)
+[![Isort](https://github.com/sinzlab/mei/actions/workflows/isort.yml/badge.svg)](https://github.com/sinzlab/mei/actions/workflows/isort.yml)
 
 Generate most exciting inputs (MEIs).
 
 ## Installation
 
+The easiest way to install the package is via pip:
+
+```python
+pip install neuro-mei
+```
+
+If you want to install from source from a different branch, for example `inception_loop`, you can also install by doing:
+
+```python
+pip install git+https://github.com/sinzlab/mei.git@inception_loop
+```
+
 ## Usage
 
 This section describes the general usage of the MEI framework. Due to the fact that this framework uses 
-[DataJoint](https://github.com/datajoint/datajoint-python/) and [NNFabrik](https://github.com/sinzlab/nnfabrik) general
+[DataJoint](https://github.com/datajoint/datajoint-python/) and [NNFabrik](https://github.com/sinzlab/nnfabrik), general
 familiarity with these two packages is assumed.
 
 ### 1. Table Setup
@@ -182,7 +194,7 @@ method_config = {
         {"path": "mei.objectives.EvaluationObjective", "kwargs": {"interval": 10}}
     ],
     "device": "cuda",
-)
+}
 MEIMethod().add_method(method_fn, method_config, comment="My MEI method")
 ```
 
@@ -305,3 +317,47 @@ method_config = {
     ...
 }
 ```
+
+## How to run the tests :test_tube:
+
+Clone this repository and run the following command from within the cloned repository to run all tests:
+
+```bash
+docker-compose run pytest
+```
+
+## How to contribute :fire:
+
+Pull requests (and issues) are always welcome. This section describes some
+preconditions that pull requests need to fulfill.
+
+### Tests
+
+Please make sure your changes pass the tests. Take a look at the [test running
+section](#how-to-run-the-tests-test_tube) for instructions on how to run them. Adding tests
+for new code is highly recommended.
+
+### Code Style
+
+#### black
+
+This project uses the [black](https://github.com/psf/black) code formatter. You
+can check whether your changes comply with its style by running the following
+command:
+
+```bash
+docker-compose run black
+```
+
+Furthermore you can pass a path to the service to have black fix any errors in
+the Python modules it finds in the given path.
+
+#### isort
+
+[isort](https://github.com/PyCQA/isort) is used to sort Python imports. You can check the order of imports by running the following command:
+
+```bash
+docker-compose run isort
+```
+
+The imports can be sorted by passing a path to the service.
