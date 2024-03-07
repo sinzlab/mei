@@ -10,6 +10,7 @@ setup(
     license="MIT",
     url="https://github.com/sinzlab/mei",
     keywords="feature visualization MEI pytorch",
+    python_requires="<3.10",
     packages=["mei"],
     classifiers=[
         "Development Status :: 3 - Alpha",
