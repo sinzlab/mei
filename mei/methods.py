@@ -18,11 +18,13 @@ def get_input_dimensions(dataloaders, get_dims):
 
 
 def gradient_ascent(
-    shape: tuple[int],
     model: Module,
     config: Dict,
     seed: int,
+    shape: tuple[int] = None,
+    dataloaders: Dict = None,
     set_seed: Callable = torch.manual_seed,
+    get_dims: Callable = get_dims_for_loader_dict,
     mei_class: Type = optimization.MEI,
     import_func: Callable = import_object,
     optimize_func: Callable = optimization.optimize,
@@ -86,7 +88,14 @@ def gradient_ascent(
     Returns:
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
+    if (dataloaders is None) and (shape is None):
+        raise ValueError('Must provide either dataloader or shape')
+
+    if dataloaders is not None:
+        shape = get_input_dimensions(dataloaders, get_dims)
+
     for component_name, component_config in config.items():
+        print(component_name, component_config)
         if component_name in ("device", "objectives"):
             continue
         if "kwargs" not in component_config:
