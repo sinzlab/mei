@@ -6,10 +6,22 @@ Generate most exciting inputs (MEIs).
 
 ## Installation
 
+The easiest way to install the package is via pip:
+
+```python
+pip install neuro-mei
+```
+
+If you want to install from source from a version, for example version `v0.1.0`, you can run the following command:
+
+```python
+pip install git+https://github.com/sinzlab/mei.git@v0.1.0
+```
+
 ## Usage
 
 This section describes the general usage of the MEI framework. Due to the fact that this framework uses 
-[DataJoint](https://github.com/datajoint/datajoint-python/) and [NNFabrik](https://github.com/sinzlab/nnfabrik) general
+[DataJoint](https://github.com/datajoint/datajoint-python/) and [NNFabrik](https://github.com/sinzlab/nnfabrik), general
 familiarity with these two packages is assumed.
 
 ### 1. Table Setup
@@ -182,7 +194,7 @@ method_config = {
         {"path": "mei.objectives.EvaluationObjective", "kwargs": {"interval": 10}}
     ],
     "device": "cuda",
-)
+}
 MEIMethod().add_method(method_fn, method_config, comment="My MEI method")
 ```
 
