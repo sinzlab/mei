@@ -27,10 +27,9 @@ class PNormConstraintAndClip:
         self.max_pixel_value = float(max_pixel_value)
         self.min_pixel_value = float(min_pixel_value)
         self.p = p
-        self.pnorm_constraint = PNormConstraintAndClip(p, norm_value)
 
     def __call__(self, img: torch.Tensor, iteration=None):
-        norm_value = self.pnorm_constraint(img, iteration=iteration)
+        norm_value = torch.pow(torch.sum(torch.pow(torch.abs(img), self.p)), 1 / self.p)
         if norm_value > self.max_value:
             normalized_img = img * (self.max_value / (norm_value + 1e-12))
         else:
