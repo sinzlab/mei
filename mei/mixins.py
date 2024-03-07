@@ -50,14 +50,10 @@ class TrainedEnsembleModelTemplateMixin:
 
     def create_ensemble(self, key: Key, comment: str = "") -> None:
         if len(self.dataset_table() & key) != 1:
-            raise ValueError(
-                "Provided key not sufficient to restrict dataset table to one entry!"
-            )
+            raise ValueError("Provided key not sufficient to restrict dataset table to one entry!")
         dataset_key = (self.dataset_table().proj() & key).fetch1()
         models = (self.trained_model_table().proj() & key).fetch(as_dict=True)
-        primary_key = dict(
-            dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models)
-        )
+        primary_key = dict(dataset_key, ensemble_hash=integration.hash_list_of_dictionaries(models))
         self.insert1(dict(primary_key, ensemble_comment=comment))
         self.Member().insert([{**primary_key, **m} for m in models])
 
@@ -144,13 +140,9 @@ class CSRFV1ObjectiveTemplateMixin:
         mappings = get_mappings(dataset_config, key)
         self.insert(mappings)
 
-    def get_output_selected_model(
-        self, model: Module, key: Key
-    ) -> constrained_output_model:
+    def get_output_selected_model(self, model: Module, key: Key) -> constrained_output_model:
         neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
-        return self.constrained_output_model(
-            model, neuron_pos, forward_kwargs=dict(data_key=session_id)
-        )
+        return self.constrained_output_model(model, neuron_pos, forward_kwargs=dict(data_key=session_id))
 
 
 class MEIMethodMixin:
@@ -178,9 +170,7 @@ class MEIMethodMixin:
         "postprocessing",
     )
 
-    def add_method(
-        self, method_fn: str, method_config: Mapping, comment: str = ""
-    ) -> None:
+    def add_method(self, method_fn: str, method_config: Mapping, comment: str = "") -> None:
         self.insert1(
             dict(
                 method_fn=method_fn,
@@ -190,20 +180,19 @@ class MEIMethodMixin:
             )
         )
 
-    def generate_mei(
-        self, dataloaders: Dataloaders, model: Module, key: Key, seed: int
-    ) -> Dict[str, Any]:
+    def generate_mei(self, dataloaders: Dataloaders, model: Module, key: Key, seed: int) -> Dict[str, Any]:
         method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
         method_fn = self.import_func(method_fn)
         self.insert_key_in_ops(method_config=method_config, key=key)
         mei, score, output = method_fn(dataloaders, model, method_config, seed)
         return dict(key, mei=mei, score=score, output=output)
 
-    def generate_ringmei(self, dataloaders: Dataloaders, model: Module, key: Key, seed: int, ring_mask: Tensor
+    def generate_ringmei(
+        self, dataloaders: Dataloaders, model: Module, key: Key, seed: int, ring_mask: Tensor
     ) -> Dict[str, Any]:
         method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
         method_fn = self.import_func(method_fn)
-        mei, score, output = method_fn(dataloaders, model, method_config, seed,ring_mask)
+        mei, score, output = method_fn(dataloaders, model, method_config, seed, ring_mask)
         return dict(key, mei=mei, score=score, output=output)
 
     def insert_key_in_ops(self, method_config, key):
@@ -211,6 +200,7 @@ class MEIMethodMixin:
             if k in self.optional_names:
                 if "key" in v.get("kwargs", ""):
                     v["kwargs"]["key"] = key
+
 
 class MEISeedMixin:
     definition = """
@@ -244,19 +234,13 @@ class MEITemplateMixin:
 
     def __init__(self, *args, cache_size_limit: int = 10, **kwargs):
         super().__init__(*args, **kwargs)
-        self.model_loader = self.model_loader_class(
-            self.trained_model_table, cache_size_limit=cache_size_limit
-        )
+        self.model_loader = self.model_loader_class(self.trained_model_table, cache_size_limit=cache_size_limit)
 
     def make(self, key: Key) -> None:
         dataloaders, model = self.model_loader.load(key=key)
         seed = (self.seed_table() & key).fetch1("mei_seed")
-        output_selected_model = self.selector_table().get_output_selected_model(
-            model, key
-        )
-        mei_entity = self.method_table().generate_mei(
-            dataloaders, output_selected_model, key, seed
-        )
+        output_selected_model = self.selector_table().get_output_selected_model(model, key)
+        mei_entity = self.method_table().generate_mei(dataloaders, output_selected_model, key, seed)
         self._insert_mei(mei_entity)
 
     def _insert_mei(self, mei_entity: Dict[str, Any]) -> None:
@@ -266,9 +250,7 @@ class MEITemplateMixin:
                 self._save_to_disk(mei_entity, temp_dir, name)
             self.insert1(mei_entity, ignore_extra_fields=True)
 
-    def _save_to_disk(
-        self, mei_entity: Dict[str, Any], temp_dir: str, name: str
-    ) -> None:
+    def _save_to_disk(self, mei_entity: Dict[str, Any], temp_dir: str, name: str) -> None:
         data = mei_entity.pop(name)
         filename = name + "_" + self._create_random_filename() + ".pth.tar"
         filepath = os.path.join(temp_dir, filename)

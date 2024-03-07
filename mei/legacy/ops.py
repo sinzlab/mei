@@ -1,21 +1,19 @@
+import os
+import random
 import warnings
 
-import os
-from scipy import signal
-import random
 import numpy as np
-
 import torch
 import torch.nn.functional as F
-
-from nnfabrik import builder
 from neuralpredictors.regularizers import LaplaceL2
+from nnfabrik import builder
+from scipy import signal
 
 from .utils import varargin
 
-#TODO: move helpers to nndichromacy.
+# TODO: move helpers to nndichromacy.
 # from nndichromacy.tables.from_mei import MEI
-fetch_download_path = os.environ.get('FETCH_DOWNLOAD_PATH', '/data/fetched_from_attach')
+fetch_download_path = os.environ.get("FETCH_DOWNLOAD_PATH", "/data/fetched_from_attach")
 
 
 ################################## REGULARIZERS ##########################################
@@ -47,8 +45,9 @@ class TotalVariation:
 
         return loss
 
+
 class RegTransparency:
-    """ transparency regularization, by adjusting weight to control the transparent level.
+    """transparency regularization, by adjusting weight to control the transparent level.
 
     Arguments:
         weight (float): Weight of the regularization.
@@ -64,6 +63,7 @@ class RegTransparency:
         loss = self.weight * mean_alpha_value
 
         return loss
+
 
 class LpNorm:
     """Computes the lp-norm of an input.
@@ -144,7 +144,7 @@ class Similarity:
         return loss
 
 
-class BoxContrast():
+class BoxContrast:
     def __init__(self, weight=0.1, filter_size=7, box_constraint=10, p=2, padding=0, l1_weight=1e-3):
         self.weight = weight
         self.filter_size = filter_size
@@ -157,12 +157,15 @@ class BoxContrast():
 
     @varargin
     def __call__(self, x, iteration=None):
-        box_loss = self.weight * torch.mean(self.ReLU(F.conv2d(x**2, self.box_filter.to(x.device), padding=self.padding)
-                                                 - self.box_constraint) ** self.p)
+        box_loss = self.weight * torch.mean(
+            self.ReLU(F.conv2d(x**2, self.box_filter.to(x.device), padding=self.padding) - self.box_constraint)
+            ** self.p
+        )
         l1_loss = self.l1_regularizer(x)
         return box_loss + l1_loss
 
-class BoxContrastPixelL2():
+
+class BoxContrastPixelL2:
     def __init__(self, weight=0.1, upper=2.0, lower=-1.5, p=2, l2_weight=1, l1_weight=0, filter_size=3):
         self.weight = weight
         self.upper = upper
@@ -175,8 +178,9 @@ class BoxContrastPixelL2():
 
     @varargin
     def __call__(self, x, iteration=None):
-        pixel_loss = self.weight * torch.sum((self.ReLU(x - self.upper) ** self.p)
-                                              + self.ReLU(-(x - self.lower) ** self.p))
+        pixel_loss = self.weight * torch.sum(
+            (self.ReLU(x - self.upper) ** self.p) + self.ReLU(-((x - self.lower) ** self.p))
+        )
 
         l2_loss = self.l2_weight * self.l2_regularizer.to(x.device)(x, avg=True)
         l1_loss = self.l1_regularizer(x)
@@ -195,84 +199,90 @@ class BoxContrastPixelL2():
 #         prior = self.pixel_cnn(x)
 #         loss = self.weight * prior
 
-class Transparency():
+
+class Transparency:
     # to encourage transparency
     # weight means the encouraging factor
-    def __init__(self,weight=0.5):
+    def __init__(self, weight=0.5):
         self.weight = weight
 
     @varargin
     def __call__(self, x, iteration=None):
-        opacity = torch.mean( x[:,-1,...])
-        return self.weight*opacity
+        opacity = torch.mean(x[:, -1, ...])
+        return self.weight * opacity
 
-class NatImgBackground():
-    def __init__(self,dataset_fn,dataset_path,norm=None,dataset_name='22564-3-12'):
+
+class NatImgBackground:
+    def __init__(self, dataset_fn, dataset_path, norm=None, dataset_name="22564-3-12"):
         self.dataset_fn = dataset_fn
         self.dataset_path = dataset_path
-        self.dataset_config = {'paths': dataset_path,
-                 'normalize': True,
-                 'include_behavior': False,
-                 'batch_size': 128,
-                 'exclude': None,
-                 'file_tree': True,
-                  'scale':1
-                 }
+        self.dataset_config = {
+            "paths": dataset_path,
+            "normalize": True,
+            "include_behavior": False,
+            "batch_size": 128,
+            "exclude": None,
+            "file_tree": True,
+            "scale": 1,
+        }
         self.dataset_name = dataset_name
-        self.images=None
-        self.norm=norm
+        self.images = None
+        self.norm = norm
 
     @varargin
-    def __call__(self, x,iteration=None):
-        if iteration==0:
+    def __call__(self, x, iteration=None):
+        if iteration == 0:
             dataloaders = builder.get_data(self.dataset_fn, self.dataset_config)
             images = []
-            for tier in ['train','test','validation']:
-                for i,j in dataloaders[tier][self.dataset_name]:
+            for tier in ["train", "test", "validation"]:
+                for i, j in dataloaders[tier][self.dataset_name]:
                     images.append(i.squeeze().data)
-                #responses.append(j.squeeze().cpu().data.numpy())
+                # responses.append(j.squeeze().cpu().data.numpy())
             self.images = torch.vstack(images)
 
-        bg=random.choice(self.images)
+        bg = random.choice(self.images)
         if self.norm is not None:
             normed_bg = bg * (self.norm / torch.norm(bg))
-            bg = torch.clamp(normed_bg,-1.96, 2.12)
+            bg = torch.clamp(normed_bg, -1.96, 2.12)
         return bg
 
-class NatImgBackgroundHighNorm():
+
+class NatImgBackgroundHighNorm:
     # to get a more robust mask, use high norm background;
     # but to help MEI converge, increasing background norm as the iteration step increase
-    def __init__(self,dataset_fn,dataset_path,start_norm=None,end_norm=None,dataset_name=None):
-        #self.dataset_fn = dataset_fn
-        #self.dataset_path = dataset_path
-        dataset_config = {'paths': dataset_path,
-                 'normalize': True,
-                 'include_behavior': False,
-                 'batch_size': 128,
-                 'exclude': None,
-                 'file_tree': True,
-                  'scale':1
-                 }
+    def __init__(self, dataset_fn, dataset_path, start_norm=None, end_norm=None, dataset_name=None):
+        # self.dataset_fn = dataset_fn
+        # self.dataset_path = dataset_path
+        dataset_config = {
+            "paths": dataset_path,
+            "normalize": True,
+            "include_behavior": False,
+            "batch_size": 128,
+            "exclude": None,
+            "file_tree": True,
+            "scale": 1,
+        }
         dataset_name = dataset_name
         dataloaders = builder.get_data(dataset_fn, dataset_config)
         images = []
-        for tier in ['train','test','validation']:
-            for i,j in dataloaders[tier][dataset_name]:
+        for tier in ["train", "test", "validation"]:
+            for i, j in dataloaders[tier][dataset_name]:
                 images.append(i.squeeze().data)
         self.images = torch.vstack(images)
-        self.start_norm=start_norm
-        self.end_norm=end_norm
+        self.start_norm = start_norm
+        self.end_norm = end_norm
 
     @varargin
-    def __call__(self, x,iteration=None):
+    def __call__(self, x, iteration=None):
 
-        bg=random.choice(self.images)
-        normed_bg = bg * (self.start_norm+iteration*(self.end_norm-self.start_norm)/1000.0 / torch.norm(bg))
-        #bg = torch.clamp(normed_bg,-1.96, 2.12)
+        bg = random.choice(self.images)
+        normed_bg = bg * (self.start_norm + iteration * (self.end_norm - self.start_norm) / 1000.0 / torch.norm(bg))
+        # bg = torch.clamp(normed_bg,-1.96, 2.12)
         return bg
 
-class WhiteNoiseBackground():
-    def __init__(self, mean, std,shape=(72,128),strength=1):
+
+class WhiteNoiseBackground:
+    def __init__(self, mean, std, shape=(72, 128), strength=1):
         self.mean = mean
         self.std = std
         self.shape = shape
@@ -280,12 +290,13 @@ class WhiteNoiseBackground():
 
     @varargin
     def __call__(self, x, iteration=None):
-        bg_img=np.random.normal(self.mean, self.std, self.shape).astype('f')
-        #print(bg_img)
-        #bg_img = np.clip(bg_img, -1.96, 2.12)
-        rang=max(max(bg_img.flatten()),abs(min(bg_img.flatten())))
-        bg_img=bg_img/rang*2.12*self.strength # such that each pixel range in (-2.12,2.12)
+        bg_img = np.random.normal(self.mean, self.std, self.shape).astype("f")
+        # print(bg_img)
+        # bg_img = np.clip(bg_img, -1.96, 2.12)
+        rang = max(max(bg_img.flatten()), abs(min(bg_img.flatten())))
+        bg_img = bg_img / rang * 2.12 * self.strength  # such that each pixel range in (-2.12,2.12)
         return torch.as_tensor(bg_img)
+
 
 ################################ TRANSFORMS ##############################################
 class Jitter:
@@ -593,13 +604,25 @@ class GaussianBlurforRing:
 
         unit_id = key["unit_id"]
 
-        outer_mei_path = (MEI & dict(method_fn=src_method_fn) & dict(ensemble_hash=outer_ensemble_hash) & dict(method_hash=outer_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
-        inner_mei_path = (MEI & dict(method_fn=src_method_fn) & dict(ensemble_hash=inner_ensemble_hash) & dict(method_hash=inner_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
+        outer_mei_path = (
+            MEI
+            & dict(method_fn=src_method_fn)
+            & dict(ensemble_hash=outer_ensemble_hash)
+            & dict(method_hash=outer_method_hash)
+            & dict(unit_id=unit_id)
+        ).fetch1("mei", download_path=fetch_download_path)
+        inner_mei_path = (
+            MEI
+            & dict(method_fn=src_method_fn)
+            & dict(ensemble_hash=inner_ensemble_hash)
+            & dict(method_hash=inner_method_hash)
+            & dict(unit_id=unit_id)
+        ).fetch1("mei", download_path=fetch_download_path)
 
-        outer_mei=torch.load(outer_mei_path)
-        inner_mei=torch.load(inner_mei_path)
+        outer_mei = torch.load(outer_mei_path)
+        inner_mei = torch.load(inner_mei_path)
 
-        self.ring_mask=(outer_mei[0][1] - inner_mei[0][1] > mask_thres_for_ring) * 1
+        self.ring_mask = (outer_mei[0][1] - inner_mei[0][1] > mask_thres_for_ring) * 1
 
     @varargin
     def __call__(self, x, iteration=None):
@@ -626,8 +649,10 @@ class GaussianBlurforRing:
 
         return final_x * self.ring_mask.to(x.device)
 
+
 class GaussianBlurforCenter:
-    """ Blur an image with a Gaussian window for surround region"""
+    """Blur an image with a Gaussian window for surround region"""
+
     """ only blur for the center """
 
     def __init__(self, sigma, key, decay_factor=None, truncate=4, mask_thres=0.3, pad_mode="reflect"):
@@ -644,10 +669,16 @@ class GaussianBlurforCenter:
 
         unit_id = key["unit_id"]
 
-        inner_mei_path = (MEI & dict(method_fn=src_method_fn) & dict(ensemble_hash=inner_ensemble_hash) & dict(method_hash=inner_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
+        inner_mei_path = (
+            MEI
+            & dict(method_fn=src_method_fn)
+            & dict(ensemble_hash=inner_ensemble_hash)
+            & dict(method_hash=inner_method_hash)
+            & dict(unit_id=unit_id)
+        ).fetch1("mei", download_path=fetch_download_path)
 
-        inner_mei=torch.load(inner_mei_path)
-        self.center_mask= (inner_mei[0][1] > mask_thres) * 1
+        inner_mei = torch.load(inner_mei_path)
+        self.center_mask = (inner_mei[0][1] > mask_thres) * 1
 
     @varargin
     def __call__(self, x, iteration=None):
@@ -674,9 +705,9 @@ class GaussianBlurforCenter:
 
         return final_x * (self.center_mask).to(x.device)
 
+
 class GaussianBlurforSurround:
-    """ Blur an image with a Gaussian window for surround region
-    """
+    """Blur an image with a Gaussian window for surround region"""
 
     def __init__(self, sigma, key, decay_factor=None, truncate=4, mask_thres=0.3, pad_mode="reflect"):
 
@@ -692,10 +723,16 @@ class GaussianBlurforSurround:
 
         unit_id = key["unit_id"]
 
-        inner_mei_path = (MEI & dict(method_fn=src_method_fn) & dict(ensemble_hash=inner_ensemble_hash) & dict(method_hash=inner_method_hash) & dict(unit_id=unit_id)).fetch1('mei', download_path=fetch_download_path)
+        inner_mei_path = (
+            MEI
+            & dict(method_fn=src_method_fn)
+            & dict(ensemble_hash=inner_ensemble_hash)
+            & dict(method_hash=inner_method_hash)
+            & dict(unit_id=unit_id)
+        ).fetch1("mei", download_path=fetch_download_path)
 
-        inner_mei=torch.load(inner_mei_path)
-        self.center_mask= (inner_mei[0][1] > mask_thres) * 1
+        inner_mei = torch.load(inner_mei_path)
+        self.center_mask = (inner_mei[0][1] > mask_thres) * 1
 
     @varargin
     def __call__(self, x, iteration=None):
@@ -720,10 +757,11 @@ class GaussianBlurforSurround:
         blurred_x = F.conv2d(blurred_x, x_gaussian.repeat(num_channels, 1, 1, 1), groups=num_channels)
         final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
 
-        return final_x * (1-self.center_mask).to(x.device)
+        return final_x * (1 - self.center_mask).to(x.device)
+
 
 class GaussianBlur:
-    """ Blur an image with a Gaussian window.
+    """Blur an image with a Gaussian window.
 
     Arguments:
         sigma (float or tuple): Standard deviation in y, x used for the gaussian blurring.
@@ -737,7 +775,7 @@ class GaussianBlur:
             default should be False (also for non transparent case)
     """
 
-    def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode="reflect",mei_only=False):
+    def __init__(self, sigma, decay_factor=None, truncate=4, pad_mode="reflect", mei_only=False):
         self.sigma = sigma if isinstance(sigma, tuple) else (sigma,) * 2
         self.decay_factor = decay_factor
         self.truncate = truncate
@@ -746,7 +784,6 @@ class GaussianBlur:
 
     @varargin
     def __call__(self, x, iteration=None):
-
 
         # Update sigma if needed
         if self.decay_factor is None:
@@ -764,9 +801,9 @@ class GaussianBlur:
 
         # Blur
         if self.mei_only:
-            num_channels = x.shape[1]-1
-            padded_x = F.pad(x[:,:-1,...], pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
-        else: # also blur transparent channel
+            num_channels = x.shape[1] - 1
+            padded_x = F.pad(x[:, :-1, ...], pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
+        else:  # also blur transparent channel
             num_channels = x.shape[1]
             padded_x = F.pad(x, pad=(x_halfsize, x_halfsize, y_halfsize, y_halfsize), mode=self.pad_mode)
         blurred_x = F.conv2d(padded_x, y_gaussian.repeat(num_channels, 1, 1)[..., None], groups=num_channels)
@@ -774,7 +811,7 @@ class GaussianBlur:
         final_x = blurred_x / (y_gaussian.sum() * x_gaussian.sum())  # normalize
         # print(final_x.shape)
         if self.mei_only:
-            return torch.cat((final_x,x[:,-1,...].view(x.shape[0],1,x.shape[2],x.shape[3])),dim=1)
+            return torch.cat((final_x, x[:, -1, ...].view(x.shape[0], 1, x.shape[2], x.shape[3])), dim=1)
         else:
             return final_x
 
@@ -782,10 +819,10 @@ class GaussianBlur:
 class ChangeStd:
     """Change the standard deviation of input.
 
-        Arguments:
-        std (float or tensor): Desired std. If tensor, it should be the same length as x.
-        zero_mean (boolean):   If False, the mean of x will be preserved after the std is changed. Defaults to False,
-                                   such that the mean will is preserved by default.
+    Arguments:
+    std (float or tensor): Desired std. If tensor, it should be the same length as x.
+    zero_mean (boolean):   If False, the mean of x will be preserved after the std is changed. Defaults to False,
+                               such that the mean will is preserved by default.
     """
 
     def __init__(self, std, zero_mean=True):
@@ -802,4 +839,3 @@ class ChangeStd:
         rescaled_x = fixed_std + (x_mean - x_mean_rescaled).view(len(x), *[1] * (x.dim() - 1))
 
         return fixed_std if self.zero_mean else rescaled_x
-

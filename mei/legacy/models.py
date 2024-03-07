@@ -53,9 +53,7 @@ class Ensemble:
 
     def __call__(self, x):
         resps = [
-            m(x, self.readout_key, eye_pos=self.eye_pos, behavior=self.behavior)[
-                :, self.neuron_idx
-            ]
+            m(x, self.readout_key, eye_pos=self.eye_pos, behavior=self.behavior)[:, self.neuron_idx]
             for m in self.models
         ]
         resps = torch.stack(resps)  # num_models x batch_size x num_neurons
@@ -77,11 +75,7 @@ class VGG19Core:
     def __init__(self, layer, use_batchnorm=True, device="cuda"):
         from torchvision import models
 
-        vgg19 = (
-            models.vgg19_bn(pretrained=True)
-            if use_batchnorm
-            else models.vgg19(pretrained=True)
-        )
+        vgg19 = models.vgg19_bn(pretrained=True) if use_batchnorm else models.vgg19(pretrained=True)
         if layer < len(vgg19.features):
             self.model = vgg19.features[: layer + 1]
         else:

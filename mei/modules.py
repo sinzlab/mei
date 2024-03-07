@@ -1,11 +1,11 @@
 """This module contains PyTorch modules used in the MEI optimization process."""
 
+from collections.abc import Iterable
 from typing import Any, Dict, List
 
 import torch
 from torch import Tensor
 from torch.nn import Module, ModuleList
-from collections.abc import Iterable
 
 
 class EnsembleModel(Module):
@@ -97,6 +97,7 @@ class ConstrainedOutputModel(Module):
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self.model}, {self.constraint}, forward_kwargs={self.forward_kwargs})"
 
+
 class ContrastiveOutputModel(Module):
     """A model that has its output constrained.
 
@@ -109,7 +110,9 @@ class ContrastiveOutputModel(Module):
             called. Optional.
     """
 
-    def __init__(self, model1: Module, model2: Module, constraint: int, target_fn=None, forward_kwargs: Dict[str, Any] = None):
+    def __init__(
+        self, model1: Module, model2: Module, constraint: int, target_fn=None, forward_kwargs: Dict[str, Any] = None
+    ):
         """Initializes ConstrainedOutputModel."""
         super().__init__()
         if target_fn is None:
@@ -133,7 +136,7 @@ class ContrastiveOutputModel(Module):
         """
         output1 = self.model1(x, *args, **self.forward_kwargs, **kwargs)
         output2 = self.model2(x, *args, **self.forward_kwargs, **kwargs)
-        contrast_output=output1-output2
+        contrast_output = output1 - output2
         return self.target_fn(contrast_output[:, self.constraint])
 
     def __repr__(self):
