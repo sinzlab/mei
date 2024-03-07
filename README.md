@@ -12,10 +12,10 @@ The easiest way to install the package is via pip:
 pip install neuro-mei
 ```
 
-If you want to install from source from a different branch, for example the `inception_loop` branch, you can run the following command:
+If you want to install from source from a version, for example version `v0.1.0`, you can run the following command:
 
 ```python
-pip install git+https://github.com/sinzlab/mei.git@inception_loop
+pip install git+https://github.com/sinzlab/mei.git@v0.1.0
 ```
 
 ## Usage
