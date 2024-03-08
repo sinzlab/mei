@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import random
 from typing import Callable, Tuple
 
 import torch
@@ -48,9 +47,6 @@ def default_background(mei: Tensor, i_iteration: int) -> Tensor:
 def default_transform(mei: Tensor, i_iteration: int) -> Tensor:
     """Default transform used when no transform is provided to MEI."""
     return mei
-
-
-import numpy as np
 
 
 class MEI:
