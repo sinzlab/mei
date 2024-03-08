@@ -9,7 +9,7 @@ from torch.nn import Module, ModuleList
 
 
 class EnsembleModel(Module):
-    """A ensemble model consisting of several individual ensemble members.
+    """An ensemble model consisting of several individual ensemble members.
 
     Attributes:
         *members: PyTorch modules representing the members of the ensemble.
