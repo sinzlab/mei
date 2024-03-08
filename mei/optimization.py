@@ -106,8 +106,6 @@ class MEI:
         self.background = background
         self.inhibitory = inhibitory
 
-        print(f"Using a transparency weight of {self.transparency_weight}")
-
     @property
     def _transformed_input(self) -> Tensor:
         if self._transformed is None:
