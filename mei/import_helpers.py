@@ -1,12 +1,15 @@
 """Contains classes and functions related to the dynamic import of objects."""
 
-from typing import Mapping, Any
+from typing import Any, Mapping
 
-from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
+from nnfabrik.utility.nnf_helper import dynamic_import, split_module_name
 
 
 def import_object(
-    path: str, object_kwargs: Mapping[str, Any] = None, split_func=split_module_name, import_func=dynamic_import,
+    path: str,
+    object_kwargs: Mapping[str, Any] = None,
+    split_func=split_module_name,
+    import_func=dynamic_import,
 ) -> Any:
     """Imports an object given a path, calls it with the given keyword arguments and returns the object returned by the
     imported object.

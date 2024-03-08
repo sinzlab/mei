@@ -5,8 +5,8 @@ of the regular DataJoint schema with the templates in this module.
 """
 
 import datajoint as dj
-
 from nnfabrik.main import Dataset, schema
+
 from . import mixins
 
 
