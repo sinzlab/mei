@@ -95,7 +95,6 @@ def gradient_ascent(
         shape = get_input_dimensions(dataloaders, get_dims)
 
     for component_name, component_config in config.items():
-        print(component_name, component_config)
         if component_name in ("device", "objectives"):
             continue
         if "kwargs" not in component_config:
