@@ -81,4 +81,3 @@ def bg_nat_img(dataloaders, dataset_name):
             images.append(x.squeeze().cpu().data.numpy())
     images = np.vstack(images)
     return images
-

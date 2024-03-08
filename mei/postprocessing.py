@@ -23,6 +23,7 @@ class PNormConstraint:
     Returns:
         torch.Tensor: The normalized tensor that satisfies the p-norm constraint.
     """
+
     def __init__(self, norm_value: float, p: int = 1):
         self.p = p
         self.max_value = norm_value
@@ -64,6 +65,7 @@ class PNormConstraintAndClip:
         torch.Tensor: The normalized and clipped image tensor, conforming to the specified p-norm and
         pixel value constraints.
     """
+
     def __init__(
         self,
         norm_value: float = 30.0,
@@ -79,11 +81,7 @@ class PNormConstraintAndClip:
 
     def __call__(self, img: torch.Tensor, iteration=None):
         normalized_img = self.p_norm_constraint(img, iteration)
-        normalized_img = torch.where(
-            normalized_img > self.max_pixel_value, self.max_pixel_value, normalized_img
-        )
-        normalized_img = torch.where(
-            normalized_img < self.min_pixel_value, self.min_pixel_value, normalized_img
-        )
+        normalized_img = torch.where(normalized_img > self.max_pixel_value, self.max_pixel_value, normalized_img)
+        normalized_img = torch.where(normalized_img < self.min_pixel_value, self.min_pixel_value, normalized_img)
 
         return normalized_img

@@ -55,6 +55,7 @@ class ModelLoader:
     The load method is the primary interface for users of this class, automatically managing caching to optimize
     model loading. The cache is transparently managed according to the specified cache size limit.
     """
+
     def __init__(self, model_table, cache_size_limit=10):
         self.model_table = model_table
         self.cache_size_limit = cache_size_limit
