@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from setuptools import setup
 
+with open("requirements.txt") as f:
+    reqs = f.read().splitlines()
+
 setup(
     name="mei",
     version="0.0.0",
@@ -10,8 +13,8 @@ setup(
     license="MIT",
     url="https://github.com/sinzlab/mei",
     keywords="feature visualization MEI pytorch",
+    python_requires="<3.10",
     packages=["mei"],
-    install_requires=["torch>=0.4.0", "scipy", "numpy", "torchvision", "datajoint", "nnfabrik", "pytest"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
