@@ -4,8 +4,6 @@ from setuptools import setup
 with open("requirements.txt") as f:
     reqs = f.read().splitlines()
 
-print(reqs)
-
 setup(
     name="mei",
     version="0.0.0",
