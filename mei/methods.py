@@ -23,10 +23,11 @@ def get_input_dimensions(dataloaders, get_dims, data_key=None):
 
 
 def gradient_ascent(
-    dataloaders: Dict,
     model: Module,
     config: Dict,
     seed: int,
+    shape: tuple[int] = None,
+    dataloaders: Dict = None,
     set_seed: Callable = torch.manual_seed,
     get_dims: Callable = get_dims_for_loader_dict,
     mei_class: Type = optimization.MEI,
@@ -92,6 +93,12 @@ def gradient_ascent(
     Returns:
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
+    if (dataloaders is None) and (shape is None):
+        raise ValueError('Must provide either dataloader or shape')
+
+    if dataloaders is not None:
+        shape = get_input_dimensions(dataloaders, get_dims)
+
     for component_name, component_config in config.items():
         if component_name in (
             "device",
@@ -117,13 +124,6 @@ def gradient_ascent(
     set_seed(seed)
     model.eval()
     model.to(config["device"])
-
-    n_meis = config.get("n_meis", 1)
-    model_forward_kwargs = config.get("model_forward_kwargs", dict())
-    model.forward_kwargs.update(model_forward_kwargs)
-
-    data_key = model.forward_kwargs["data_key"]
-    shape = config.get("mei_shape", get_input_dimensions(dataloaders, get_dims, data_key=data_key))
 
     create_initial_guess = import_func(config["initial"]["path"], config["initial"]["kwargs"])
     initial_guess = create_initial_guess(n_meis, *shape[1:]).to(config["device"])  # (1*1*h*w)
