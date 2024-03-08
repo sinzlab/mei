@@ -94,7 +94,7 @@ def gradient_ascent(
         The MEI, the final evaluation as a single float and the log of the tracker.
     """
     if (dataloaders is None) and (shape is None):
-        raise ValueError('Must provide either dataloader or shape')
+        raise ValueError("Must provide either dataloader or shape")
 
     if dataloaders is not None:
         shape = get_input_dimensions(dataloaders, get_dims)

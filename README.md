@@ -4,7 +4,7 @@
 
 Generate most exciting inputs (MEIs).
 
-![Documentation](docs/README.md)
+[Documentation](docs/README.md)
 
 ## Installation
 
@@ -21,11 +21,13 @@ pip install git+https://github.com/sinzlab/mei.git@v0.1.0
 ```
 
 ## Quickstart
-```python
-import torch.nn as nn
-import torch.functional as F
-import torch
 
+Check out the demo notebooks in the `demo` folder to get started.
+- [Quickstart](demo/quickstart.ipynb)
+- [DataJoint Integration](demo/dj_integration.ipynb)
+
+Simple usage with a pre-trained model:
+```python
 from mei.methods import gradient_ascent
 
 # Create an instance of the model
@@ -41,11 +43,8 @@ method_config = {
     "device": "cuda",
 }
 
-mei, _, _ = gradient_ascent(model, method_config)
+mei, _, _ = gradient_ascent(model, config=method_config, seed=0, shape=(1, 1, 100, 100))
 ```
-
-
-```python
 
 ## How to run the tests :test_tube:
 
