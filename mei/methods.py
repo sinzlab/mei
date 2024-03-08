@@ -83,10 +83,14 @@ def gradient_ascent(
         config: Configuration dictionary. See above for an explanation and example.
         seed: Integer used to make the MEI generation process reproducible.
         set_seed: Callable object that sets the seed to the value given by the seed argument. Example: torch.manual_seed
-        get_dims: Callable object that, given a dictionary of DataLoaders, returns a dictionary with same keys and shape information on each keyed DataLoader.
+        get_dims: Callable object that, given a dictionary of DataLoaders, returns a dictionary with same keys and shape
+            information on each keyed DataLoader.
         mei_class: Wrapper class for MEI. Used to create the MEI object that will be returned.
-        import_func: Callable object that has as input the absolute path to the object to be imported and the keyword arguments used to call the object to be imported.
-        optimize_func: Callable object that will receive a MEI, a stopper and a tracker. Returns a float representing the final evaluation and a tensor of floats having the same shape as "initial_guess" representing the input that maximizes the function.
+        import_func: Callable object that has as input the absolute path to the object to be imported and the keyword
+            arguments used to call the object to be imported.
+        optimize_func: Callable object that will receive a MEI, a stopper and a tracker. Returns a float representing
+            the final evaluation and a tensor of floats having the same shape as "initial_guess" representing the input
+            that maximizes the function.
         tracker_cls: Wrapper class for Tracker. Tracks and logs objective(s) and values during MEI optimization process.
 
     Returns:

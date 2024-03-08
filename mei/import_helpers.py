@@ -17,8 +17,10 @@ def import_object(
     Args:
         path: The absolute path to the object to be imported. For example: "module1.module2.class"
         object_kwargs: The keyword arguments used to call the imported object.
-        split_func: Callable that, given a module's full path (absolute path + name), splits it into absolute path and name. Optional. Example: given "module1.module2.class", returns "module1.module2", "class".
-        import_func: Callable that, given a module's path and name, returns the object associated to the module to be imported. Optional.
+        split_func: Callable that, given a module's full path (absolute path + name), splits it into absolute path and
+            name. Optional. Example: given "module1.module2.class", returns "module1.module2", "class".
+        import_func: Callable that, given a module's path and name, returns the object associated to the module to be
+            imported. Optional.
 
     Returns:
         The object returned by the call to the imported object.
