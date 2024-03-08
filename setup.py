@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 from setuptools import setup
 
-
-with open("requirements.txt") as f:
-    reqs = f.read().splitlines()
-
 setup(
     name="mei",
     version="0.0.0",
@@ -16,7 +12,6 @@ setup(
     keywords="feature visualization MEI pytorch",
     python_requires="<3.10",
     packages=["mei"],
-    install_requires=reqs,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
