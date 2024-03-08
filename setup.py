@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from setuptools import setup
 
+with open("requirements.txt") as f:
+    reqs = f.read().splitlines()
+
 setup(
     name="mei",
     version="0.0.0",
@@ -19,4 +22,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English" "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
+    python_requires="<3.10",
 )
