@@ -22,4 +22,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English" "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
+    python_requires="<3.10",
 )
