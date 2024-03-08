@@ -65,11 +65,11 @@ class PNormConstraintAndClip:
         pixel value constraints.
     """
     def __init__(
-            self,
-            norm_value: float = 30.0,
-            p: int = 1,
-            max_pixel_value: float = 1.0,
-            min_pixel_value: float = -1.0,
+        self,
+        norm_value: float = 30.0,
+        p: int = 1,
+        max_pixel_value: float = 1.0,
+        min_pixel_value: float = -1.0,
     ):
         self.max_value = norm_value
         self.max_pixel_value = float(max_pixel_value)
