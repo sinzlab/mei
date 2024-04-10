@@ -20,7 +20,7 @@ def gradient_ascent(
     save_iters=None,
     print_iters=100,
 ):
-    """ Maximize f(x) via gradient ascent.
+    """Maximize f(x) via gradient ascent.
 
     Objective: f(transform(x)) - regularization(transform(x))
     Update: x_{t+1} = post_update(x_{t} + step_size * gradient_f(x_{t}.grad))
@@ -66,6 +66,7 @@ def gradient_ascent(
     if x.dtype != torch.float32:
         raise ValueError("x must be of torch.float32 dtype")
     x = x.detach().clone()  # to avoid changing original
+
     x.requires_grad_()
 
     # Declare optimizer
@@ -80,6 +81,7 @@ def gradient_ascent(
     fevals = []  # to store function evaluations
     reg_terms = []  # to store regularization function evaluations
     saved_xs = []  # to store xs (ignored if save_iters is None)
+
     for i in range(1, num_iterations + 1):
         # Zero gradients
         if x.grad is not None:
@@ -100,7 +102,7 @@ def gradient_ascent(
             reg_term = 0
 
         # Compute gradient
-        (-feval + reg_term).backward()
+        (-feval + reg_term).backward()  # add -transparency here???
         if x.grad is None:
             raise FeatureVisException("Gradient did not reach x.")
 

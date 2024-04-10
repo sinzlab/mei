@@ -5,8 +5,8 @@ of the regular DataJoint schema with the templates in this module.
 """
 
 import datajoint as dj
-
 from nnfabrik.main import Dataset, schema
+
 from . import mixins
 
 
@@ -15,7 +15,7 @@ class TrainedEnsembleModelTemplate(mixins.TrainedEnsembleModelTemplateMixin, dj.
 
     To create a functional "TrainedEnsembleModel" table, create a new class that inherits from this template and
     decorate it with your preferred Datajoint schema. Next assign the trained model table of your choosing to the class
-    variable called "trained_model_table". By default the created table will point to the "Dataset" table in the
+    variable called "trained_model_table". By default, the created table will point to the "Dataset" table in the
     Datajoint schema called "nnfabrik.main". This behaviour can be changed by overwriting the class attribute called
     "dataset_table".
     """

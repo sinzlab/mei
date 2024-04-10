@@ -3,8 +3,8 @@
 import pickle
 from copy import deepcopy
 
-from nnfabrik.utility.nnf_helper import split_module_name, dynamic_import
 from nnfabrik.utility.dj_helpers import make_hash
+from nnfabrik.utility.nnf_helper import dynamic_import, split_module_name
 
 
 def load_pickled_data(path):
@@ -18,7 +18,14 @@ def get_mappings(dataset_config, key, load_func=load_pickled_data):
     for datafile_path in dataset_config["datafiles"]:
         data = load_func(datafile_path)
         for neuron_pos, neuron_id in enumerate(data["unit_indices"]):
-            entities.append(dict(key, neuron_id=neuron_id, neuron_position=neuron_pos, session_id=data["session_id"]))
+            entities.append(
+                dict(
+                    key,
+                    neuron_id=neuron_id,
+                    neuron_position=neuron_pos,
+                    session_id=data["session_id"],
+                )
+            )
     return entities
 
 
@@ -27,6 +34,29 @@ def import_module(path):
 
 
 class ModelLoader:
+    """
+    A utility class for loading and caching models.
+
+    This class is designed to manage the loading and caching of models to optimize performance by reducing redundant
+    loading operations. It supports limiting the cache size to prevent excessive memory usage.
+
+    Attributes:
+        model_table (callable): A callable that returns an object capable of loading models given a key.
+        cache_size_limit (int, optional): The maximum number of models to keep in the cache. Defaults to 10.
+        cache (dict): A dictionary acting as the cache for storing loaded models.
+
+    Methods:
+        load(key): Loads a model by its key, using the cache if available. Loading it from the `model_table` otherwise.
+        _load_model(key): Directly loads a model from the `model_table` without attempting to use the cache.
+        _is_cached(key): Checks if a model corresponding to the given key is present in the cache.
+        _cache_model(key): Caches a model under the given key, ensuring the cache does not exceed its size limit.
+        _get_cached_model(key): Retrieves a model from the cache based on its key.
+        _hash_trained_model_key(key): Generates a hash for the model key, primarily for use as a cache key.
+
+    The load method is the primary interface for users of this class, automatically managing caching to optimize
+    model loading. The cache is transparently managed according to the specified cache size limit.
+    """
+
     def __init__(self, model_table, cache_size_limit=10):
         self.model_table = model_table
         self.cache_size_limit = cache_size_limit

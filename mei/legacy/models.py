@@ -4,7 +4,7 @@ from mei.legacy.utils import varargin
 
 
 class Ensemble:
-    """ Average the response across a set of models.
+    """Average the response across a set of models.
 
     Arguments:
         models (list): A list of pytorch models.
@@ -63,7 +63,7 @@ class Ensemble:
 
 
 class VGG19Core:
-    """ A pretrained VGG-19. Output will be intermediate feature representation
+    """A pretrained VGG-19. Output will be intermediate feature representation
     (N x C x H x W) at the desired layer.
 
     Arguments:
@@ -89,7 +89,7 @@ class VGG19Core:
 
 
 class VGG19:
-    """ A pretrained VGG-19. Output will be the average of one channel across spatial
+    """A pretrained VGG-19. Output will be the average of one channel across spatial
     dimensions.
 
     Arguments:
