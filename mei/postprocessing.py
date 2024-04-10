@@ -81,7 +81,9 @@ class PNormConstraintAndClip:
 
     def __call__(self, img: torch.Tensor, iteration=None):
         normalized_img = self.p_norm_constraint(img, iteration)
-        normalized_img = torch.where(normalized_img > self.max_pixel_value, self.max_pixel_value, normalized_img)
-        normalized_img = torch.where(normalized_img < self.min_pixel_value, self.min_pixel_value, normalized_img)
+        max_pixel_value = torch.tensor(self.max_pixel_value, dtype=normalized_img.dtype, device=normalized_img.device)
+        min_pixel_value = torch.tensor(self.min_pixel_value, dtype=normalized_img.dtype, device=normalized_img.device)
+        normalized_img = torch.where(normalized_img > max_pixel_value, max_pixel_value, normalized_img)
+        normalized_img = torch.where(normalized_img < min_pixel_value, min_pixel_value, normalized_img)
 
         return normalized_img
