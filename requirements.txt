@@ -1,7 +1,7 @@
-datajoint==0.12.9
-nnfabrik @ git+https://github.com/sinzlab/nnfabrik.git
-torch>=0.4.0
-scipy==1.12.0
-numpy==1.26.4
-torchvision==0.17.1
-pytest==8.0.2
+datajoint<=0.12.9
+nnfabrik
+torch
+scipy>=1.7.0,<=1.12.0
+numpy>=1.22.0,<=1.26.4
+torchvision
+pytest
