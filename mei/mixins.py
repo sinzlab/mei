@@ -62,6 +62,7 @@ class TrainedEnsembleModelTemplateMixin:
         key: Optional[Key] = None,
         include_dataloader: Optional[bool] = True,
         include_state_dict: Optional[bool] = True,
+        **kwargs,
     ) -> Tuple[Dataloaders, EnsembleModel]:
         if key is None:
             key = self.fetch1("KEY")
@@ -69,6 +70,7 @@ class TrainedEnsembleModelTemplateMixin:
             key=key,
             include_dataloader=include_dataloader,
             include_state_dict=include_state_dict,
+            **kwargs,
         )
 
     def _load_ensemble_model(
@@ -76,8 +78,8 @@ class TrainedEnsembleModelTemplateMixin:
         key: Optional[Key] = None,
         include_dataloader: Optional[bool] = True,
         include_state_dict: Optional[bool] = True,
+        **kwargs,
     ) -> Tuple[Dataloaders, EnsembleModel]:
-
         ensemble_key = (self & key).fetch1()
         model_keys = (self.Member() & ensemble_key).fetch(as_dict=True)
 
@@ -90,6 +92,7 @@ class TrainedEnsembleModelTemplateMixin:
                             key=k,
                             include_dataloader=include_dataloader,
                             include_state_dict=include_state_dict,
+                            **kwargs,
                         )
                         for k in model_keys
                     ]
@@ -101,6 +104,7 @@ class TrainedEnsembleModelTemplateMixin:
                     key=k,
                     include_dataloader=include_dataloader,
                     include_state_dict=include_state_dict,
+                    **kwargs,
                 )
                 for k in model_keys
             ]
@@ -170,21 +174,26 @@ class MEIMethodMixin:
         "postprocessing",
     )
 
-    def add_method(self, method_fn: str, method_config: Mapping, comment: str = "") -> None:
+    def add_method(self, method_fn: str, method_config: Mapping, comment: str = "", **kwargs) -> None:
         self.insert1(
             dict(
                 method_fn=method_fn,
                 method_hash=make_hash(method_config),
                 method_config=method_config,
                 method_comment=comment,
-            )
+            ),
+            **kwargs,
         )
 
     def generate_mei(self, dataloaders: Dataloaders, model: Module, key: Key, seed: int) -> Dict[str, Any]:
         method_fn, method_config = (self & key).fetch1("method_fn", "method_config")
         method_fn = self.import_func(method_fn)
         self.insert_key_in_ops(method_config=method_config, key=key)
-        mei, score, output = method_fn(dataloaders, model, method_config, seed)
+
+        train_input_shape = next(iter(next(iter(dataloaders["train"].values())))).images.shape
+        input_shape = (1, 4) + train_input_shape[2:]
+        mei, score, output = method_fn(model=model, config=method_config, seed=seed, shape=input_shape)
+
         return dict(key, mei=mei, score=score, output=output)
 
     def generate_ringmei(
@@ -209,7 +218,7 @@ class MEISeedMixin:
     """
 
 
-class MEITemplateMixin:
+class MEIMixin:
     definition = """
     # contains maximally exciting images (MEIs)
     -> self.method_table
@@ -260,3 +269,26 @@ class MEITemplateMixin:
     @staticmethod
     def _create_random_filename(length: Optional[int] = 32) -> str:
         return "".join(choice(ascii_letters) for _ in range(length))
+
+
+class CSRFV1SelectorTemplateMixin:
+    dataset_table = None
+
+    definition = """
+        # contains information that can be used to map a neuron's id to its corresponding integer position in the output of
+        # the model. 
+        -> self.dataset_table
+        neuron_id       : smallint unsigned # unique neuron identifier
+        ---
+        neuron_position : smallint unsigned # integer position of the neuron in the model's output 
+        session_id      : varchar(13)       # unique session identifier
+        """
+
+    def make(self, key):
+        dataset_config = (self.dataset_table & key).fetch1("dataset_config")
+        mappings = integration.get_mappings(dataset_config, key)
+        self.insert(mappings)
+
+    def get_output_selected_model(self, model, key):
+        neuron_pos, session_id = (self & key).fetch1("neuron_position", "session_id")
+        return integration.get_output_selected_model(neuron_pos, session_id, model)

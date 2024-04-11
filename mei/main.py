@@ -7,7 +7,7 @@ of the regular DataJoint schema with the templates in this module.
 import datajoint as dj
 from nnfabrik.main import Dataset, schema
 
-from . import mixins
+from . import integration, mixins
 
 
 class TrainedEnsembleModelTemplate(mixins.TrainedEnsembleModelTemplateMixin, dj.Manual):
@@ -48,7 +48,7 @@ class MEIMethod(mixins.MEIMethodMixin, dj.Lookup):
     """Table that contains MEI methods and their configurations."""
 
 
-class MEITemplate(mixins.MEITemplateMixin, dj.Computed):
+class MEITemplate(mixins.MEIMixin, dj.Computed):
     """MEI table template.
 
     To create a functional "MEI" table, create a new class that inherits from this template and decorate it with your
@@ -60,3 +60,15 @@ class MEITemplate(mixins.MEITemplateMixin, dj.Computed):
 
     method_table = MEIMethod
     seed_table = MEISeed
+
+
+class CSRFV1SelectorTemplate(mixins.CSRFV1SelectorTemplateMixin, dj.Computed):
+    """CSRF V1 selector table template.
+
+    To create a functional "CSRFV1Selector" table, create a new class that inherits from this template and decorate it
+    with your preferred Datajoint schema. By default, the created table will point to the "Dataset" table in the
+    Datajoint schema called "nnfabrik.main". This behavior can be changed by overwriting the class attribute called
+    "dataset_table".
+    """
+
+    dataset_table = Dataset
