@@ -82,15 +82,16 @@ def gradient_ascent(
         model: Callable object that will receive a tensor and must return a tensor containing a single float.
         config: Configuration dictionary. See above for an explanation and example.
         seed: Integer used to make the MEI generation process reproducible.
-        shape: Shape of the input, if the shape is given, the dataloaders are not necessary.
-        If dataloaders are not None, the shape will be inferred from there
-        dataloaders: NNFabrik-style dataloader dictionary.
-        set_seed: Callable for setting random seeds in torch.
-        get_dims: Callable for inferring the dimensions from the dataloaders. If dataloaders are None can be None.
-        mei_class: MEI class to use
-        import_func: Callable for importing a class based on location.
-        optimize_func: Callable to be used for optimization of the MEI.
-        tracker_cls: Tracker to use.
+        set_seed: Callable object that sets the seed to the value given by the seed argument. Example: torch.manual_seed
+        get_dims: Callable object that, given a dictionary of DataLoaders, returns a dictionary with same keys and shape
+            information on each keyed DataLoader.
+        mei_class: Wrapper class for MEI. Used to create the MEI object that will be returned.
+        import_func: Callable object that has as input the absolute path to the object to be imported and the keyword
+            arguments used to call the object to be imported.
+        optimize_func: Callable object that will receive a MEI, a stopper and a tracker. Returns a float representing
+            the final evaluation and a tensor of floats having the same shape as "initial_guess" representing the input
+            that maximizes the function.
+        tracker_cls: Wrapper class for Tracker. Tracks and logs objective(s) and values during MEI optimization process.
 
     Returns:
         The MEI, the final evaluation as a single float and the log of the tracker.
