@@ -75,6 +75,9 @@ class ConstrainedOutputModel(Module):
         self.constraint = constraint if (isinstance(constraint, Iterable) or constraint is None) else [constraint]
         self.forward_kwargs = forward_kwargs if forward_kwargs else dict()
         self.target_fn = target_fn
+        if hasattr(model, "core") and hasattr(model, "readout"):
+            self.core = model.core
+            self.readout = model.readout
 
     def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
         """Computes the constrained output of the model.
@@ -87,7 +90,11 @@ class ConstrainedOutputModel(Module):
         Returns:
             A tensor representing the constrained output of the model.
         """
-        output = self.model(x, *args, **self.forward_kwargs, **kwargs)
+        duplicate_keys = self.forward_kwargs.keys() & kwargs.keys()
+        reduced_forward_kwargs = self.forward_kwargs
+        for key in duplicate_keys:
+            reduced_forward_kwargs.pop(key)
+        output = self.model(x, *args, **reduced_forward_kwargs, **kwargs)
         return (
             self.target_fn(output)
             if self.constraint is None or len(self.constraint) == 0
