@@ -191,7 +191,7 @@ class MEIMethodMixin:
         self.insert_key_in_ops(method_config=method_config, key=key)
 
         train_input_shape = next(iter(next(iter(dataloaders["train"].values())))).images.shape
-        input_shape = (1, 4) + train_input_shape[2:]
+        input_shape = (1,) + train_input_shape[1:]
         mei, score, output = method_fn(model=model, config=method_config, seed=seed, shape=input_shape)
 
         return dict(key, mei=mei, score=score, output=output)
